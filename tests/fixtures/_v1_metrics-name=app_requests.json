@@ -1,0 +1,15 @@
+{
+  "query": {
+    "offset": 0,
+    "length": 1,
+    "total": 2,
+    "found": 1
+  },
+  "metrics": [
+    {
+      "type": "counter",
+      "description": "Number of HTTP requests serviced by the app",
+      "name": "app_requests"
+    }
+  ]
+}

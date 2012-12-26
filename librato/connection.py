@@ -54,7 +54,7 @@ class Connection(object):
 
   def _exe(self, end_path, query_params):
     url      = self.hostname + self.base_path + end_path
-    response = requests.get(url, auth=self.auth)
+    response = requests.get(url, auth=self.auth, params=query_params)
     return json.loads(response.text)
 
   def _parse(self, resp, name, cls):
