@@ -9,9 +9,10 @@ class Metric():
   def __init__(self, connection, name, attributes=None, period=None, description=None):
     self.connection = connection
     self.name = name
-    #self.attributes=attributes or {}
-    #self.period = period
+    self.attributes=attributes or {}
+    self.period = period
     self.description = description
+    self.type = type
 
   @classmethod
   def from_dict(cls, connection, data):
@@ -24,9 +25,10 @@ class Metric():
 
     obj             = cls(connection, data['name'])
     obj.description = data['description']
-    #obj.period      = data['period']
-    #obj.attributes  = data['attributes']
     obj.description = data['description']
+    obj.type        = data['type']
+    obj.period      = data['period']     if data.has_key('period') else None
+    obj.attributes  = data['attributes'] if data.has_key('attributes') else {}
 
     return obj
 

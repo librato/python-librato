@@ -44,6 +44,15 @@ class TestMetrics(unittest.TestCase):
     assert len(results)  == 2
     for m in results:
       assert re.search('app_requests|server_temperature', m.name)
+      if m.name == 'app_requests':
+        assert m.type == 'counter'
+        assert m.description == 'Number of HTTP requests serviced by the app'
+        assert len(m.attributes) == 0
+      if m.name == 'server_temperature':
+        assert m.type == 'gauge'
+        assert m.description == 'Temperature of the server as measured in degrees Fahrenheit'
+        assert len(m.attributes) == 1
+        assert m.attributes['display_max'] == 150
 
   def test_get_specific_metric(self):
     expected_name = 'app_requests'
