@@ -1,21 +1,9 @@
 import sys, json, unittest, re, time
 import librato
 from mock_connection import MockRequest
+import helpers
 
 librato.connection.requests = MockRequest()
-
-"""tell me if two dics have the same contents """
-def dicts_match(x, truth):
-  shared_items              = set(x.items()) & set(truth.items())
-  same_length               = len(x) == len(truth)
-  same_overlap_shared_items = len(shared_items) == len(truth)
-  if same_length and same_overlap_shared_items:
-    return True
-  else:
-    print "--x:     "; print json.dumps(x)
-    print "--truth: "; print json.dumps(truth)
-    return False
-
 
 class TestMetrics(unittest.TestCase):
   def setUp(self):
@@ -43,8 +31,8 @@ class TestMetrics(unittest.TestCase):
     truth = self.truth_post_1
 
     assert len(g.measurements) == 2
-    assert dicts_match(truth[0], m[0].__dict__)
-    assert dicts_match(truth[1], m[1].__dict__)
+    assert helpers.dicts_match(truth[0], m[0].__dict__)
+    assert helpers.dicts_match(truth[1], m[1].__dict__)
 
   def test_checking_type_of_metric(self):
     g = self.my_gauge
@@ -60,5 +48,5 @@ class TestMetrics(unittest.TestCase):
 
     # contents
     truth = self.truth_post_1
-    assert dicts_match(m[0], truth[0])
-    assert dicts_match(m[1], truth[1])
+    assert helpers.dicts_match(m[0], truth[0])
+    assert helpers.dicts_match(m[1], truth[1])
