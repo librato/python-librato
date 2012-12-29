@@ -1,34 +1,10 @@
-import sys, json, unittest, re, urllib
-from urlparse import urlparse
+import sys, json, unittest, re
 import librato
-
-class MockResponse(object):
-  def __init__(self):
-    self.text = ""
-
-class MockRequest(object):
-  def __init__(self):
-    pass
-
-  def get(self, url, auth, params):
-    parsed       = urlparse(url)
-    path, params = parsed.path, urllib.urlencode(params)
-    f_name       = path.replace('/', '_')
-    fn_path      = 'tests/fixtures/%s-%s.json' % (f_name, params)
-    print("url requested  : %s" % url)
-    print("params         : %s" % params)
-    print("Loading fixture: %s" % fn_path)
-
-    fd           = open(fn_path)
-    content      = fd.read()
-    fd.close()
-    resp         = MockResponse()
-    resp.text    = content
-    return resp
+from mock_connection import MockRequest
 
 librato.connection.requests = MockRequest()
 
-class TestMetrics(unittest.TestCase):
+class TestConnection(unittest.TestCase):
   def setUp(self):
     self.api = librato.Connection("drio", "abcdef")
 
