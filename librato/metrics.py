@@ -43,11 +43,11 @@ class Metric(object):
 
   def prepare_payload(self):
     """set the payload based on the current measurements"""
-    pl = self.payload # alias, less typing
+    pl = self.payload        # alias, less typing
     pl[self.what_type()] = []
     a = pl[self.what_type()] # alias
     for m in self.measurements:
-      a.append(m.__dict__)
+      a.append(m.__dict__)   # add the hash version of the measu. object
 
 class Gauge(Metric):
   """Librato Gauge metric"""
