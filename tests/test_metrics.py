@@ -22,24 +22,24 @@ class TestMetrics(unittest.TestCase):
     self.api = librato.Connection('drio', 'abcdef')
     self.my_gauge = librato.Gauge(self.api, name='home_temp', description='Temp. at home')
 
-    # Create a metric(gauge) and add a couple of measurements
+    # make a POST /metrics with two measurements (gauges)
     self.now = 1356802172
     g = self.my_gauge
     g.add(20.2, source="upstairs")
     g.add(20.0, name="dummy", source="downstairs", measure_time=self.now)
 
-    # Load truth for some POST requests
-    fd                = open("tests/fixtures/post_measurements_1.json")
+    # Load the truth for that
+    fd                = open("tests/fixtures/post_measurements_two_gauges.json")
     self.truth_post_1 = json.loads(fd.read())['gauges']
     fd.close()
-    # TODO: try counters ...
+    # TODO: exercise counters ...
 
   def tearDown(self):
     pass
 
   def test_add_measurements(self):
-    g = self.my_gauge
-    m = g.measurements # measurements
+    g     = self.my_gauge
+    m     = g.measurements # alias
     truth = self.truth_post_1
 
     assert len(g.measurements) == 2
@@ -50,7 +50,7 @@ class TestMetrics(unittest.TestCase):
     g = self.my_gauge
     assert g.what_type() == 'gauges'
 
-  def test_submit_measurements(self):
+  def test_submit_two_gauges_measurements(self):
     g = self.my_gauge
     g.submit()
 
