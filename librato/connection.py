@@ -5,7 +5,7 @@ from metrics import Metric
 # Defaults
 HOSTNAME  = "https://metrics-api.librato.com"
 BASE_PATH = "/v1/"
-HEAD_JSON = {'Content-type': 'application/json'}
+HEAD_JSON = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
 class Connection(object):
 
@@ -20,7 +20,9 @@ class Connection(object):
       r = requests.get(url, auth=self.auth, params=query_params)
       return json.loads(r.text)
     if method == "POST":
-      r = requests.post(url, auth=self.auth, data=payload, headers=HEAD_JSON)
+      #r = requests.post(url, auth=self.auth, data=json.dumps(payload), headers=HEAD_JSON)
+      r = requests.post(url, auth=self.auth, data=json.dumps(payload), headers=HEAD_JSON)
+      r.raise_for_status()
 
   def _parse(self, resp, name, cls):
     if resp.has_key(name):

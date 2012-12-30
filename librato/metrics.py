@@ -49,6 +49,7 @@ class Metric(object):
     for m in self.measurements:
       a.append(m.__dict__)   # add the hash version of the measu. object
 
+
 class Gauge(Metric):
   """Librato Gauge metric"""
   def what_type(self):

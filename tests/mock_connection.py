@@ -34,4 +34,10 @@ class MockRequest(object):
     for Metric, we will run set_payload(). After submit we can check the
     payload attribute.
     """
+    return self
+
+  def delete(self):
+    return self
+
+  def raise_for_status(self):
     pass
