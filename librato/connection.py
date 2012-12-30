@@ -23,6 +23,9 @@ class Connection(object):
       #r = requests.post(url, auth=self.auth, data=json.dumps(payload), headers=HEAD_JSON)
       r = requests.post(url, auth=self.auth, data=json.dumps(payload), headers=HEAD_JSON)
       r.raise_for_status()
+    if method == "DELETE":
+      r = requests.delete(url, auth=self.auth, data=json.dumps(payload), headers=HEAD_JSON)
+      r.raise_for_status()
 
   def _parse(self, resp, name, cls):
     if resp.has_key(name):

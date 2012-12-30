@@ -38,10 +38,14 @@ class Metric(object):
 
   def submit(self):
     """Send measurements to librato"""
-    self.prepare_payload()
+    self.prepare_post_payload()
     self.connection._exe(end_path="metrics", method="POST", payload=self.payload)
 
-  def prepare_payload(self):
+  def delete(self):
+    self.payload = { 'names': [self.name] }
+    self.connection._exe(end_path="metrics", method="DELETE", payload=self.payload)
+
+  def prepare_post_payload(self):
     """set the payload based on the current measurements"""
     pl = self.payload        # alias, less typing
     pl[self.what_type()] = []
