@@ -2,7 +2,6 @@ import requests
 import json
 from metrics import Metric
 
-
 # Defaults
 HOSTNAME  = "https://metrics-api.librato.com"
 BASE_PATH = "/v1/"
@@ -10,6 +9,7 @@ BASE_PATH = "/v1/"
 class Connection(object):
   HOSTNAME  = "https://metrics-api.librato.com"
   BASE_PATH = "/v1/"
+  HEAD_JSON = {'Content-type': 'application/json'}
 
   def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):
     self.hostname  = hostname
@@ -19,10 +19,10 @@ class Connection(object):
   def _exe(self, end_path, method="GET", query_params=None, payload=None):
     url = self.hostname + self.base_path + end_path
     if method == "GET":
-      response = requests.get(url, auth=self.auth, params=query_params)
-      return json.loads(response.text)
+      r = requests.get(url, auth=self.auth, params=query_params)
+      return json.loads(r.text)
     if method == "POST":
-      requests.post(url, auth=self.auth, data=payload)
+      r = requests.post(url, auth=self.auth, data=payload, headers=self.HEAD_JSON)
 
   def _parse(self, resp, name, cls):
     if resp.has_key(name):

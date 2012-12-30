@@ -26,7 +26,7 @@ class TestMetrics(unittest.TestCase):
     pass
 
   def test_add_measurements(self):
-    g     = self.my_gauge
+    g     = self.my_gauge  # alias
     m     = g.measurements # alias
     truth = self.truth_post_1
 

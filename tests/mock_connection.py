@@ -29,7 +29,7 @@ class MockRequest(object):
     resp.text    = content
     return resp
 
-  def post(self, url, auth, data):
+  def post(self, url, auth, data, headers=None):
     """We don't need to do anything here. In the submit instance method
     for Metric, we will run set_payload(). After submit we can check the
     payload attribute.
