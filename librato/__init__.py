@@ -163,10 +163,6 @@ class LibratoConnection(object):
       params["source"] = source
     return self._mexe("gauges/%s.json" % name, method="POST", query_props=params)
 
-  def _submit_batch_measurements(self, params):
-    """Send the measurements stored"""
-    return self._mexe("metrics", method="POST", query_props=params)
-
   #
   # Counters
   #

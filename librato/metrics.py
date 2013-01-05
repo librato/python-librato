@@ -53,22 +53,6 @@ class Metric(object):
 
     return obj
 
-  def push(self, value, source=None, **params):
-    """Store a measurement for sending later"""
-    if not params:
-      params = {}
-    params["value"] = value
-    if source:
-      params["source"] = source
-    params["name"] = self.name
-    self.measurements[self.what_am_i()].append(params)
-
-  def submit(self):
-    """submit all the measurements available"""
-    r = self.connection._submit_batch_measurements(self.measurements)
-    self.measurements[self.what_am_i()] = [] # empty measurements
-    return r
-
   def __repr__(self):
     return "%s<%s>" % (self.__class__.__name__, self.name)
 
