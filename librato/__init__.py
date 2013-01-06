@@ -183,10 +183,10 @@ class LibratoConnection(object):
     resp = self._mexe("counters.json", method="POST", query_props=query_props)
     return Counter.from_dict(self, resp)
 
-  def get_counter(self, name):
+  def get_counter(self, name, **query_props):
     """Fetch a specific counter"""
     from librato.metrics import Counter
-    resp = self._mexe("counters/%s.json" % name)
+    resp = self._mexe("counters/%s.json" % name, method="GET", query_props=query_props)
     return Counter.from_dict(self, resp)
 
   def delete_counter(self, name):
