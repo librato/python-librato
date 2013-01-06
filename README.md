@@ -64,7 +64,7 @@ To iterate over your metrics:
     print "%s: %s" % (m.name, m.description)
 ```
 
-To retrieve a concrete metric or counter:
+To retrieve a concrete gauge or counter:
 
 ```
   gauge   = api.get_gauge("temperature")
@@ -106,10 +106,9 @@ measurements to any source. Read more about it in the
 
 ## Contribution
 
-Want to contribute? Do you need a new feature? Please open a
+Do you want to contribute? Do you need a new feature? Please open a
 [ticket](https://github.com/librato/python-librato/issues).
 
 ## Copyright
 
 Copyright (c) 2011-2013 [Librato Inc.](http://librato.com) See LICENSE for details.
-
