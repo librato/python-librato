@@ -111,6 +111,11 @@ measurements to any source. Read more about it in the
 Do you want to contribute? Do you need a new feature? Please open a
 [ticket](https://github.com/librato/python-librato/issues).
 
+## Contributors
+
+The original version of `python-librato` was conceived/authored/released by Chris Moyer (AKA [@kopertop](https://github.com/kopertop)). He's
+graciously handed over maintainership of the project to us and we're super-appreciative of his efforts.
+
 ## Copyright
 
 Copyright (c) 2011-2013 [Librato Inc.](http://librato.com) See LICENSE for details.
