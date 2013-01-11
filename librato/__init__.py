@@ -32,6 +32,7 @@ import urllib
 import base64
 import json
 from librato import exceptions
+from librato.queue import Queue
 
 log = logging.getLogger("librato")
 
@@ -202,7 +203,13 @@ class LibratoConnection(object):
       params["source"] = source
     return self._mexe("counters/%s.json" % name, method="POST", query_props=params)
 
+  #
+  # Queue
+  #
+  def new_queue(self):
+    return Queue(self)
 
 def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):
   """Connect to Librato Metrics"""
   return LibratoConnection(username, api_key, hostname, base_path)
+

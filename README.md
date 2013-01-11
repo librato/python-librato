@@ -105,6 +105,23 @@ Notice how we are using the key `unassigned` since we have not associated our
 measurements to any source. Read more about it in the
 [API documentation](http://dev.librato.com/v1).
 
+## Sending measurements in batching mode
+
+Sending a measurement in a single HTTP request is inefficient. The overhead
+both at protocol and backend level is very high. That's why we provide an
+alternative method to submit your measurements. The idea is to send measurements
+in batch mode. We push measurements that are saved in memory and when we are
+ready, they will be submitted in an efficient matter. Let me show you:
+
+```
+api = librato.connect(user, token)
+q   = api.new_queue()
+q.push('temperature', 22.1, source='upstairs')
+q.push('temperature', 23.1, source='dowstairs')
+q.push('num_requests', 100, type='counter', source='server1')
+q.push('num_requests', 102, type='counter', source='server2')
+q.submit()
+```
 
 ## Contribution
 

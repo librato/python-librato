@@ -21,6 +21,8 @@
 
 import logging
 import nose
+import time
+from random import randint
 logging.basicConfig(level=logging.DEBUG)
 
 class TestLibratoBasic(object):
@@ -72,35 +74,31 @@ class TestLibratoBasic(object):
     self.conn.send_gauge_value("Test_sg", 11111)
     self.conn.send_gauge_value("Test_sg", 22222)
     self.conn.delete_gauge("Test_sg")
-'''
+
   def test_send_batch_gauge_measurements(self):
-    try:
-      gauge = self.conn.create_gauge("home_temp", "temperature at home")
-    except:
-      gauge = self.conn.get_gauge("home_temp")
-    gauge.push(15, "upstairs")
-    gauge.push(25, "dowstairs")
-    assert gauge.measurements.has_key('gauges')
-    assert len(gauge.measurements['gauges']) == 2
-    gauge.submit()
-    # We should have measurements now
-    assert len(gauge.measurements['gauges']) == 0
-    #self.conn.delete_gauge("home_temp")
+    q = self.conn.new_queue()
+    for t in range(1,10):
+      q.add('temperature', randint(20,40))
+    q.submit()
+
+    for t in range(1,10):
+      q.add('temperature', randint(20,40), measure_time=time.time()+t)
+    q.submit()
+
+    for t in range(1,10):
+      q.add('temperature', randint(20,40), source='upstairs', measure_time=time.time()+t)
+    q.submit()
+
+    for t in range(1,50):
+      q.add('temperature', randint(20,30), source='downstairs', measure_time=time.time()+t)
+    q.submit()
 
   def test_send_batch_counter_measurements(self):
-    try:
-      counter = self.conn.create_counter("conn_servers", "# of connections to server")
-    except:
-      counter = self.conn.get_counter("conn_servers")
-    counter.push(150, "server1")
-    counter.push(200, "server2")
-    assert counter.measurements.has_key('counters')
-    assert len(counter.measurements['counters']) == 2
-    counter.submit()
-    # We should have measurements now
-    assert len(counter.measurements['counters']) == 0
-    #self.conn.delete_gauge("home_temp")
-'''
+    q = self.conn.new_queue()
+    for nr in range(1,2):
+      q.add('num_req', nr, type='counter', source='server1', measure_time=time.time()-1)
+      q.add('num_req', nr, type='counter', source='server2', measure_time=time.time()-1)
+    q.submit()
 
 if __name__ == '__main__':
     nose.runmodule()

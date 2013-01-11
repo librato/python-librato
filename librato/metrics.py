@@ -48,7 +48,7 @@ class Metric(object):
     obj = cls(connection, data['name'])
     obj.period = data['period']
     obj.attributes = data['attributes']
-    obj.description = data['description']
+    obj.description = data['description'] if data.has_key('description') else None
     obj.measurements = data['measurements'] if data.has_key('measurements') else {}
 
     return obj

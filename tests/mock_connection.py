@@ -9,13 +9,23 @@ class MockServer(object):
     self.counters = {}
 
   def list_of_metrics(self):
-    if self.store_is_empty():
-      self.store['metrics'] = []
+    store = {}
+    store['metrics'] = []
     for n, g in self.gauges.items():
-      self.store['metrics'].append(g)
+      store['metrics'].append(g)
     for n, c in self.counters.items():
-      self.store['metrics'].append(c)
-    return json.dumps(self.store)
+      store['metrics'].append(c)
+
+    return json.dumps(store)
+
+  def add_batch_of_measurements(self, gc_measurements):
+    for gm in gc_measurements['gauges']:
+      new_gauge = { 'name': gm['name'], 'type': gm['type'] }
+      self.add_gauge_to_store(new_gauge)
+      self.add_gauge_measurement(gm)
+
+    #for cm in gc_measurements['counters']
+      #self.add_single_gauge_measurement(cm['name'], cm)
 
   def add_single_gauge_measurement(self, gauge_name, m):
     m['name'] = gauge_name
@@ -51,18 +61,16 @@ class MockServer(object):
     return json.dumps(self.gauges[name])
 
   def add_gauge_to_store(self, g):
-    g['type'] = 'gauge'
-    if not g.has_key('period')    : g['period']     = None
-    if not g.has_key('attributes'): g['attributes'] = {}
-    g['measurements'] = {}
-    self.gauges[g['name']] = g
+    if not self.gauges.has_key(g['name']):
+      g['type'] = 'gauge'
+      if not g.has_key('period')    : g['period']     = None
+      if not g.has_key('attributes'): g['attributes'] = {}
+      g['measurements'] = {}
+      self.gauges[g['name']] = g
 
   def delete_gauge(self, name):
     del self.gauges[name]
     return ''
-
-  def store_is_empty(self):
-    return len(self.gauges) == 0 and len(self.counters) == 0
 
 '''Start the server.'''
 server = MockServer()
@@ -90,8 +98,19 @@ class MockResponse(object):
       return server.get_gauge(self.extract_from_url())
     elif self.req_is_send_value('gauges'):
       return server.add_single_gauge_measurement(self.extract_from_url(), r.body)
+    elif self.req_is_send_batch_measurements():
+      return server.add_batch_of_measurements(r.body)
     else:
-      raise Exception("I am just mocking a RESTful Api server, I am not an actual server.")
+      msg = """
+      ----
+      I am just mocking a RESTful Api server, I am not an actual server.
+      path =  % s
+      ----
+      """ % self.request.uri
+      raise Exception(msg)
+
+  def req_is_send_batch_measurements(self):
+    return self.method_is('POST') and self.path_is('/v1/metrics')
 
   def req_is_send_value(self, what):
     return self.method_is('POST') and re.match('/v1/%s/([\w_]+).json' % what, self.request.uri)
