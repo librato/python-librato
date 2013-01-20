@@ -4,6 +4,9 @@ import urllib, json, re
 class MockServer(object):
   """Mock the data storing in the backend"""
   def __init__(self):
+    self.clean()
+
+  def clean(self):
     self.store    = {}
     self.gauges   = {}
     self.counters = {}
@@ -163,3 +166,6 @@ class MockConnect(object):
 
   def getresponse(self):
     return MockResponse(self)
+
+  def flush_server(self):
+    server.clean()
