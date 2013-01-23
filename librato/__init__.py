@@ -36,6 +36,7 @@ import base64
 import json
 from librato import exceptions
 from librato.queue import Queue
+from librato.metrics import Gauge, Counter
 
 log = logging.getLogger("librato")
 
@@ -78,7 +79,7 @@ class LibratoConnection(object):
       uri  = self.base_path + path
       body = None
       if query_props:
-        if method == "POST":
+        if method == "POST" or method == "DELETE":
           body = json.dumps(query_props)
           headers['Content-Type'] = "application/json"
         else:
@@ -119,92 +120,29 @@ class LibratoConnection(object):
   def list_metrics(self, **query_props):
     """List all the metrics available"""
     from librato.metrics import Metric
-    resp = self._mexe("metrics.json", query_props=query_props)
+    resp = self._mexe("metrics", query_props=query_props)
     return self._parse(resp, "metrics", Metric)
 
-  def post_metrics(self, metric_data):
-    """Posts multiple metrics using the
-      http://dev.librato.com/v1/post/metrics
-    API"""
-    return self._mexe("metrics.json", method="POST", query_props=metric_data)
+  def submit(self, name, value, type="gauge", **query_props):
+    payload = {'gauges': [], 'counters': []}
+    metric = { 'name': name, 'value': value }
+    for k,v in query_props.items():
+      metric[k] = v
+    payload[type + 's'].append(metric)
+    self._mexe("metrics", method="POST", query_props=payload)
 
-  #
-  # Gauges
-  #
-  def list_gauges(self, **query_props):
-    """List all available gauges"""
-    from librato.metrics import Gauge
-    resp = self._mexe("gauges.json", query_props=query_props)
-    return self._parse(resp, "gauges", Gauge)
+  def get(self, name, **query_props):
+    resp = self._mexe("metrics/%s" % name, method="GET", query_props=query_props)
+    if resp['type'] == 'gauge':
+      return Gauge.from_dict(self, resp)
+    elif resp['type'] == 'counter':
+      return Gauge.from_dict(self, resp)
+    else:
+      raise Exception('The server sent me something that is not a Gauge nor a Counter.')
 
-  def create_gauge(self, name, description=None, **query_props):
-    """Create a new gauge"""
-    from librato.metrics import Gauge
-    if query_props is None:
-      query_props = {}
-    query_props['name'] = name
-    if description:
-      query_props['description'] = description
-    resp = self._mexe("gauges.json", method="POST", query_props=query_props)
-    return Gauge.from_dict(self, resp)
-
-  def get_gauge(self, name, **query_props):
-    """Fetch a specific gauge"""
-    from librato.metrics import Gauge
-    resp = self._mexe("gauges/%s.json" % name, method="GET", query_props=query_props)
-    return Gauge.from_dict(self, resp)
-
-  def delete_gauge(self, name):
-    """Delete a guage"""
-    return self._mexe("gauges/%s.json" % name, method="DELETE")
-
-  def send_gauge_value(self, name, value, source=None, **params):
-    """Send a value for a given gauge"""
-    if not params:
-      params = {}
-    params["value"] = value
-    if source:
-      params["source"] = source
-    return self._mexe("gauges/%s.json" % name, method="POST", query_props=params)
-
-  #
-  # Counters
-  #
-  def list_counters(self, **query_props):
-    """List all available counters"""
-    from librato.metrics import Counter
-    resp = self._mexe("counters.json", query_props=query_props)
-    return self._parse(resp, "counters", Counter)
-
-  def create_counter(self, name, description=None, **query_props):
-    """Create a new counter"""
-    from librato.metrics import Counter
-    if query_props is None:
-      query_props = {}
-    query_props['name'] = name
-    if description:
-      query_props['description'] = description
-    resp = self._mexe("counters.json", method="POST", query_props=query_props)
-    return Counter.from_dict(self, resp)
-
-  def get_counter(self, name, **query_props):
-    """Fetch a specific counter"""
-    from librato.metrics import Counter
-    resp = self._mexe("counters/%s.json" % name, method="GET", query_props=query_props)
-    return Counter.from_dict(self, resp)
-
-  def delete_counter(self, name):
-    """Delete a counter"""
-    return self._mexe("counters/%s.json" % name, method="DELETE")
-
-  def send_counter_value(self, name, value, source=None, **params):
-    """Send a value for a given counter"""
-    if not params:
-      params = {}
-    params["value"] = value
-    if source:
-      params["source"] = source
-    return self._mexe("counters/%s.json" % name, method="POST", query_props=params)
+  def delete(self, name):
+    payload = { 'names': [name] }
+    return self._mexe("metrics", method="DELETE", query_props=payload)
 
   #
   # Queue

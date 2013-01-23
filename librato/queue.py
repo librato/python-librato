@@ -37,7 +37,7 @@ class Queue(object):
   When the user sends a .submit() we iterate over the list of chunks and
   send one at a time.
   """
-  MAX_MEASUREMENTS_PER_CHUNK = 500
+  MAX_MEASUREMENTS_PER_CHUNK = 300 # based docs; on POST /metrics
 
   def __init__(self, connection):
     self.connection = connection

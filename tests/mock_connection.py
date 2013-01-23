@@ -1,4 +1,5 @@
 from urlparse import urlparse
+from collections import defaultdict
 import urllib, json, re
 
 class MockServer(object):
@@ -7,19 +8,71 @@ class MockServer(object):
     self.clean()
 
   def clean(self):
-    self.store    = {}
-    self.gauges   = {}
-    self.counters = {}
+    self.metrics = { 'gauges': {}, 'counters': {} }
 
   def list_of_metrics(self):
-    store = {}
-    store['metrics'] = []
-    for n, g in self.gauges.items():
-      store['metrics'].append(g)
-    for n, c in self.counters.items():
-      store['metrics'].append(c)
+    answer = self.__an_empty_list_metrics()
+    for gn, g in self.metrics['gauges'].items():
+      answer['metrics'].append(g)
+    for cn, c in self.metrics['counters'].items():
+      answer['metrics'].append(c)
+    return json.dumps(answer)
 
-    return json.dumps(store)
+  def create_metric(self, payload):
+    """ Check 3) in POST /metrics for payload example """
+    #metric_type = self.find_type_of_metric(payload)[0:-1]
+
+    for metric_type in ['gauge', 'counter']:
+      for metric in payload[metric_type + 's']:
+        name = metric['name']
+        self.add_metric_to_store(metric, metric_type)
+
+        # The metric comes also with a value, we have to add it
+        # to the measurements (for a particular source if available)
+        if metric.has_key('value'):
+          if not metric.has_key('source'):
+            source = 'unassigned'
+          else:
+            source = metric['source']
+            del metric['source']
+          value  = metric['value']
+          del metric['value']
+
+          # Create a new source for the measurements if necessary
+          p_to_metric = self.metrics[metric_type + 's'][name]
+          if not p_to_metric['measurements'].has_key(source):
+            p_to_metric['measurements'][source] = []
+          p_to_metric['measurements'][source].append({"value": value})
+
+    return ''
+
+  def get_metric(self, name, payload):
+    gauges   = self.metrics['gauges']
+    counters = self.metrics['counters']
+    if gauges.has_key(name):
+      metric = gauges[name]
+    if counters.has_key(name):
+      metric = counters[name]
+    return json.dumps(metric)
+
+  def delete_metric(self, payload):
+    gauges   = self.metrics['gauges']
+    counters = self.metrics['counters']
+    if payload.has_key('names'):
+      for rm_name in payload['names']:
+        if gauges.has_key(rm_name):
+          del gauges[rm_name]
+        if counters.has_key(rm_name):
+          del counters[rm_name]
+    else:
+      raise Exception('Trying to DELETE metric without providing array of names')
+    return ''
+
+  def __an_empty_list_metrics(self):
+    answer = {}
+    answer['metrics'] = []
+    answer['query'] = {}
+    return answer
 
   def add_batch_of_measurements(self, gc_measurements):
     for gm in gc_measurements['gauges']:
@@ -27,49 +80,13 @@ class MockServer(object):
       self.add_gauge_to_store(new_gauge)
       self.add_gauge_measurement(gm)
 
-    #for cm in gc_measurements['counters']
-      #self.add_single_gauge_measurement(cm['name'], cm)
-
-  def add_single_gauge_measurement(self, gauge_name, m):
-    m['name'] = gauge_name
-    self.add_gauge_measurement(m)
-    return ''
-
-  def add_gauge_measurement(self, m):
-    """Add a measuremnt to a gauge
-       m = {*"source": "source_test", "value": 100}
-       (*) source is optional
-    """
-    gauge_name  = m['name']
-    pm          = self.gauges[gauge_name]['measurements'] # pointer to measurement
-    self.add_default_source_if_needed(m)
-    pm[m['source']].append(m)
-
-  def add_default_source_if_needed(self, m):
-    gauge_name  = m['name']
-    pm          = self.gauges[gauge_name]['measurements'] # pointer to measurement
-    source_name = 'unassigned' if not m.has_key('source') else m['source']
-    if not pm.has_key(source_name): # source not there
-      pm[source_name] = []
-    m['source'] = 'unassigned'
-
-  def create_gauge(self, new_gauge):
-    """ new_gauge (body) should look like:
-        {"name": "Test", "description": "Test Gauge to be removed"}
-    """
-    self.add_gauge_to_store(new_gauge)
-    return json.dumps(new_gauge)
-
-  def get_gauge(self, name):
-    return json.dumps(self.gauges[name])
-
-  def add_gauge_to_store(self, g):
-    if not self.gauges.has_key(g['name']):
-      g['type'] = 'gauge'
+  def add_metric_to_store(self, g, m_type):
+    if not self.metrics[m_type + 's'].has_key(g['name']):
+      g['type'] = m_type
       if not g.has_key('period')    : g['period']     = None
       if not g.has_key('attributes'): g['attributes'] = {}
       g['measurements'] = {}
-      self.gauges[g['name']] = g
+      self.metrics[m_type + 's'][g['name']] = g
 
   def delete_gauge(self, name):
     del self.gauges[name]
@@ -93,42 +110,42 @@ class MockResponse(object):
     r = self.request
     if self.req_is_list_of_metrics():
       return server.list_of_metrics()
-    elif self.req_is_create_gauge():
-      return server.create_gauge(r.body)
-    elif self.req_is_delete('gauges'):
-      return server.delete_gauge(self.extract_from_url())
-    elif self.req_is_get_gauge():
-      return server.get_gauge(self.extract_from_url())
-    elif self.req_is_send_value('gauges'):
-      return server.add_single_gauge_measurement(self.extract_from_url(), r.body)
-    elif self.req_is_send_batch_measurements():
-      return server.add_batch_of_measurements(r.body)
+    elif self.req_is_create_metric():
+      return server.create_metric(r.body)
+    elif self.req_is_delete():
+      return server.delete_metric(r.body)
+    elif self.req_is_get_metric():
+      return server.get_metric(self.extract_from_url(), r.body)
+    #elif self.req_is_send_value('gauges'):
+    #  return server.add_single_gauge_measurement(self.extract_from_url(), r.body)
+    #elif self.req_is_send_batch_measurements():
+    #  return server.add_batch_of_measurements(r.body)
     else:
       msg = """
       ----
       I am just mocking a RESTful Api server, I am not an actual server.
-      path =  % s
+      path = %s
       ----
       """ % self.request.uri
       raise Exception(msg)
 
-  def req_is_send_batch_measurements(self):
+  def req_is_list_of_metrics(self):
+    return self.method_is('GET') and self.path_is('/v1/metrics')
+
+  def req_is_create_metric(self):
     return self.method_is('POST') and self.path_is('/v1/metrics')
+
+  def req_is_delete(self):
+    return self.method_is('DELETE')
+
+  def req_is_get_metric(self):
+    return self.method_is('GET') and re.match('/v1/metrics/([\w_]+)', self.request.uri)
+
+  #def req_is_send_batch_measurements(self):
+  #  return self.method_is('POST') and self.path_is('/v1/metrics')
 
   def req_is_send_value(self, what):
     return self.method_is('POST') and re.match('/v1/%s/([\w_]+).json' % what, self.request.uri)
-
-  def req_is_get_gauge(self):
-    return self.method_is('GET') and re.match('/v1/gauges/([\w_]+).json', self.request.uri)
-
-  def req_is_delete(self, what):
-    return self.method_is('DELETE') and re.match('/v1/%s/([\w_]+).json' % what, self.request.uri)
-
-  def req_is_list_of_metrics(self):
-    return self.method_is('GET') and self.path_is('/v1/metrics.json')
-
-  def req_is_create_gauge(self):
-    return self.method_is('POST') and self.path_is('/v1/gauges.json')
 
   def method_is(self, m):
     return self.request.method == m
@@ -137,7 +154,7 @@ class MockResponse(object):
     return self.request.uri == p
 
   def extract_from_url(self):
-    m = re.match('/v1/gauges/([\w_]+).json', self.request.uri)
+    m = re.match('/v1/metrics/([\w_]+)', self.request.uri)
     try:
       name = m.group(1)
     except:
@@ -166,6 +183,3 @@ class MockConnect(object):
 
   def getresponse(self):
     return MockResponse(self)
-
-  def flush_server(self):
-    server.clean()

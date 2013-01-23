@@ -22,15 +22,15 @@
 import logging
 import nose
 import time
+import librato
+import os
 from random import randint
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 class TestLibratoBasic(object):
   @classmethod
   def setup_class(cls):
     """Initialize the Librato Connection"""
-    import librato
-    import os
     assert(os.environ.has_key("LIBRATO_USER") and os.environ.has_key("LIBRATO_TOKEN")), \
            "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
     cls.conn = librato.connect(os.environ['LIBRATO_USER'], os.environ['LIBRATO_TOKEN'])
@@ -39,41 +39,42 @@ class TestLibratoBasic(object):
     metrics = self.conn.list_metrics()
 
   def test_create_and_delete_gauge(self):
-    gauge = self.conn.create_gauge("Test", "Test Gauge to be removed")
-    assert(gauge and gauge.name == "Test")
-    assert(gauge.description == "Test Gauge to be removed")
+    name, desc = 'Test', 'Test Gauge to be removed'
+    self.conn.submit(name, 10, description=desc)
+    gauge = self.conn.get(name)
+    assert gauge and gauge.name == name
+    assert gauge.description == desc
     # Clean up gague
-    self.conn.delete_gauge("Test")
+    self.conn.delete(name)
     # Make sure it's not there anymore
     gauge = None
     try:
-      gauge = self.conn.get_gauge("Test")
+      gauge = self.conn.get_gauge(name)
     except:
       gauge = None
     assert(gauge is None)
 
   def test_create_and_delete_counter(self):
-    counter = self.conn.create_counter("TestC", "Test Counter to be removed")
-    assert(counter and counter.name == "TestC")
-    assert(counter.description == "Test Counter to be removed")
+    name, desc = 'Test_counter', 'Test Counter to be removed'
+    self.conn.submit(name, 10, type='counter', description=desc)
+    counter = self.conn.get(name)
+    assert counter and counter.name == name
+    assert counter.description == desc
     # Clean up gague
-    self.conn.delete_counter("TestC")
+    self.conn.delete(name)
     # Make sure it's not there anymore
     counter = None
     try:
-      counter = self.conn.get_counter("TestC")
+      counter = self.conn.get_counter(name)
     except:
       counter = None
     assert(counter is None)
 
   def test_save_gauge_metrics(self):
-    try:
-      gauge = self.conn.create_gauge("Test_sg", "Test Gauge")
-    except:
-      gauge = self.conn.get_gauge("Test_sg")
-    self.conn.send_gauge_value("Test_sg", 11111)
-    self.conn.send_gauge_value("Test_sg", 22222)
-    self.conn.delete_gauge("Test_sg")
+    name, desc = 'Test', 'Test Counter to be removed'
+    self.conn.submit(name, 10, description=desc)
+    self.conn.submit(name, 20, description=desc)
+    self.conn.delete(name)
 
   def test_send_batch_gauge_measurements(self):
     q = self.conn.new_queue()
@@ -92,6 +93,7 @@ class TestLibratoBasic(object):
     for t in range(1,50):
       q.add('temperature', randint(20,30), source='downstairs', measure_time=time.time()+t)
     q.submit()
+    self.conn.delete('temperature')
 
   def test_send_batch_counter_measurements(self):
     q = self.conn.new_queue()
