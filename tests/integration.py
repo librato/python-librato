@@ -47,9 +47,8 @@ class TestLibratoBasic(object):
     # Clean up gague
     self.conn.delete(name)
     # Make sure it's not there anymore
-    gauge = None
     try:
-      gauge = self.conn.get_gauge(name)
+      gauge = self.conn.get(name)
     except:
       gauge = None
     assert(gauge is None)

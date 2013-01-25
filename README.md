@@ -40,23 +40,30 @@ To iterate over your metrics:
     print m.name
 ```
 
-Let's now create a Gauge Metric:
+Let's now create a Metric:
 
 ```
-  gauge = api.create_gauge("temperature", description="temperature at home")
+  api.submit("temperature", 10, description="temperature at home")
 ```
 
-And we can remove using:
+By default ```submit()``` will create a gauge metric. The metric will be
+created automatically by the server if it does not exist. We can remove that
+metric with:
 
 ```
-  api.delete_gauge("temperature")
+  api.delete("temperature")
 ```
 
-And for counter metrics:
+For creating a counter metric, we can:
 
 ```
-  counter = api.create_counter("connections", description="server connections")
-  api.delete_counter("connections")
+  api.submit("connections", 20, type='counter', description="server connections")
+```
+
+And again to remove:
+
+```
+  api.delete("connections")
 ```
 
 To iterate over your metrics:
@@ -66,44 +73,36 @@ To iterate over your metrics:
     print "%s: %s" % (m.name, m.description)
 ```
 
-To retrieve a concrete gauge or counter:
+To retrieve a specific metric use ```get()```:
 
 ```
-  gauge   = api.get_gauge("temperature")
-  counter = api.get_counter("connections")
+  gauge   = api.get("temperature")
+  counter = api.get("connections")
 ```
 
-Now, let's send some data to our metrics:
+For sending more measurements:
 
 ```
   for temp in [20, 21, 22]:
-    api.send_gauge_value('temperature', temp)
-```
-
-and for our connections (a counter metric):
-
-```
+    api.submit('temperature', temp)
   for num_con in [100, 200, 300]:
-    api.send_counter_value('connections', num_con)
+    api.submit('connections', num_con, type='counter')
 ```
 
 Let's now iterate over the measurements of our Metrics:
 
 ```
-  measurements = api.get_gauge("temperature", resolution=1, count=10).measurements
-  for m in measurements['unassigned']:
+  metric = api.get("temperature", count=100, resolution=1)
+  for m in metric.measurements['unassigned']:
     print "%s: %s" % (m['value'], m['measure_time'])
 ```
 
-```
-  measurements = api.get_counter("connections", resolution=1, count=10).measurements
-  for m in measurements['unassigned']:
-    print "%s: %s" % (m['value'], m['measure_time'])
-```
-
-Notice how we are using the key `unassigned` since we have not associated our
-measurements to any source. Read more about it in the
-[API documentation](http://dev.librato.com/v1).
+Notice a couple of things here. First, we are using the key `unassigned` since
+we have not associated our measurements to any source. Read more about it in
+the [API documentation](http://dev.librato.com/v1). In addition, notice how
+we are passing the count and resolution parameters to make sure the API
+returns measurements in its answer and not only the metric properties.
+Read more about them [here](http://dev.librato.com/v1/time-intervals).
 
 ## Sending measurements in batch mode
 
@@ -116,10 +115,10 @@ ready, they will be submitted in an efficient matter. Here is an example:
 ```
 api = librato.connect(user, token)
 q   = api.new_queue()
-q.push('temperature', 22.1, source='upstairs')
-q.push('temperature', 23.1, source='dowstairs')
-q.push('num_requests', 100, type='counter', source='server1')
-q.push('num_requests', 102, type='counter', source='server2')
+q.add('temperature', 22.1, source='upstairs')
+q.add('temperature', 23.1, source='dowstairs')
+q.add('num_requests', 100, type='counter', source='server1')
+q.add('num_requests', 102, type='counter', source='server2')
 q.submit()
 ```
 
