@@ -21,11 +21,10 @@ From your application or script:
 
 ## Authenticating
 
-  The first thing we to is preseting the credentials so we have access to the
-  metrics api. I am assuming you have
-  [a librato account for Metrics](https://metrics.librato.com/). Go to your
-  [account settings page](https://metrics.librato.com/account)
-  and save your username and token.
+  We first use our credentials to connect to the API.  I am assuming you have
+[a librato account for Metrics](https://metrics.librato.com/). Go to your
+[account settings page](https://metrics.librato.com/account) and save your
+username and token.
 
 ```
   api = librato.connect(user, token)
@@ -47,8 +46,7 @@ Let's now create a Metric:
 ```
 
 By default ```submit()``` will create a gauge metric. The metric will be
-created automatically by the server if it does not exist. We can remove that
-metric with:
+created automatically by the server if it does not exist. We can remove it:
 
 ```
   api.delete("temperature")
@@ -73,7 +71,7 @@ To iterate over your metrics:
     print "%s: %s" % (m.name, m.description)
 ```
 
-To retrieve a specific metric use ```get()```:
+To retrieve a specific metric:
 
 ```
   gauge   = api.get("temperature")
@@ -109,7 +107,7 @@ Read more about them [here](http://dev.librato.com/v1/time-intervals).
 Sending a measurement in a single HTTP request is inefficient. The overhead
 both at protocol and backend level is very high. That's why we provide an
 alternative method to submit your measurements. The idea is to send measurements
-in batch mode. We push measurements that are saved in memory and when we are
+in batch mode. We push measurements that are stored and when we are
 ready, they will be submitted in an efficient matter. Here is an example:
 
 ```
