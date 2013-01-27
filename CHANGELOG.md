@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.2.3
+* New library entry points to reflect latest API endpoints.
+
 ### Version 0.2.2
 * Support for sending measurements in batch mode.
 

@@ -1,4 +1,6 @@
 #!/usr/bin/python
+#
+# python setup.py sdist upload
 
 try:
 	from setuptools import setup, find_packages
@@ -20,6 +22,7 @@ setup(name = "librato-metrics",
 		url = "http://dev.librato.com/v1/metrics",
 		packages = ['librato'],
 		include_package_data = True,
+    package_data = { '': ['LICENSE', 'README.md', 'CHANGELOG.md'] },
 		license = 'LICENSE',
 		scripts = [],
 		platforms = 'Posix; MacOS X; Windows',
