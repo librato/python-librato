@@ -1,5 +1,11 @@
 ## Changelog
 
+### Version 0.2.5
+* Fixing authorship in pypi.
+
+### Version 0.2.4
+* Fixing packaging issues.
+
 ### Version 0.2.3
 * New library entry points to reflect latest API endpoints.
 
