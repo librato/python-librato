@@ -9,11 +9,11 @@ A Python wrapper for the Librato Metrics API.
 
 In your shell:
 
-  ```$ easy_install librato-python```
+  ```$ easy_install librato-metrics```
 
   or
 
-  ```$ pip install librato-python```
+  ```$ pip install librato-metrics```
 
 From your application or script:
 
