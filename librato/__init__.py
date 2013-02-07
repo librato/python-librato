@@ -64,7 +64,7 @@ class LibratoConnection(object):
     self.base_path = base_path
 
   def _mexe(self, path, method="GET", query_props=None, headers=None):
-    """Internal method for exeucting a command"""
+    """Internal method for executing a command"""
 
     success = False
     backoff = 1
