@@ -98,3 +98,6 @@ class TestLibratoQueue(unittest.TestCase):
     assert gauge.description == None
     for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK+1):
       assert gauge.measurements['unassigned'][t-1]['value'] == t
+
+if __name__ == '__main__':
+  unittest.main()
