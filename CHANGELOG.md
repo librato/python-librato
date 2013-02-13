@@ -1,5 +1,9 @@
 ## Changelog
 
+### Version 0.2.6
+* Refactoring _mexe()
+* Setting User-Agent header
+
 ### Version 0.2.5
 * Fixing authorship in pypi.
 
