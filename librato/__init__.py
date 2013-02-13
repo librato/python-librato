@@ -75,6 +75,47 @@ class LibratoConnection(object):
     headers['User-Agent'] = ' '.join(ua_chunks)
     return headers
 
+  def _make_request(self, path, headers, query_props, method):
+    """ Perform the an https request to the server """
+    conn = HTTPSConnection(self.hostname)
+    uri  = self.base_path + path
+    body = None
+    if query_props:
+      if method == "POST" or method == "DELETE":
+        body = json.dumps(query_props)
+        headers['Content-Type'] = "application/json"
+      else:
+        uri += "?" + urllib.urlencode(query_props)
+
+    log.info("method=%s uri=%s" % (method, uri))
+    log.info("body(->): %s" % body)
+    conn.request(method, uri, body=body, headers=headers)
+    return conn.getresponse()
+
+  def _process_response(self, resp, backoff):
+    """ Process the response from the server """
+    success            = True
+    resp_data          = None
+    not_a_server_error = resp.status < 500
+
+    if not_a_server_error:
+      body = resp.read()
+      if body:
+        try:
+          resp_data = json.loads(body)
+        except:
+          pass
+      log.info("body(<-): %s" % body)
+      a_client_error = resp.status >= 400
+      if a_client_error:
+        raise exceptions.get(resp.status, resp_data)
+      return resp_data, success, backoff
+    else: # A server error, wait and retry
+      backoff += backoff*2
+      log.info("%s: waiting %s before re-trying" % (resp.status, backoff))
+      time.sleep(backoff)
+      return None, not success, backoff
+
   def _mexe(self, path, method="GET", query_props=None, p_headers=None):
     """Internal method for executing a command.
        If we get server errors we exponentially wait before retrying
@@ -84,39 +125,8 @@ class LibratoConnection(object):
     backoff   = 1
     resp_data = None
     while not success:
-      conn = HTTPSConnection(self.hostname)
-      uri  = self.base_path + path
-      body = None
-      if query_props:
-        if method == "POST" or method == "DELETE":
-          body = json.dumps(query_props)
-          headers['Content-Type'] = "application/json"
-        else:
-          uri += "?" + urllib.urlencode(query_props)
-
-      log.info("method=%s uri=%s" % (method, uri))
-      log.info("body(->): %s" % body)
-      conn.request(method, uri, body=body, headers=headers)
-      resp = conn.getresponse()
-
-      not_a_server_error = resp.status < 500
-      if not_a_server_error:
-        body = resp.read()
-        if body:
-          try:
-            resp_data = json.loads(body)
-          except:
-            pass
-        log.info("body(<-): %s" % body)
-        a_client_error = resp.status >= 400
-        if a_client_error:
-          raise exceptions.get(resp.status, resp_data)
-        success = True
-      else: # A server error, increasingly wait and retry
-        backoff += backoff*2
-        log.info("%s: waiting %s before re-trying" % (resp.status, backoff))
-        time.sleep(backoff)
-
+      resp = self._make_request(path, headers, query_props, method)
+      resp_data, success, backoff = self._process_response(resp, backoff)
     return resp_data
 
   def _parse(self, resp, name, cls):
