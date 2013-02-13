@@ -116,10 +116,6 @@ class MockResponse(object):
       return server.delete_metric(r.body)
     elif self.req_is_get_metric():
       return server.get_metric(self.extract_from_url(), r.body)
-    #elif self.req_is_send_value('gauges'):
-    #  return server.add_single_gauge_measurement(self.extract_from_url(), r.body)
-    #elif self.req_is_send_batch_measurements():
-    #  return server.add_batch_of_measurements(r.body)
     else:
       msg = """
       ----
@@ -141,9 +137,6 @@ class MockResponse(object):
   def req_is_get_metric(self):
     return self.method_is('GET') and re.match('/v1/metrics/([\w_]+)', self.request.uri)
 
-  #def req_is_send_batch_measurements(self):
-  #  return self.method_is('POST') and self.path_is('/v1/metrics')
-
   def req_is_send_value(self, what):
     return self.method_is('POST') and re.match('/v1/%s/([\w_]+).json' % what, self.request.uri)
 
@@ -163,11 +156,11 @@ class MockResponse(object):
 
 class MockConnect(object):
   """Mocks urllib's HTTPSConnection.
-  These are the methods we use in _mexec
-  .request(method, uri, body, headers) : perform the request
-  .getresponse()                       : return response object.
-    .status
-    .read() -> raw json body of the answer
+    These are the methods we use in _mexec
+    .request(method, uri, body, headers) : perform the request
+    .getresponse()                       : return response object.
+      .status
+      .read() -> raw json body of the answer
   """
   def __init__(self, hostname):
     self.hostname = hostname
@@ -176,10 +169,7 @@ class MockConnect(object):
     self.method  = method
     self.uri     = uri
     self.headers = headers
-    self.set_body(body)
-
-  def set_body(self, b):
-    self.body = json.loads(b) if b else b
+    self.body    = json.loads(body) if body else body
 
   def getresponse(self):
     return MockResponse(self)
