@@ -28,7 +28,7 @@ __version__ = "0.2.6"
 HOSTNAME = "metrics-api.librato.com"
 BASE_PATH = "/v1/"
 
-import sys
+import platform
 import time
 import logging
 from httplib import HTTPSConnection
@@ -69,9 +69,13 @@ class LibratoConnection(object):
       headers = {}
     headers['Authorization'] = "Basic " + base64.b64encode(self.username + ":" + self.api_key).strip()
 
+    # http://en.wikipedia.org/wiki/User_agent#Format
+    # librato-metrics/1.0.3 (ruby; 1.9.3p385; x86_64-darwin11.4.2) direct-faraday/0.8.4
     ua_chunks = [] # Set user agent
-    ua_chunks.append("python-librato " + __version__)
-    ua_chunks.append("engine version " + sys.version)
+    ua_chunks.append("python-librato/" + __version__)
+    p = platform
+    system_info = (p.python_version(), p.machine(), p.system(), p.release())
+    ua_chunks.append("(python; %s; %s-%s%s)" %  system_info)
     headers['User-Agent'] = ' '.join(ua_chunks)
     return headers
 

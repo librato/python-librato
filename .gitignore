@@ -1,6 +1,8 @@
 curl
 *.vim
 
+htmlcov
+play.py
 playground
 
 *.py[cod]
