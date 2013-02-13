@@ -51,8 +51,7 @@ class LibratoConnection(object):
 
   def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):
     """Create a new connection to Librato Metrics.
-    Doesn't actually connect yet or validate until you
-    make a request.
+    Doesn't actually connect yet or validate until you make a request.
 
     :param username: The username (email address) of the user to connect as
     :type username: str
