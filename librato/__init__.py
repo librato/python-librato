@@ -28,6 +28,7 @@ __version__ = "0.2.5"
 HOSTNAME = "metrics-api.librato.com"
 BASE_PATH = "/v1/"
 
+import sys
 import time
 import logging
 from httplib import HTTPSConnection
@@ -63,17 +64,26 @@ class LibratoConnection(object):
     self.hostname = hostname
     self.base_path = base_path
 
-  def _mexe(self, path, method="GET", query_props=None, headers=None):
-    """Internal method for executing a command"""
-
-    success = False
-    backoff = 1
-
+  def _set_headers(self, headers):
+    """ set headers for request """
     if headers is None:
       headers = {}
     headers['Authorization'] = "Basic " + base64.b64encode(self.username + ":" + self.api_key).strip()
-    resp_data = None
 
+    ua_chunks = [] # Set user agent
+    ua_chunks.append("python-librato " + __version__)
+    ua_chunks.append("engine version " + sys.version)
+    headers['User-Agent'] = ' '.join(ua_chunks)
+    return headers
+
+  def _mexe(self, path, method="GET", query_props=None, p_headers=None):
+    """Internal method for executing a command.
+       If we get server errors we exponentially wait before retrying
+    """
+    headers   = self._set_headers(p_headers)
+    success   = False
+    backoff   = 1
+    resp_data = None
     while not success:
       conn = HTTPSConnection(self.hostname)
       uri  = self.base_path + path
@@ -89,7 +99,9 @@ class LibratoConnection(object):
       log.info("body(->): %s" % body)
       conn.request(method, uri, body=body, headers=headers)
       resp = conn.getresponse()
-      if resp.status < 500:
+
+      not_a_server_error = resp.status < 500
+      if not_a_server_error:
         body = resp.read()
         if body:
           try:
@@ -97,14 +109,15 @@ class LibratoConnection(object):
           except:
             pass
         log.info("body(<-): %s" % body)
-        if resp.status >= 400:
+        a_client_error = resp.status >= 400
+        if a_client_error:
           raise exceptions.get(resp.status, resp_data)
         success = True
-      else:
+      else: # A server error, increasingly wait and retry
         backoff += backoff*2
         log.info("%s: waiting %s before re-trying" % (resp.status, backoff))
         time.sleep(backoff)
-    log.info("-" * 80)
+
     return resp_data
 
   def _parse(self, resp, name, cls):
