@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.2.7
+* Update User-Agent string to follow standards
+
 ### Version 0.2.6
 * Refactoring _mexe()
 * Setting User-Agent header
