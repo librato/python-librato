@@ -58,10 +58,14 @@ class LibratoConnection(object):
     :param api_key: The API Key (token) to use to authenticate
     :type api_key: str
     """
-    self.username = username
-    self.api_key = api_key
-    self.hostname = hostname
-    self.base_path = base_path
+    self.username      = username
+    self.api_key       = api_key
+    self.hostname      = hostname
+    self.base_path     = base_path
+    # these two attributes ared used to control fake server errors when doing
+    # unit testing.
+    self.fake_n_errors = 0
+    self.backoff_logic = lambda(backoff): backoff*2
 
   def _set_headers(self, headers):
     """ set headers for request """
@@ -79,9 +83,8 @@ class LibratoConnection(object):
     headers['User-Agent'] = ' '.join(ua_chunks)
     return headers
 
-  def _make_request(self, path, headers, query_props, method):
+  def _make_request(self, conn, path, headers, query_props, method):
     """ Perform the an https request to the server """
-    conn = HTTPSConnection(self.hostname)
     uri  = self.base_path + path
     body = None
     if query_props:
@@ -115,7 +118,7 @@ class LibratoConnection(object):
         raise exceptions.get(resp.status, resp_data)
       return resp_data, success, backoff
     else: # A server error, wait and retry
-      backoff += backoff*2
+      backoff = self.backoff_logic(backoff)
       log.info("%s: waiting %s before re-trying" % (resp.status, backoff))
       time.sleep(backoff)
       return None, not success, backoff
@@ -124,14 +127,24 @@ class LibratoConnection(object):
     """Internal method for executing a command.
        If we get server errors we exponentially wait before retrying
     """
+    conn      = self._setup_connection()
     headers   = self._set_headers(p_headers)
     success   = False
     backoff   = 1
     resp_data = None
     while not success:
-      resp = self._make_request(path, headers, query_props, method)
+      resp = self._make_request(conn, path, headers, query_props, method)
       resp_data, success, backoff = self._process_response(resp, backoff)
     return resp_data
+
+  def _do_we_want_to_fake_server_errors(self):
+    return self.fake_n_errors > 0
+
+  def _setup_connection(self):
+    if self._do_we_want_to_fake_server_errors():
+      return HTTPSConnection(self.hostname, fake_n_errors=self.fake_n_errors)
+    else:
+      return HTTPSConnection(self.hostname)
 
   def _parse(self, resp, name, cls):
     """Parse to an object"""
@@ -177,6 +190,8 @@ class LibratoConnection(object):
     return Queue(self)
 
 def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):
-  """Connect to Librato Metrics"""
+  """
+  Connect to Librato Metrics
+  """
   return LibratoConnection(username, api_key, hostname, base_path)
 

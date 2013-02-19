@@ -95,27 +95,29 @@ class MockServer(object):
 '''Start the server.'''
 server = MockServer()
 
+
 class MockResponse(object):
-  ''' Inspect the request and interact with the mocked server to generate
-  and answer
   '''
-  def __init__(self, request):
+  Inspect the request and interact with the mocked server to generate
+  and answer.
+  '''
+  def __init__(self, request, fake_failure=False):
     self.request = request
-    self.status  = 200
+    self.status  = 500 if fake_failure else 200
 
   def read(self):
-    return self.json_body_based_on_request()
+    return self._json_body_based_on_request()
 
-  def json_body_based_on_request(self):
+  def _json_body_based_on_request(self):
     r = self.request
-    if self.req_is_list_of_metrics():
+    if self._req_is_list_of_metrics():
       return server.list_of_metrics()
-    elif self.req_is_create_metric():
+    elif self._req_is_create_metric():
       return server.create_metric(r.body)
-    elif self.req_is_delete():
+    elif self._req_is_delete():
       return server.delete_metric(r.body)
-    elif self.req_is_get_metric():
-      return server.get_metric(self.extract_from_url(), r.body)
+    elif self._req_is_get_metric():
+      return server.get_metric(self._extract_from_url(), r.body)
     else:
       msg = """
       ----
@@ -125,28 +127,28 @@ class MockResponse(object):
       """ % self.request.uri
       raise Exception(msg)
 
-  def req_is_list_of_metrics(self):
-    return self.method_is('GET') and self.path_is('/v1/metrics')
+  def _req_is_list_of_metrics(self):
+    return self._method_is('GET') and self._path_is('/v1/metrics')
 
-  def req_is_create_metric(self):
-    return self.method_is('POST') and self.path_is('/v1/metrics')
+  def _req_is_create_metric(self):
+    return self._method_is('POST') and self._path_is('/v1/metrics')
 
-  def req_is_delete(self):
-    return self.method_is('DELETE')
+  def _req_is_delete(self):
+    return self._method_is('DELETE')
 
-  def req_is_get_metric(self):
-    return self.method_is('GET') and re.match('/v1/metrics/([\w_]+)', self.request.uri)
+  def _req_is_get_metric(self):
+    return self._method_is('GET') and re.match('/v1/metrics/([\w_]+)', self.request.uri)
 
-  def req_is_send_value(self, what):
-    return self.method_is('POST') and re.match('/v1/%s/([\w_]+).json' % what, self.request.uri)
+  def _req_is_send_value(self, what):
+    return self._method_is('POST') and re.match('/v1/%s/([\w_]+).json' % what, self.request.uri)
 
-  def method_is(self, m):
+  def _method_is(self, m):
     return self.request.method == m
 
-  def path_is(self,p):
+  def _path_is(self,p):
     return self.request.uri == p
 
-  def extract_from_url(self):
+  def _extract_from_url(self):
     m = re.match('/v1/metrics/([\w_]+)', self.request.uri)
     try:
       name = m.group(1)
@@ -155,15 +157,17 @@ class MockResponse(object):
     return name
 
 class MockConnect(object):
-  """Mocks urllib's HTTPSConnection.
-    These are the methods we use in _mexec
-    .request(method, uri, body, headers) : perform the request
-    .getresponse()                       : return response object.
-      .status
-      .read() -> raw json body of the answer
   """
-  def __init__(self, hostname):
-    self.hostname = hostname
+  Mocks urllib's HTTPSConnection.
+  These are the methods we use in _mexec
+  .request(method, uri, body, headers) : perform the request
+  .getresponse()                       : return response object.
+    .status
+    .read() -> raw json body of the answer
+  """
+  def __init__(self, hostname, fake_n_errors=0):
+    self.hostname      = hostname
+    self.fake_n_errors = fake_n_errors
 
   def request(self, method, uri, body, headers):
     self.method  = method
@@ -172,4 +176,9 @@ class MockConnect(object):
     self.body    = json.loads(body) if body else body
 
   def getresponse(self):
-    return MockResponse(self)
+    if self.fake_n_errors > 0:
+      fake_error = True
+      self.fake_n_errors -= 1
+    else:
+      fake_error = False
+    return MockResponse(self, fake_error)
