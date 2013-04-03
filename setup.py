@@ -43,5 +43,5 @@ setup(
     'Topic :: Internet',
   ],
   dependency_links = [],
-  install_requires = [],
+  install_requires = ['six'],
 )
