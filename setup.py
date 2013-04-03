@@ -2,13 +2,7 @@
 #
 import os
 import sys
-
-try:
-  from setuptools import setup, find_packages
-except ImportError:
-  from ez_setup import use_setuptools
-  use_setuptools()
-  from setuptools import setup, find_packages
+from setuptools import setup, find_packages
 
 if sys.argv[-1] == 'publish':
   os.system('python setup.py sdist upload')
