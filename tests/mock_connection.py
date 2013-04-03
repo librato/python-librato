@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import urllib, json, re
 
 class MockServer(object):
@@ -7,7 +7,7 @@ class MockServer(object):
     self.clean()
 
   def clean(self):
-    self.metrics = { 'gauges': {}, 'counters': {} }
+    self.metrics = { 'gauges': OrderedDict(), 'counters': OrderedDict() }
 
   def list_of_metrics(self):
     answer = self.__an_empty_list_metrics()
