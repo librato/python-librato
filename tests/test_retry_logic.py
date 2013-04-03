@@ -15,7 +15,7 @@ class TestRetries(unittest.TestCase):
 
   def test_list_metrics_with_retries(self):
     self.conn.fake_n_errors  = 1
-    self.conn.backoff_logic  = lambda(x): 0.1 # We don't want to wait 1 sec for this to finish
+    self.conn.backoff_logic  = lambda x: 0.1 # We don't want to wait 1 sec for this to finish
     metrics = self.conn.list_metrics()
     assert len(metrics) == 0
 

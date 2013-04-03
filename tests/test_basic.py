@@ -27,26 +27,29 @@ class TestLibrato(unittest.TestCase):
 
     assert len(metrics) == 2
     assert type(metrics[0]) == librato.metrics.Gauge
-    assert metrics[0].name == 'gauge_2'
-    assert metrics[0].description == 'desc 2'
+    assert metrics[0].name == 'gauge_1'
+    assert metrics[0].description == 'desc 1'
 
     assert type(metrics[1]) == librato.metrics.Gauge
-    assert metrics[1].name == 'gauge_1'
-    assert metrics[1].description == 'desc 1'
+    assert metrics[1].name == 'gauge_2'
+    assert metrics[1].description == 'desc 2'
 
   def test_list_metrics_adding_counter_metrics(self):
     self.conn.submit('c1', 10, 'counter', description='counter desc 1')
     self.conn.submit('c2', 20, 'counter', description='counter desc 2')
     # Get all metrics
     metrics = self.conn.list_metrics()
+
     assert len(metrics) == 2
+
     assert type(metrics[0]) == librato.metrics.Counter
-    assert metrics[0].name == 'c2'
-    assert metrics[0].description == 'counter desc 2'
+    assert metrics[0].name == 'c1'
+    assert metrics[0].description == 'counter desc 1'
 
     assert type(metrics[1]) == librato.metrics.Counter
-    assert metrics[1].name == 'c1'
-    assert metrics[1].description == 'counter desc 1'
+    assert metrics[1].name == 'c2'
+    assert metrics[1].description == 'counter desc 2'
+
 
   def test_list_metrics_adding_one_counter_one_gauge(self):
     self.conn.submit('gauge1', 10)

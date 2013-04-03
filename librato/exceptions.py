@@ -66,7 +66,7 @@ def get(code, resp_data):
       for v in resp_data['errors'][key]:
         for m in resp_data['errors'][key][v]:
           msg += "%s: %s %s\n" % (key, v, m)
-  if CODES.has_key(code):
+  if code in CODES:
     return CODES[code](msg)
   else:
     return ClientError(code, msg)
