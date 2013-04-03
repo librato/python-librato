@@ -155,7 +155,7 @@ class LibratoConnection(object):
 
   def _parse(self, resp, name, cls):
     """Parse to an object"""
-    if resp.has_key(name):
+    if name in resp:
       return [cls.from_dict(self, m) for m in resp[name]]
     else:
       return resp
