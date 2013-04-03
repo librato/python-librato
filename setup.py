@@ -10,20 +10,13 @@ except ImportError:
   use_setuptools()
   from setuptools import setup, find_packages
 
-from librato import __version__
-
-#
-# Change __version__ in librato/__init__.py before publishing
-# You may want to use the pypi web interface to remove the current version
-# incase you want to re-publish the same version.
-#
 if sys.argv[-1] == 'publish':
   os.system('python setup.py sdist upload')
   sys.exit()
 
 setup(
   name = "librato-metrics",
-  version = __version__,
+  version = "0.2.7",
   description = "Python API Wrapper for Librato",
   long_description="Python Wrapper for the Librato Metrics API: http://dev.librato.com/v1/metrics",
   author = "Librato",
