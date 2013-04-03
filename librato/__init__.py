@@ -67,8 +67,8 @@ class LibratoConnection(object):
     :param api_key: The API Key (token) to use to authenticate
     :type api_key: str
     """
-    self.username      = username
-    self.api_key       = api_key
+    self.username      = username.encode('ascii')   # FIXME: can usernames be non-ASCII?
+    self.api_key       = api_key.encode('ascii')    # FIXME: ditto.
     self.hostname      = hostname
     self.base_path     = base_path
     # these two attributes ared used to control fake server errors when doing
@@ -80,7 +80,7 @@ class LibratoConnection(object):
     """ set headers for request """
     if headers is None:
       headers = {}
-    headers['Authorization'] = "Basic " + base64.b64encode(self.username + ":" + self.api_key).strip()
+    headers['Authorization'] = b"Basic " + base64.b64encode(self.username + b":" + self.api_key).strip()
 
     # http://en.wikipedia.org/wiki/User_agent#Format
     # librato-metrics/1.0.3 (ruby; 1.9.3p385; x86_64-darwin11.4.2) direct-faraday/0.8.4
