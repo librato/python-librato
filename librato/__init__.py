@@ -65,7 +65,7 @@ class LibratoConnection(object):
     # these two attributes ared used to control fake server errors when doing
     # unit testing.
     self.fake_n_errors = 0
-    self.backoff_logic = lambda(backoff): backoff*2
+    self.backoff_logic = lambda backoff: backoff*2
 
   def _set_headers(self, headers):
     """ set headers for request """
