@@ -15,7 +15,7 @@ class MockServer(object):
       answer['metrics'].append(g)
     for cn, c in self.metrics['counters'].items():
       answer['metrics'].append(c)
-    return json.dumps(answer)
+    return json.dumps(answer).encode('utf-8')
 
   def create_metric(self, payload):
     """ Check 3) in POST /metrics for payload example """
@@ -52,7 +52,7 @@ class MockServer(object):
       metric = gauges[name]
     if name in counters:
       metric = counters[name]
-    return json.dumps(metric)
+    return json.dumps(metric).encode('utf-8')
 
   def delete_metric(self, payload):
     gauges   = self.metrics['gauges']
@@ -103,6 +103,11 @@ class MockResponse(object):
   def __init__(self, request, fake_failure=False):
     self.request = request
     self.status  = 500 if fake_failure else 200
+
+  class headers(object):
+    @staticmethod
+    def get_content_charset(default):
+        return 'utf-8'
 
   def read(self):
     return self._json_body_based_on_request()

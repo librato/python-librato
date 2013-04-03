@@ -117,7 +117,7 @@ class LibratoConnection(object):
     if not_a_server_error:
       body = resp.read()
       if body:
-        resp_data = json.loads(body)
+        resp_data = json.loads(body.decode(resp.headers.get_content_charset('utf-8')))
       log.info("body(<-): %s" % body)
       a_client_error = resp.status >= 400
       if a_client_error:
@@ -133,7 +133,6 @@ class LibratoConnection(object):
     """Internal method for executing a command.
        If we get server errors we exponentially wait before retrying
     """
-    import pdb; pdb.set_trace()
     conn      = self._setup_connection()
     headers   = self._set_headers(p_headers)
     success   = False
