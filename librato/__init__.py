@@ -31,7 +31,7 @@ BASE_PATH = "/v1/"
 import platform
 import time
 import logging
-from httplib import HTTPSConnection
+from six.moves import http_client
 import urllib
 import base64
 import json
@@ -40,6 +40,15 @@ from librato.queue import Queue
 from librato.metrics import Gauge, Counter
 
 log = logging.getLogger("librato")
+
+# Alias HTTPSConnection so the tests can mock it out.
+HTTPSConnection = http_client.HTTPSConnection
+
+# Alias urlencode, it moved between py2 and py3.
+try:
+    urlencode = urllib.parse.urlencode  # py3
+except AttributeError:
+    urlencode = urllib.urlencode        # py2
 
 class LibratoConnection(object):
   """Librato API Connection.
@@ -92,7 +101,7 @@ class LibratoConnection(object):
         body = json.dumps(query_props)
         headers['Content-Type'] = "application/json"
       else:
-        uri += "?" + urllib.urlencode(query_props)
+        uri += "?" + urlencode(query_props)
 
     log.info("method=%s uri=%s" % (method, uri))
     log.info("body(->): %s" % body)

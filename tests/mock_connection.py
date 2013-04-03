@@ -1,4 +1,3 @@
-from urlparse import urlparse
 from collections import defaultdict
 import urllib, json, re
 
