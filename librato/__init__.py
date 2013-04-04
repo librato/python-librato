@@ -31,7 +31,7 @@ BASE_PATH = "/v1/"
 import platform
 import time
 import logging
-from httplib import HTTPSConnection
+from six.moves import http_client
 import urllib
 import base64
 import json
@@ -40,6 +40,15 @@ from librato.queue import Queue
 from librato.metrics import Gauge, Counter
 
 log = logging.getLogger("librato")
+
+# Alias HTTPSConnection so the tests can mock it out.
+HTTPSConnection = http_client.HTTPSConnection
+
+# Alias urlencode, it moved between py2 and py3.
+try:
+    urlencode = urllib.parse.urlencode  # py3
+except AttributeError:
+    urlencode = urllib.urlencode        # py2
 
 class LibratoConnection(object):
   """Librato API Connection.
@@ -58,20 +67,20 @@ class LibratoConnection(object):
     :param api_key: The API Key (token) to use to authenticate
     :type api_key: str
     """
-    self.username      = username
-    self.api_key       = api_key
+    self.username      = username.encode('ascii')   # FIXME: can usernames be non-ASCII?
+    self.api_key       = api_key.encode('ascii')    # FIXME: ditto.
     self.hostname      = hostname
     self.base_path     = base_path
     # these two attributes ared used to control fake server errors when doing
     # unit testing.
     self.fake_n_errors = 0
-    self.backoff_logic = lambda(backoff): backoff*2
+    self.backoff_logic = lambda backoff: backoff*2
 
   def _set_headers(self, headers):
     """ set headers for request """
     if headers is None:
       headers = {}
-    headers['Authorization'] = "Basic " + base64.b64encode(self.username + ":" + self.api_key).strip()
+    headers['Authorization'] = b"Basic " + base64.b64encode(self.username + b":" + self.api_key).strip()
 
     # http://en.wikipedia.org/wiki/User_agent#Format
     # librato-metrics/1.0.3 (ruby; 1.9.3p385; x86_64-darwin11.4.2) direct-faraday/0.8.4
@@ -92,7 +101,7 @@ class LibratoConnection(object):
         body = json.dumps(query_props)
         headers['Content-Type'] = "application/json"
       else:
-        uri += "?" + urllib.urlencode(query_props)
+        uri += "?" + urlencode(query_props)
 
     log.info("method=%s uri=%s" % (method, uri))
     log.info("body(->): %s" % body)
@@ -108,10 +117,7 @@ class LibratoConnection(object):
     if not_a_server_error:
       body = resp.read()
       if body:
-        try:
-          resp_data = json.loads(body)
-        except:
-          pass
+        resp_data = json.loads(body.decode(resp.headers.get_content_charset('utf-8')))
       log.info("body(<-): %s" % body)
       a_client_error = resp.status >= 400
       if a_client_error:
@@ -148,7 +154,7 @@ class LibratoConnection(object):
 
   def _parse(self, resp, name, cls):
     """Parse to an object"""
-    if resp.has_key(name):
+    if name in resp:
       return [cls.from_dict(self, m) for m in resp[name]]
     else:
       return resp

@@ -31,7 +31,7 @@ class TestLibratoBasic(object):
   @classmethod
   def setup_class(cls):
     """Initialize the Librato Connection"""
-    assert(os.environ.has_key("LIBRATO_USER") and os.environ.has_key("LIBRATO_TOKEN")), \
+    assert("LIBRATO_USER" in os.environ and "LIBRATO_TOKEN" in os.environ), \
            "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
     cls.conn = librato.connect(os.environ['LIBRATO_USER'], os.environ['LIBRATO_TOKEN'])
 

@@ -1,5 +1,4 @@
-from urlparse import urlparse
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import urllib, json, re
 
 class MockServer(object):
@@ -8,7 +7,7 @@ class MockServer(object):
     self.clean()
 
   def clean(self):
-    self.metrics = { 'gauges': {}, 'counters': {} }
+    self.metrics = { 'gauges': OrderedDict(), 'counters': OrderedDict() }
 
   def list_of_metrics(self):
     answer = self.__an_empty_list_metrics()
@@ -16,7 +15,7 @@ class MockServer(object):
       answer['metrics'].append(g)
     for cn, c in self.metrics['counters'].items():
       answer['metrics'].append(c)
-    return json.dumps(answer)
+    return json.dumps(answer).encode('utf-8')
 
   def create_metric(self, payload):
     """ Check 3) in POST /metrics for payload example """
@@ -29,8 +28,8 @@ class MockServer(object):
 
         # The metric comes also with a value, we have to add it
         # to the measurements (for a particular source if available)
-        if metric.has_key('value'):
-          if not metric.has_key('source'):
+        if 'value' in metric:
+          if 'source' not in metric:
             source = 'unassigned'
           else:
             source = metric['source']
@@ -40,7 +39,7 @@ class MockServer(object):
 
           # Create a new source for the measurements if necessary
           p_to_metric = self.metrics[metric_type + 's'][name]
-          if not p_to_metric['measurements'].has_key(source):
+          if source not in p_to_metric['measurements']:
             p_to_metric['measurements'][source] = []
           p_to_metric['measurements'][source].append({"value": value})
 
@@ -49,20 +48,20 @@ class MockServer(object):
   def get_metric(self, name, payload):
     gauges   = self.metrics['gauges']
     counters = self.metrics['counters']
-    if gauges.has_key(name):
+    if name in gauges:
       metric = gauges[name]
-    if counters.has_key(name):
+    if name in counters:
       metric = counters[name]
-    return json.dumps(metric)
+    return json.dumps(metric).encode('utf-8')
 
   def delete_metric(self, payload):
     gauges   = self.metrics['gauges']
     counters = self.metrics['counters']
-    if payload.has_key('names'):
+    if 'names' in payload:
       for rm_name in payload['names']:
-        if gauges.has_key(rm_name):
+        if rm_name in gauges:
           del gauges[rm_name]
-        if counters.has_key(rm_name):
+        if rm_name in counters:
           del counters[rm_name]
     else:
       raise Exception('Trying to DELETE metric without providing array of names')
@@ -81,10 +80,10 @@ class MockServer(object):
       self.add_gauge_measurement(gm)
 
   def add_metric_to_store(self, g, m_type):
-    if not self.metrics[m_type + 's'].has_key(g['name']):
+    if g['name'] not in self.metrics[m_type + 's']:
       g['type'] = m_type
-      if not g.has_key('period')    : g['period']     = None
-      if not g.has_key('attributes'): g['attributes'] = {}
+      if 'period' not in g    : g['period']     = None
+      if 'attributes' not in g: g['attributes'] = {}
       g['measurements'] = {}
       self.metrics[m_type + 's'][g['name']] = g
 
@@ -104,6 +103,11 @@ class MockResponse(object):
   def __init__(self, request, fake_failure=False):
     self.request = request
     self.status  = 500 if fake_failure else 200
+
+  class headers(object):
+    @staticmethod
+    def get_content_charset(default):
+        return 'utf-8'
 
   def read(self):
     return self._json_body_based_on_request()
