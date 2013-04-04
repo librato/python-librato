@@ -3,4 +3,7 @@ python:
   - "2.7"
   - "3.2"
   - "3.3"
+install:
+  - "pip install . --use-mirrors"
+  - "pip install -r requirements.txt --use-mirrors"
 script: nosetests tests/test_basic.py tests/test_queue.py
