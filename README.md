@@ -1,7 +1,7 @@
 python-librato
 ==============
 
-[![Build Status](https://magnum.travis-ci.com/librato/python-librato.png?token=5DkaEcPsGmzNFtrdssjk)](http://magnum.travis-ci.com/librato/python-librato)
+[![Build Status](https://secure.travis-ci.org/librato/python-librato.png?branch=master)](http://travis-ci.org/librato/python-librato)
 
 A Python wrapper for the Librato Metrics API.
 
