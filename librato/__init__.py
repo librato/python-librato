@@ -35,6 +35,7 @@ from six.moves import http_client
 import urllib
 import base64
 import json
+import email.message
 from librato import exceptions
 from librato.queue import Queue
 from librato.metrics import Gauge, Counter
@@ -117,7 +118,7 @@ class LibratoConnection(object):
     if not_a_server_error:
       body = resp.read()
       if body:
-        resp_data = json.loads(body.decode(resp.headers.get_content_charset('utf-8')))
+        resp_data = json.loads(body.decode(_getcharset(resp)))
       log.info("body(<-): %s" % body)
       a_client_error = resp.status >= 400
       if a_client_error:
@@ -201,3 +202,16 @@ def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):
   """
   return LibratoConnection(username, api_key, hostname, base_path)
 
+def _getcharset(resp, default='utf-8'):
+    """
+    Extract the charset from an HTTPResponse.
+    """
+    # In Python 3, HTTPResponse is a subclass of email.message.Message, so we
+    # can use get_content_chrset. In Python 2, however, it's not so we have
+    # to be "clever".
+    if hasattr(resp, 'headers'):
+        return resp.headers.get_content_charset(default)
+    else:
+        m = email.message.Message()
+        m['content-type'] = resp.getheader('content-type')
+        return m.get_content_charset(default)
