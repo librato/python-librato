@@ -1,11 +1,14 @@
 ## Changelog
 
+### Version 0.4
+* python3 support thanks to the fantastic work of @jacobian
+
 ### Version 0.2.7
-* Update User-Agent string to follow standards
+* Update User-Agent string to follow standards.
 
 ### Version 0.2.6
-* Refactoring _mexe()
-* Setting User-Agent header
+* Refactoring _mexe().
+* Setting User-Agent header.
 
 ### Version 0.2.5
 * Fixing authorship in pypi.
@@ -20,10 +23,10 @@
 * Support for sending measurements in batch mode.
 
 ### Version 0.2.1
-* Unit Testing infrastructure
-* Mocking librato API
-* Improve integration tests
+* Unit Testing infrastructure.
+* Mocking librato API.
+* Improve integration tests.
 
 ### Version 0.2.0
-* Initial release
-* Chris Moyer's (AKA @kopertop) code moved from bitbucket to github
+* Initial release.
+* Chris Moyer's (AKA @kopertop) code moved from bitbucket to github.
