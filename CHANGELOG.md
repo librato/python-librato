@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.2
+* Fixing reading the charset of a response in python2.
+
 ### Version 0.4.1
 * python3 support thanks to @jacobian fantastic work.
 
