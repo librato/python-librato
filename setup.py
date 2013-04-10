@@ -10,7 +10,7 @@ if sys.argv[-1] == 'publish':
 
 setup(
   name = "librato-metrics",
-  version = "0.4",
+  version = "0.4.1",
   description = "Python API Wrapper for Librato",
   long_description="Python Wrapper for the Librato Metrics API: http://dev.librato.com/v1/metrics",
   author = "Librato",
