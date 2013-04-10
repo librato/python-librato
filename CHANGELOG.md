@@ -1,7 +1,7 @@
 ## Changelog
 
-### Version 0.4
-* python3 support thanks to the fantastic work of @jacobian
+### Version 0.4.1
+* python3 support thanks to @jacobian fantastic work.
 
 ### Version 0.2.7
 * Update User-Agent string to follow standards.
