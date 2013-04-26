@@ -98,7 +98,7 @@ class LibratoConnection(object):
     uri  = self.base_path + path
     body = None
     if query_props:
-      if method == "POST" or method == "DELETE":
+      if method == "POST" or method == "DELETE" or method == "PUT":
         body = json.dumps(query_props)
         headers['Content-Type'] = "application/json"
       else:
@@ -185,6 +185,9 @@ class LibratoConnection(object):
       return Gauge.from_dict(self, resp)
     else:
       raise Exception('The server sent me something that is not a Gauge nor a Counter.')
+
+  def update(self, name, **query_props):
+      resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)
 
   def delete(self, name):
     payload = { 'names': [name] }
