@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.3
+* Adding support to update metric attributes
+
 ### Version 0.4.2
 * Fixing reading the charset of a response in python2.
 
