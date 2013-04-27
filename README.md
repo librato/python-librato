@@ -120,6 +120,20 @@ q.add('num_requests', 102, type='counter', source='server2')
 q.submit()
 ```
 
+## Updating Metrics
+
+You can update the information for a metric by using the `update` method,
+for example:
+
+```
+api = librato.connect(user, token)
+for metric in api.list_metrics():
+    gauge = api.get(m.name)
+    attrs = gauge.attributes
+    attrs['display_units_long'] = 'ms'
+    api.update(metric.name, attributes=attrs)
+```
+
 ## Contribution
 
 Do you want to contribute? Do you need a new feature? Please open a
