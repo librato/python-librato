@@ -187,7 +187,7 @@ class LibratoConnection(object):
       raise Exception('The server sent me something that is not a Gauge nor a Counter.')
 
   def update(self, name, **query_props):
-      resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)
+    resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)
 
   def delete(self, name):
     payload = { 'names': [name] }

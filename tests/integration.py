@@ -101,5 +101,24 @@ class TestLibratoBasic(object):
       q.add('num_req', nr, type='counter', source='server2', measure_time=time.time()-1)
     q.submit()
 
+  def test_update_metrics_attributes(self):
+    name, desc = 'Test', 'A great gauge.'
+    self.conn.submit(name, 10, description=desc)
+    gauge = self.conn.get(name)
+    assert gauge and gauge.name == name
+    assert gauge.description == desc
+
+    gauge = self.conn.get(name)
+    attrs = gauge.attributes
+    attrs['display_min'] = 0
+    self.conn.update(name, attributes=attrs)
+
+    gauge = self.conn.get(name)
+    assert gauge.attributes['display_min'] == 0
+
+    self.conn.delete(name)
+
 if __name__ == '__main__':
+    # TO run a specific test:
+    # $ nosetests tests/integration.py:TestLibratoBasic.test_update_metrics_attributes
     nose.runmodule()

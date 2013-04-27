@@ -26,7 +26,7 @@ From your application or script:
 [account settings page](https://metrics.librato.com/account) and save your
 username and token.
 
-```
+```python
   api = librato.connect(user, token)
 ```
 
@@ -34,53 +34,53 @@ username and token.
 
 To iterate over your metrics:
 
-```
+```python
   for m in api.list_metrics():
     print m.name
 ```
 
 Let's now create a Metric:
 
-```
+```python
   api.submit("temperature", 10, description="temperature at home")
 ```
 
 By default ```submit()``` will create a gauge metric. The metric will be
 created automatically by the server if it does not exist. We can remove it:
 
-```
+```python
   api.delete("temperature")
 ```
 
 For creating a counter metric, we can:
 
-```
+```python
   api.submit("connections", 20, type='counter', description="server connections")
 ```
 
 And again to remove:
 
-```
+```python
   api.delete("connections")
 ```
 
 To iterate over your metrics:
 
-```
+```python
   for m in api.list_metrics():
     print "%s: %s" % (m.name, m.description)
 ```
 
 To retrieve a specific metric:
 
-```
+```python
   gauge   = api.get("temperature")
   counter = api.get("connections")
 ```
 
 For sending more measurements:
 
-```
+```python
   for temp in [20, 21, 22]:
     api.submit('temperature', temp)
   for num_con in [100, 200, 300]:
@@ -89,7 +89,7 @@ For sending more measurements:
 
 Let's now iterate over the measurements of our Metrics:
 
-```
+```python
   metric = api.get("temperature", count=100, resolution=1)
   for m in metric.measurements['unassigned']:
     print "%s: %s" % (m['value'], m['measure_time'])
@@ -110,7 +110,7 @@ alternative method to submit your measurements. The idea is to send measurements
 in batch mode. We push measurements that are stored and when we are
 ready, they will be submitted in an efficient matter. Here is an example:
 
-```
+```python
 api = librato.connect(user, token)
 q   = api.new_queue()
 q.add('temperature', 22.1, source='upstairs')
@@ -125,13 +125,13 @@ q.submit()
 You can update the information for a metric by using the `update` method,
 for example:
 
-```
+```python
 api = librato.connect(user, token)
 for metric in api.list_metrics():
-    gauge = api.get(m.name)
-    attrs = gauge.attributes
-    attrs['display_units_long'] = 'ms'
-    api.update(metric.name, attributes=attrs)
+  gauge = api.get(m.name)
+  attrs = gauge.attributes
+  attrs['display_units_long'] = 'ms'
+  api.update(metric.name, attributes=attrs)
 ```
 
 ## Contribution
