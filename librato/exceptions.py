@@ -58,14 +58,18 @@ CODES = {
 }
 
 
+# http://dev.librato.com/v1/responses-errors
 def get(code, resp_data):
   if resp_data:
     msg = ""
     for key in resp_data['errors']:
       for v in resp_data['errors'][key]:
-        if isinstance(v, unicode):
+        # The API reports errors in a the JSON format which makes it easier to
+        # parse and evaluate them. As of now, there are two kinds of errors:
+        # params and request.
+        if isinstance(v, unicode): # request type
           msg += "%s: %s\n" % (key, v)
-        else:
+        else: # params type
           for m in resp_data['errors'][key][v]:
             msg += "%s: %s %s\n" % (key, v, m)
   if code in CODES:
