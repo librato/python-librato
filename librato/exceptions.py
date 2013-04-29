@@ -59,13 +59,15 @@ CODES = {
 
 
 def get(code, resp_data):
-  msg = ""
   if resp_data:
     msg = ""
     for key in resp_data['errors']:
       for v in resp_data['errors'][key]:
-        for m in resp_data['errors'][key][v]:
-          msg += "%s: %s %s\n" % (key, v, m)
+        if isinstance(v, unicode):
+          msg += "%s: %s\n" % (key, v)
+        else:
+          for m in resp_data['errors'][key][v]:
+            msg += "%s: %s %s\n" % (key, v, m)
   if code in CODES:
     return CODES[code](msg)
   else:
