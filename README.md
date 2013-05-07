@@ -21,10 +21,10 @@ From your application or script:
 
 ## Authenticating
 
-  We first use our credentials to connect to the API.  I am assuming you have
+  We first use our credentials to connect to the API. I am assuming you have
 [a librato account for Metrics](https://metrics.librato.com/). Go to your
 [account settings page](https://metrics.librato.com/account) and save your
-username and token.
+username (email address) and token (long hexadecimal string).
 
 ```python
   api = librato.connect(user, token)
