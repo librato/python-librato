@@ -169,9 +169,9 @@ class LibratoConnection(object):
     resp = self._mexe("metrics", query_props=query_props)
     return self._parse(resp, "metrics", Metric)
 
-  def submit(self, name, value, type="gauge", **query_props):
+  def submit(self, metric_name, value, type="gauge", **query_props):
     payload = {'gauges': [], 'counters': []}
-    metric = { 'name': name, 'value': value }
+    metric = { 'name': metric_name, 'value': value }
     for k,v in query_props.items():
       metric[k] = v
     payload[type + 's'].append(metric)
