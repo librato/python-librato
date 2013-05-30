@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.4
+* Consolidates parameter name in queue. Thanks to @stevepeak to point this out.
+
 ### Version 0.4.3
 * Adding support to update metric attributes
 
