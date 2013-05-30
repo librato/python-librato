@@ -43,9 +43,9 @@ class Queue(object):
     self.connection = connection
     self.chunks = [ self._gen_empty_chunk() ]
 
-  def add(self, metric_name, value, type='gauge', **query_props):
+  def add(self, name, value, type='gauge', **query_props):
     nm = {} # new measurement
-    nm['name']  = metric_name
+    nm['name']  = name
     nm['value'] = value
     nm['type']  = type
     for pn, v in query_props.items():
