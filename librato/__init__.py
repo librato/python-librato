@@ -39,6 +39,7 @@ import email.message
 from librato import exceptions
 from librato.queue import Queue
 from librato.metrics import Gauge, Counter
+from librato.instruments import Instrument
 
 log = logging.getLogger("librato")
 
@@ -192,6 +193,36 @@ class LibratoConnection(object):
   def delete(self, name):
     payload = { 'names': [name] }
     return self._mexe("metrics", method="DELETE", query_props=payload)
+
+  #
+  # Instruments
+  #
+  def list_instruments(self, **query_props):
+    """List all instruments"""
+    resp = self._mexe("instruments", query_props=query_props)
+    print resp
+    return self._parse(resp, "instruments", Instrument)
+
+  def get_instrument(self, id, **query_props):
+    """Get specific instrument by ID"""
+    #TODO: Add better handling around 404s
+    resp = self._mexe("instruments/%s" % id, method="GET", query_props=query_props)
+    return Instrument.from_dict(self, resp)
+
+  def update_instrument(self, instrument, **query_props):
+    """Update an existing experiment"""
+    payload = instrument.get_payload()
+    for k,v in query_props.items():
+      payload[k] = v
+    resp = self._mexe("instruments/%s" % instrument.id, method="PUT", query_props=payload)
+    return resp
+  def create_instrument(self, name, **query_props):
+    payload = Instrument(self, name).get_payload()
+    for k,v in query_props.items():
+      payload[k] = v
+    resp = self._mexe("instruments", method="POST", query_props=payload)
+    print repr(resp)
+    return Instrument.from_dict(self, resp)
 
   #
   # Queue
