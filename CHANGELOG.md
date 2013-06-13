@@ -1,5 +1,9 @@
 ## Changelog
 
+### Version 0.4.5
+* Same as 0.4.4. Just making sure there are no distribution issues after
+  changing the Hosting Mode in pypi.
+
 ### Version 0.4.4
 * Consolidates parameter name in queue. Thanks to @stevepeak to point this out.
 
