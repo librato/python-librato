@@ -68,8 +68,12 @@ class LibratoConnection(object):
     :param api_key: The API Key (token) to use to authenticate
     :type api_key: str
     """
-    self.username      = username.encode('ascii')   # FIXME: can usernames be non-ASCII?
-    self.api_key       = api_key.encode('ascii')    # FIXME: ditto.
+    try:
+      self.username  = username.encode('ascii')
+      self.api_key   = api_key.encode('ascii')
+    except:
+      raise("Librato only supports ascii for the credentials.")
+
     self.hostname      = hostname
     self.base_path     = base_path
     # these two attributes ared used to control fake server errors when doing
