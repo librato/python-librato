@@ -43,4 +43,4 @@ publish:
 
 clean:
 	find . -name "*.pyc" | xargs rm -f
-	rm -rf tests/__pycache__ librato_metrics.egg-info htmlcov .coverage
+	rm -rf tests/__pycache__ librato_metrics.egg-info htmlcov .coverage dist
