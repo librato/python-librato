@@ -33,12 +33,12 @@ publish:
 	read NEW;\
 	export _NEW=$$NEW; \
 	echo "New version will be: $$NEW"; \
-	cat setup.py            | ruby -ne 'puts $$_.gsub(/([\d\.]+\")/, ENV["_NEW"] + "\"" )'	> _tmp ; \
-	cat librato/__init__.py | ruby -ne 'puts $$_.gsub(/([\d\.]+\")/, ENV["_NEW"] + "\"" )'  > _tmp2 ; \
+	cat setup.py            | ruby -ne 'puts $$_.gsub(/version = \"[\d\.]+\"/, "version = \"" + ENV["_NEW"] + "\"" )'	> _tmp ; \
+	cat librato/__init__.py | ruby -ne 'puts $$_.gsub(/__version__ = \"[\d\.]+\"/,  "__version__ = \"" + ENV["_NEW"] + "\"")'  > _tmp2 ; \
 	mv _tmp setup.py ;\
 	mv _tmp2 librato/__init__.py ;\
 	rm -f _tmp _tmp2;\
-	echo ">> To publish : python setup.py sdist upload" ;\
+	python setup.py sdist upload ;\
 	)
 
 clean:
