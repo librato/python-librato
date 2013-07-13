@@ -37,8 +37,8 @@ publish:
 	cat librato/__init__.py | ruby -ne 'puts $$_.gsub(/([\d\.]+\")/, ENV["_NEW"] + "\"" )'  > _tmp2 ; \
 	mv _tmp setup.py ;\
 	mv _tmp2 librato/__init__.py ;\
-	python setup.py sdist upload ;\
 	rm -f _tmp _tmp2;\
+	echo ">> To publish : python setup.py sdist upload" ;\
 	)
 
 clean:

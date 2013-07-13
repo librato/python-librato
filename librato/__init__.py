@@ -22,7 +22,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-__version__ = "0.4.5"
+__version__ = "0.4.8"
 
 # Defaults
 HOSTNAME = "metrics-api.librato.com"
@@ -72,7 +72,7 @@ class LibratoConnection(object):
       self.username  = username.encode('ascii')
       self.api_key   = api_key.encode('ascii')
     except:
-      raise("Librato only supports ascii for the credentials.")
+      raise("Librato only supports ascii for the credentials")
 
     self.hostname      = hostname
     self.base_path     = base_path
