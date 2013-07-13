@@ -38,6 +38,11 @@ publish:
 	mv _tmp setup.py ;\
 	mv _tmp2 librato/__init__.py ;\
 	rm -f _tmp _tmp2;\
+	echo "";\
+	git diff;\
+	echo "";\
+	echo -ne "Hit <enter> to send new package to pypi; <ctrl+c> to cancel...";\
+	read ;\
 	python setup.py sdist upload ;\
 	)
 
