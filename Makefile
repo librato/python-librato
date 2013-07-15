@@ -25,26 +25,7 @@ tox:
 	tox
 
 publish:
-	@(\
-	export ONE=`cat setup.py | grep "version" | ruby -ne 'puts $$_.match(/([\d\.]+)\"/)[1]'`; \
-	export TWO=`cat librato/__init__.py | grep "^__version__" | ruby -ne 'puts $$_.match(/([\d\.]+)\"/)[1]'`; \
-	echo "Current version: $$ONE $$TWO"; \
-	echo -ne "Introduce new version: "; \
-	read NEW;\
-	export _NEW=$$NEW; \
-	echo "New version will be: $$NEW"; \
-	cat setup.py            | ruby -ne 'puts $$_.gsub(/version = \"[\d\.]+\"/, "version = \"" + ENV["_NEW"] + "\"" )'	> _tmp ; \
-	cat librato/__init__.py | ruby -ne 'puts $$_.gsub(/__version__ = \"[\d\.]+\"/,  "__version__ = \"" + ENV["_NEW"] + "\"")'  > _tmp2 ; \
-	mv _tmp setup.py ;\
-	mv _tmp2 librato/__init__.py ;\
-	rm -f _tmp _tmp2;\
-	echo "";\
-	git diff;\
-	echo "";\
-	echo -ne "Hit <enter> to send new package to pypi; <ctrl+c> to cancel...";\
-	read ;\
-	python setup.py sdist upload ;\
-	)
+	@sh/publish.sh
 
 clean:
 	find . -name "*.pyc" | xargs rm -f
