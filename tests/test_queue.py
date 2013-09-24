@@ -1,8 +1,5 @@
 import logging
-import sys
-import json
 import unittest
-import re
 import librato
 from mock_connection import MockConnect, server
 from random import randint
