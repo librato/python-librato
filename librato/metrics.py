@@ -22,56 +22,60 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 class Metric(object):
-  """Librato Metric Base class"""
+    """Librato Metric Base class"""
 
-  def __init__(self, connection, name, attributes=None, period=None, description=None):
-    self.connection = connection
-    self.name = name
-    self.attributes=attributes or {}
-    self.period = period
-    self.description = description
-    self.measurements = {}
+    def __init__(self, connection, name, attributes=None, period=None, description=None):
+        self.connection = connection
+        self.name = name
+        self.attributes = attributes or {}
+        self.period = period
+        self.description = description
+        self.measurements = {}
 
-  def __getitem__(self, name):
-    return self.attributes[name]
+    def __getitem__(self, name):
+        return self.attributes[name]
 
-  def get(self, name, default=None):
-    return self.attributes.get(name, default)
+    def get(self, name, default=None):
+        return self.attributes.get(name, default)
 
-  @classmethod
-  def from_dict(cls, connection, data):
-    """Returns a metric object from a dictionary item,
-    which is usually from librato's API"""
-    if data.get('type') == "gauge":
-      cls = Gauge
-    elif data.get('type') == "counter":
-      cls = Counter
+    @classmethod
+    def from_dict(cls, connection, data):
+        """Returns a metric object from a dictionary item,
+        which is usually from librato's API"""
+        if data.get('type') == "gauge":
+            cls = Gauge
+        elif data.get('type') == "counter":
+            cls = Counter
 
-    obj = cls(connection, data['name'])
-    obj.period = data['period']
-    obj.attributes = data['attributes']
-    obj.description = data['description'] if 'description' in data else None
-    obj.measurements = data['measurements'] if 'measurements' in data else {}
+        obj = cls(connection, data['name'])
+        obj.period = data['period']
+        obj.attributes = data['attributes']
+        obj.description = data['description'] if 'description' in data else None
+        obj.measurements = data['measurements'] if 'measurements' in data else {}
 
-    return obj
+        return obj
 
-  def __repr__(self):
-    return "%s<%s>" % (self.__class__.__name__, self.name)
+    def __repr__(self):
+        return "%s<%s>" % (self.__class__.__name__, self.name)
+
 
 class Gauge(Metric):
-  """Librato Gauge metric"""
-  def add(self, value, source=None, **params):
-    """Add a new measurement to this gauge"""
-    return self.connection.send_gauge_value(self.name, value, source, **params)
+    """Librato Gauge metric"""
+    def add(self, value, source=None, **params):
+        """Add a new measurement to this gauge"""
+        return self.connection.send_gauge_value(self.name, value, source, **params)
 
-  def what_am_i(self):
-    return 'gauges'
+    def what_am_i(self):
+        return 'gauges'
+
 
 class Counter(Metric):
-  """Librato Counter metric"""
-  def add(self, value, source=None, **params):
-    return self.connection.send_counter_value(self.name, value, source, **params)
+    """Librato Counter metric"""
+    def add(self, value, source=None, **params):
+        return self.connection.send_counter_value(self.name, value, source, **params)
 
-  def what_am_i(self):
-    return 'counters'
+    def what_am_i(self):
+        return 'counters'
