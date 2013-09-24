@@ -1,15 +1,14 @@
-from .instruments import Instrument
-
 
 class Dashboard(object):
     """Librato Dashboard Base class"""
 
-    def __init__(self, connection, name, id=None, instruments=[]):
+    def __init__(self, connection, name, id=None, instrument_dicts=None):
         self.connection = connection
         self.name = name
-        self.instruments = []
-        for i in instruments:
-            self.add_instrument(i)
+        self.instrument_ids = []
+        self._instruments = None
+        for i in (instrument_dicts or []):
+            self.instrument_ids.append(i['id'])
         self.id = id
 
     @classmethod
@@ -20,23 +19,22 @@ class Dashboard(object):
         """
         obj = cls(connection,
                   data['name'],
-                  instruments=data['instruments'],
+                  instrument_dicts=data['instruments'],
                   id=data['id'])
         return obj
 
     def get_payload(self):
         return {'name': self.name,
-                'instruments': [x.id for x in self.instruments]}
+                'instruments': self.instrument_ids[:]}
 
-    def add_instrument(self, instrument):
-        if isinstance(instrument, Instrument):
-            self.instruments.append(instrument)
-        # We should handle this better, i.e. allowing instrument instantiation from integers, for consistency.
-        elif isinstance(instrument, int):
-            # Aaah, cascading GETs!
-            instrument = self.connection.get_instrument(instrument)
-            # get_instrument throws a librato.exceptions.NotFound: [404] request: Not Found
-            self.instruments.append(instrument)
+    def get_instruments(self):
+        if self._instruments is None:
+            instruments = []
+            for i in self.instrument_ids:
+                instruments.append(self.connection.get_instrument(i))
+            self._instruments = instruments
+
+        return self._instruments[:]
 
     def save(self):
         self.connection.update_dashboard(self)
