@@ -6,4 +6,4 @@ python:
 install:
   - "pip install . --use-mirrors"
   - "pip install six --use-mirrors"
-script: nosetests tests/test_basic.py tests/test_queue.py
+script: nosetests tests/

@@ -23,56 +23,61 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 class ClientError(Exception):
-  """4xx client exceptions"""
-  def __init__(self, code, msg=None):
-    self.code = code
-    msg = "[%s] %s" % (code, msg)
-    Exception.__init__(self, msg)
+    """4xx client exceptions"""
+    def __init__(self, code, msg=None):
+        self.code = code
+        msg = "[%s] %s" % (code, msg)
+        Exception.__init__(self, msg)
+
 
 class BadRequest(ClientError):
-  """400 Forbidden"""
-  def __init__(self, msg=None):
-    ClientError.__init__(self,400, msg)
+    """400 Forbidden"""
+    def __init__(self, msg=None):
+        ClientError.__init__(self, 400, msg)
+
 
 class Unauthorized(ClientError):
-  """401 Unauthorized"""
-  def __init__(self, msg=None):
-    ClientError.__init__(self,401, msg)
+    """401 Unauthorized"""
+    def __init__(self, msg=None):
+        ClientError.__init__(self, 401, msg)
+
 
 class Forbidden(ClientError):
-  """403 Forbidden"""
-  def __init__(self, msg=None):
-    ClientError.__init__(self,403, msg)
+    """403 Forbidden"""
+    def __init__(self, msg=None):
+        ClientError.__init__(self, 403, msg)
+
 
 class NotFound(ClientError):
-  """404 Forbidden"""
-  def __init__(self, msg=None):
-    ClientError.__init__(self,404, msg)
+    """404 Forbidden"""
+    def __init__(self, msg=None):
+        ClientError.__init__(self, 404, msg)
 
 CODES = {
-  400: BadRequest,
-  401: Unauthorized,
-  403: Forbidden,
-  404: NotFound
+    400: BadRequest,
+    401: Unauthorized,
+    403: Forbidden,
+    404: NotFound
 }
 
 
 # http://dev.librato.com/v1/responses-errors
 def get(code, resp_data):
-  if resp_data:
-    msg = ""
-    for key in resp_data['errors']:
-      for v in resp_data['errors'][key]:
-        # The API reports errors in a the JSON format which makes it easier to
-        # parse and evaluate them. As of now, there are two kinds of errors:
-        # params and request.
-        if isinstance(v, unicode): # request type
-          msg += "%s: %s\n" % (key, v)
-        else: # params type
-          for m in resp_data['errors'][key][v]:
-            msg += "%s: %s %s\n" % (key, v, m)
-  if code in CODES:
-    return CODES[code](msg)
-  else:
-    return ClientError(code, msg)
+    if resp_data:
+        msg = ""
+        for key in resp_data['errors']:
+            for v in resp_data['errors'][key]:
+                # The API reports errors in a the JSON format which makes it easier to
+                # parse and evaluate them. As of now, there are two kinds of errors:
+                # params and request.
+                if isinstance(v, unicode):  # request type
+                    msg += "%s: %s\n" % (key, v)
+                else:  # params type
+                    for m in resp_data['errors'][key][v]:
+                        msg += "%s: %s %s\n" % (key, v, m)
+    if code in CODES:
+        return CODES[code](msg)
+    else:
+        return ClientError(code, msg)
