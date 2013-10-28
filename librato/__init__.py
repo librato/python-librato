@@ -75,7 +75,7 @@ class LibratoConnection(object):
             self.username = username.encode('ascii')
             self.api_key = api_key.encode('ascii')
         except:
-            raise("Librato only supports ascii for the credentials")
+            raise TypeError("Librato only supports ascii for the credentials")
 
         self.hostname = hostname
         self.base_path = base_path
