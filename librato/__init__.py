@@ -22,7 +22,7 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-__version__ = "0.4.8"
+__version__ = "0.4.9"
 
 # Defaults
 HOSTNAME = "metrics-api.librato.com"
@@ -203,7 +203,6 @@ class LibratoConnection(object):
     #
     # Dashboards!
     #
-
     def list_dashboards(self, **query_props):
         """List all dashboards"""
         resp = self._mexe("dashboards", query_props=query_props)
