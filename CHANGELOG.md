@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.9
+* Adding dashboard and instrument support. Thanks @sargun.
+
 ### Version 0.4.8
 * More explicit exception if user provides non-ascii data for the credentials.
 
