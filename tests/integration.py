@@ -25,8 +25,8 @@ import time
 import librato
 import os
 from random import randint
+import time
 logging.basicConfig(level=logging.INFO)
-
 
 class TestLibratoBasic(object):
     @classmethod
@@ -47,6 +47,7 @@ class TestLibratoBasic(object):
         assert gauge.description == desc
         # Clean up gague
         self.conn.delete(name)
+        time.sleep(2)
         # Make sure it's not there anymore
         try:
             gauge = self.conn.get(name)
@@ -119,7 +120,28 @@ class TestLibratoBasic(object):
 
         self.conn.delete(name)
 
+    def test_instruments(self):
+        _c = self.conn
+
+        _c.submit("server_temp", value="23", source="app1")
+        _c.submit("environmental_temp", value="18", source="rack1")
+
+        _c.create_instrument("Server Temperature",
+            streams = [
+                        { "metric": "server_temp", "source":"app1" },
+                        { "metric": "environmental_temp", "source":"rack1" }
+                      ],
+            attributes = { "display_integral": True} )
+
+
+        """
+        dbs = _c.list_dashboards()
+        assert len(dbs) > 0
+
+        _c.create_dashboard("foo_", instruments = [ { "id": 1 }, { "id": 2 } ] )
+        """
+
 if __name__ == '__main__':
-        # TO run a specific test:
-        # $ nosetests tests/integration.py:TestLibratoBasic.test_update_metrics_attributes
+    # TO run a specific test:
+    # $ nosetests tests/integration.py:TestLibratoBasic.test_update_metrics_attributes
     nose.runmodule()

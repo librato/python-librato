@@ -203,7 +203,6 @@ class LibratoConnection(object):
     #
     # Dashboards!
     #
-
     def list_dashboards(self, **query_props):
         """List all dashboards"""
         resp = self._mexe("dashboards", query_props=query_props)
