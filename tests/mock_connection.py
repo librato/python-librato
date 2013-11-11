@@ -10,7 +10,9 @@ class MockServer(object):
         self.clean()
 
     def clean(self):
-        self.metrics = {'gauges': OrderedDict(), 'counters': OrderedDict()}
+        self.metrics     = {'gauges': OrderedDict(), 'counters': OrderedDict()}
+        self.instruments = OrderedDict()
+        self.last_i_id   = 1
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
@@ -20,10 +22,13 @@ class MockServer(object):
             answer['metrics'].append(c)
         return json.dumps(answer).encode('utf-8')
 
-    def create_metric(self, payload):
-        """ Check 3) in POST /metrics for payload example """
-        #metric_type = self.find_type_of_metric(payload)[0:-1]
+    def list_of_instruments(self):
+        answer = {}
+        answer["query"] = {}
+        answer["instruments"] = [v for k.v in self.instruments.items()]
+        return json.dumps(answer).encode('utf-8')
 
+    def create_metric(self, payload):
         for metric_type in ['gauge', 'counter']:
             for metric in payload[metric_type + 's']:
                 name = metric['name']
@@ -47,6 +52,12 @@ class MockServer(object):
                     p_to_metric['measurements'][source].append({"value": value})
 
         return ''
+
+    def create_instrument(self, payload):
+        self.last_i_id += 1
+        payload["id"] = self.last_i_id
+        self.instruments[self.last_i_id] = payload
+        return json.dumps(payload).encode('utf-8')
 
     def get_metric(self, name, payload):
         gauges = self.metrics['gauges']
@@ -127,6 +138,12 @@ class MockResponse(object):
             return server.delete_metric(r.body)
         elif self._req_is_get_metric():
             return server.get_metric(self._extract_from_url(), r.body)
+
+        elif self._req_is_list_of_instruments():
+            return server.list_of_instruments()
+        elif self._req_is_create_instrument():
+            return server.create_instrument(r.body)
+
         else:
             msg = """
       ----
@@ -139,8 +156,14 @@ class MockResponse(object):
     def _req_is_list_of_metrics(self):
         return self._method_is('GET') and self._path_is('/v1/metrics')
 
+    def _req_is_list_of_instruments(self):
+        return self._method_is('GET') and self._path_is('/v1/instruments')
+
     def _req_is_create_metric(self):
         return self._method_is('POST') and self._path_is('/v1/metrics')
+
+    def _req_is_create_instrument(self):
+        return self._method_is('POST') and self._path_is('/v1/instruments')
 
     def _req_is_delete(self):
         return self._method_is('DELETE')
