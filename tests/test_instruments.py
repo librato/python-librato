@@ -17,8 +17,11 @@ class TestLibrato(unittest.TestCase):
         assert len(ins) == 0
 
     def test_adding_a_new_instrument_without_streams(self):
-        ins = self.conn.create_instrument("my_INST")
-        assert 1 == 1
+        name = "my_INST"
+        ins = self.conn.create_instrument(name)
+        assert type(ins) == librato.Instrument
+        assert ins.name == name
+        assert len(ins.streams) == 0
 
 if __name__ == '__main__':
     unittest.main()
