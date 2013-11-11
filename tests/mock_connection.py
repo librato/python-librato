@@ -103,7 +103,7 @@ server = MockServer()
 class MockResponse(object):
     '''
     Inspect the request and interact with the mocked server to generate
-    and answer.
+    an answer.
     '''
     def __init__(self, request, fake_failure=False):
         self.request = request

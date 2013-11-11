@@ -7,7 +7,6 @@ logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
-
 class TestLibrato(unittest.TestCase):
     def setUp(self):
         self.conn = librato.connect('user_test', 'key_test')
