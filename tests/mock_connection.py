@@ -10,7 +10,9 @@ class MockServer(object):
         self.clean()
 
     def clean(self):
-        self.metrics = {'gauges': OrderedDict(), 'counters': OrderedDict()}
+        self.metrics     = {'gauges': OrderedDict(), 'counters': OrderedDict()}
+        self.instruments = OrderedDict()
+        self.last_i_id   = 0
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
@@ -21,9 +23,6 @@ class MockServer(object):
         return json.dumps(answer).encode('utf-8')
 
     def create_metric(self, payload):
-        """ Check 3) in POST /metrics for payload example """
-        #metric_type = self.find_type_of_metric(payload)[0:-1]
-
         for metric_type in ['gauge', 'counter']:
             for metric in payload[metric_type + 's']:
                 name = metric['name']
@@ -47,6 +46,48 @@ class MockServer(object):
                     p_to_metric['measurements'][source].append({"value": value})
 
         return ''
+
+    def list_of_instruments(self):
+        answer = {}
+        answer["query"] = {}
+        answer["instruments"] = []
+        ins = answer["instruments"]
+        for _id, c_ins in self.instruments.items():
+            c_ins["id"] = _id
+            ins.append(c_ins)
+        return json.dumps(answer).encode('utf-8')
+
+    def create_instrument(self, payload):
+        self.last_i_id += 1
+        payload["id"] = self.last_i_id
+        self.instruments[self.last_i_id] = payload
+        return json.dumps(payload).encode('utf-8')
+
+    def update_instrument(self, payload, uri):
+        _id = None
+        m = re.search('\/(\d+)$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.instruments:
+            # TODO: return 400
+            raise Exception("Trying to update instrument that doesn't exists %d", _id)
+        else:
+            self.instruments[int(_id)] = payload
+            self.instruments[int(_id)]["id"] = int(_id)
+        return ''
+
+    def get_instrument(self, uri):
+        _id = None
+        m = re.search('\/(\d+)$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.instruments:
+            # TODO: return 400
+            raise Exception("Trying to get instrument that doesn't exists %d", _id)
+        else:
+            return json.dumps(self.instruments[int(_id)]).encode('utf-8')
 
     def get_metric(self, name, payload):
         gauges = self.metrics['gauges']
@@ -103,7 +144,7 @@ server = MockServer()
 class MockResponse(object):
     '''
     Inspect the request and interact with the mocked server to generate
-    and answer.
+    an answer.
     '''
     def __init__(self, request, fake_failure=False):
         self.request = request
@@ -127,6 +168,16 @@ class MockResponse(object):
             return server.delete_metric(r.body)
         elif self._req_is_get_metric():
             return server.get_metric(self._extract_from_url(), r.body)
+
+        elif self._req_is_list_of_instruments():
+            return server.list_of_instruments()
+        elif self._req_is_create_instrument():
+            return server.create_instrument(r.body)
+        elif self._req_is_update_instrument():
+            return server.update_instrument(r.body, r.uri)
+        elif self._req_is_get_instrument():
+            return server.get_instrument(r.uri)
+
         else:
             msg = """
       ----
@@ -150,6 +201,22 @@ class MockResponse(object):
 
     def _req_is_send_value(self, what):
         return self._method_is('POST') and re.match('/v1/%s/([\w_]+).json' % what, self.request.uri)
+
+    # Instruments
+    def _req_is_create_instrument(self):
+        return self._method_is('POST') and self._path_is('/v1/instruments')
+
+    def _req_is_list_of_instruments(self):
+        return self._method_is('GET') and self._path_is('/v1/instruments')
+
+    def _req_is_update_instrument(self):
+        return self._method_is('PUT') and re.match('/v1/instruments/\d+', self.request.uri)
+
+    def _req_is_get_instrument(self):
+        return self._method_is('GET') and re.match('/v1/instruments/\d+', self.request.uri)
+
+
+
 
     def _method_is(self, m):
         return self.request.method == m

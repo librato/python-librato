@@ -3,10 +3,9 @@ import unittest
 import librato
 from mock_connection import MockConnect, server
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
-
 
 class TestLibrato(unittest.TestCase):
     def setUp(self):
