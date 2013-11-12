@@ -10,7 +10,7 @@ targets:
 	@echo "make clean      : Clean garbage"
 
 utests:
-	python tests/test_basic.py
+	@for f in tests/test*.py; do python $$f; done
 
 integration:
 	python tests/integration.py

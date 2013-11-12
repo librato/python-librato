@@ -4,7 +4,7 @@ import librato
 from mock_connection import MockConnect, server
 from random import randint
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 librato.HTTPSConnection = MockConnect
 
 
