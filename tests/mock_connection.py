@@ -67,14 +67,27 @@ class MockServer(object):
         _id = None
         m = re.search('\/(\d+)$', uri)
         if m:
-          _id = m.group(1)
+            _id = m.group(1)
 
         if int(_id) not in self.instruments:
             # TODO: return 400
             raise Exception("Trying to update instrument that doesn't exists %d", _id)
         else:
-            self.instruments[_id] = payload
+            self.instruments[int(_id)] = payload
+            self.instruments[int(_id)]["id"] = int(_id)
         return ''
+
+    def get_instrument(self, uri):
+        _id = None
+        m = re.search('\/(\d+)$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.instruments:
+            # TODO: return 400
+            raise Exception("Trying to get instrument that doesn't exists %d", _id)
+        else:
+            return json.dumps(self.instruments[int(_id)]).encode('utf-8')
 
     def get_metric(self, name, payload):
         gauges = self.metrics['gauges']
@@ -162,6 +175,8 @@ class MockResponse(object):
             return server.create_instrument(r.body)
         elif self._req_is_update_instrument():
             return server.update_instrument(r.body, r.uri)
+        elif self._req_is_get_instrument():
+            return server.get_instrument(r.uri)
 
         else:
             msg = """
@@ -196,6 +211,11 @@ class MockResponse(object):
 
     def _req_is_update_instrument(self):
         return self._method_is('PUT') and re.match('/v1/instruments/\d+', self.request.uri)
+
+    def _req_is_get_instrument(self):
+        return self._method_is('GET') and re.match('/v1/instruments/\d+', self.request.uri)
+
+
 
 
     def _method_is(self, m):

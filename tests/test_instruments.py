@@ -7,6 +7,7 @@ from mock_connection import MockConnect, server
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
+
 class TestLibrato(unittest.TestCase):
     def setUp(self):
         self.conn = librato.connect('user_test', 'key_test')
@@ -34,12 +35,26 @@ class TestLibrato(unittest.TestCase):
         self.conn.submit('a_gauge', 12, description='the desc for a gauge')
         ins.new_stream('a_gauge')
         self.conn.update_instrument(ins)
-        list_ins = self.conn.list_instruments()
+        #list_ins = self.conn.list_instruments()
         assert ins.name == name
         assert len(ins.streams) == 1
         assert ins.id == 1
         assert ins.streams[0].metric == "a_gauge"
 
+    def test_get_instrument(self):
+        name = "my_INST_with_STREAMS"
+        ins = self.conn.create_instrument(name)
+
+        self.conn.submit('a_gauge', 12, description='the desc for a gauge')
+        ins.new_stream('a_gauge')
+        self.conn.update_instrument(ins)
+
+        si = self.conn.get_instrument(ins.id)  # si ; same instrument
+        assert type(si) == librato.Instrument
+        assert si.name == name
+        assert len(si.streams) == 1
+        assert si.id == 1
+        assert si.streams[0].metric == "a_gauge"
 
 if __name__ == '__main__':
     unittest.main()
