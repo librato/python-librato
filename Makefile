@@ -16,10 +16,8 @@ integration:
 	python tests/integration.py
 
 coverage:
-	coverage run tests/test_basic.py
-	coverage html
-	coverage report -m
-	@echo ">> open htmlcov/index.html"
+	nosetests --cover-package=librato --cover-erase --cover-html --with-coverage
+	@echo ">> open "file:///"`pwd`/cover/index.html"
 
 tox:
 	tox
@@ -29,4 +27,4 @@ publish:
 
 clean:
 	find . -name "*.pyc" | xargs rm -f
-	rm -rf tests/__pycache__ librato_metrics.egg-info htmlcov .coverage dist
+	rm -rf tests/__pycache__ librato_metrics.egg-info htmlcov .coverage dist cover
