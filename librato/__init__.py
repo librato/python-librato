@@ -208,9 +208,10 @@ class LibratoConnection(object):
         resp = self._mexe("dashboards", query_props=query_props)
         return self._parse(resp, "dashboards", Dashboard)
 
-    def get_dashboard(self, **query_props):
+    def get_dashboard(self, id, **query_props):
         """Get specific dashboard by ID"""
-        resp = self._mexe("dashboards/%s" % id, method="GET", query_props=query_props)
+        resp = self._mexe("dashboards/%s" % id,
+                          method="GET", query_props=query_props)
         return Dashboard.from_dict(self, resp)
 
     def update_dashboard(self, dashboard, **query_props):
@@ -218,7 +219,8 @@ class LibratoConnection(object):
         payload = dashboard.get_payload()
         for k, v in query_props.items():
             payload[k] = v
-        resp = self._mexe("dashboards/%s" % dashboard.id, method="PUT", query_props=payload)
+        resp = self._mexe("dashboards/%s" % dashboard.id,
+                          method="PUT", query_props=payload)
         return resp
 
     def create_dashboard(self, name, **query_props):

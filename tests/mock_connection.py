@@ -12,6 +12,7 @@ class MockServer(object):
         self.instruments = OrderedDict()
         self.dashboards = OrderedDict()
         self.last_i_id = 0
+        self.last_db_id = 0
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
@@ -99,6 +100,40 @@ class MockServer(object):
             c_dbs["id"] = _id
             dbs.append(c_dbs)
         return json.dumps(answer).encode('utf-8')
+
+    def create_dashboard(self, payload):
+        self.last_db_id += 1
+        payload["id"] = self.last_i_id
+        self.dashboards[self.last_i_id] = payload
+        return json.dumps(payload).encode('utf-8')
+
+    def get_dashboard(self, uri):
+        _id = None
+        m = re.search('\/(\d+)$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.dashboards:
+            # TODO: return 400
+            raise Exception("Trying to get dashboard that doesn't " +
+                            " exists %d", _id)
+        else:
+            return json.dumps(self.dashboards[int(_id)]).encode('utf-8')
+
+    def update_dashboard(self, payload, uri):
+        _id = None
+        m = re.search('\/(\d+)$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.dashboards:
+            # TODO: return 400
+            raise Exception("Trying to update dashboard that doesn't " +
+                            "exists %d", _id)
+        else:
+            self.dashboards[int(_id)] = payload
+            self.dashboards[int(_id)]["id"] = int(_id)
+        return ''
 
     def get_metric(self, name, payload):
         gauges = self.metrics['gauges']
@@ -192,6 +227,12 @@ class MockResponse(object):
 
         elif self._req_is_list_of_dashboards():
             return server.list_of_dashboards()
+        elif self._req_is_create_dashboard():
+            return server.create_dashboard(r.body)
+        elif self._req_is_get_dashboard():
+            return server.get_dashboard(r.uri)
+        elif self._req_is_update_dashboard():
+            return server.update_dashboard(r.body, r.uri)
 
         else:
             msg = """
@@ -235,8 +276,19 @@ class MockResponse(object):
                 re.match('/v1/instruments/\d+', self.request.uri))
 
     # dashboards
+    def _req_is_create_dashboard(self):
+        return self._method_is('POST') and self._path_is('/v1/dashboards')
+
     def _req_is_list_of_dashboards(self):
         return self._method_is('GET') and self._path_is('/v1/dashboards')
+
+    def _req_is_get_dashboard(self):
+        return (self._method_is('GET') and
+                re.match('/v1/dashboards/\d+', self.request.uri))
+
+    def _req_is_update_dashboard(self):
+        return (self._method_is('PUT') and
+                re.match('/v1/dashboards/\d+', self.request.uri))
 
     def _method_is(self, m):
         return self.request.method == m
