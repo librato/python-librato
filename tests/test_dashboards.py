@@ -13,7 +13,9 @@ class TestLibratoDashboard(unittest.TestCase):
         self.conn = librato.connect('user_test', 'key_test')
         server.clean()
 
-    def test_list_instruments_when_none(self):
-        ins = self.conn.list_instruments()
+    def test_list_when_none(self):
+        ins = self.conn.list_dashboards()
         assert len(ins) == 0
 
+if __name__ == '__main__':
+    unittest.main()
