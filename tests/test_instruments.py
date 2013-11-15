@@ -8,7 +8,7 @@ from mock_connection import MockConnect, server
 librato.HTTPSConnection = MockConnect
 
 
-class TestLibrato(unittest.TestCase):
+class TestLibratoInstruments(unittest.TestCase):
     def setUp(self):
         self.conn = librato.connect('user_test', 'key_test')
         server.clean()
