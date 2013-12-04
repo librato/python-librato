@@ -27,13 +27,14 @@
 class Metric(object):
     """Librato Metric Base class"""
 
-    def __init__(self, connection, name, attributes=None, period=None, description=None):
+    def __init__(self, connection, name, attributes=None, period=None, description=None ):
         self.connection = connection
         self.name = name
         self.attributes = attributes or {}
         self.period = period
         self.description = description
         self.measurements = {}
+        self.query = {}
 
     def __getitem__(self, name):
         return self.attributes[name]
@@ -55,6 +56,7 @@ class Metric(object):
         obj.attributes = data['attributes']
         obj.description = data['description'] if 'description' in data else None
         obj.measurements = data['measurements'] if 'measurements' in data else {}
+        obj.query = data['query'] if 'query' in data else {}
 
         return obj
 
