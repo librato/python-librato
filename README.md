@@ -138,40 +138,45 @@ for metric in api.list_metrics():
 
 List Annotation all annotation streams: 
 
-```for stream in api.list_annotation_streams
- print "%s:%s" % (stream.name,stream.display_name)
+```
+for stream in api.list_annotation_streams
+print "%s:%s" % (stream.name,stream.display_name)
 ```
 
 View the metadata on a named annotation stream: 
 
-```stream=api.get_annotation_stream("api.pushes")
+```
+stream=api.get_annotation_stream("api.pushes")
 print stream
 ```
 
 Retrieve all of the events inside a named annotation stream, by adding a
 start_time parameter to the get_annotation_stream() call: 
 
-```stream=api.get_annotation_stream("api.pushes",start_time="1386050400")
-for source in stream.events:                                                                               
-   print source                                                                                          
-   events=stream.events[source]                                                                            
-   for event in events:                                                                                  
-      print event['id']                                                                                  
-      print event['title']
-      print event['description']
+```
+stream=api.get_annotation_stream("api.pushes",start_time="1386050400")
+for source in stream.events:
+	print source
+	events=stream.events[source]
+	for event in events:
+		print event['id']
+		print event['title']
+		print event['description']
 ```
 
 Submit a new annotation to a named annotation stream (creates the stream if it
 doesn't exist). Title is a required parameter, and all other parameters are optional
 
-```api.post_annotation("testing",title="foobarbiz")
+```
+api.post_annotation("testing",title="foobarbiz")
 
 api.post_annotation("TravisCI",title="build %s"%travisBuildID, source=SystemSource, description="Application %s, Travis build %s"%(appName,travisBuildID))
 ```
 
 Delete a named annotation stream:
 
-```api.delete_annotation_stream("testing")
+```
+api.delete_annotation_stream("testing")
 ```
 
 ## Contribution
