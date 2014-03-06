@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.10
+* Adding annotation support.
+
 ### Version 0.4.9
 * Adding dashboard and instrument support. Thanks @sargun.
 

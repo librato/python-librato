@@ -44,3 +44,5 @@ class Annotation(object):
         obj.query = data['query'] if 'query' in data else {}
         return obj
 
+    def get_payload(self):                                                                  
+        return {'name': self.name,'display_name': self.display_name}
