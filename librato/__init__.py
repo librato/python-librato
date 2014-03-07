@@ -105,7 +105,7 @@ class LibratoConnection(object):
         uri = self.base_path + path
         body = None
         if query_props:
-            if method == "POST" or method == "DELETE" or method == "PUT":
+            if method == "POST" or method == "PUT":
                 body = json.dumps(query_props)
                 headers['Content-Type'] = "application/json"
             else:
@@ -196,9 +196,8 @@ class LibratoConnection(object):
     def update(self, name, **query_props):
         resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)
 
-    def delete(self, name):
-        payload = {'names': [name]}
-        return self._mexe("metrics", method="DELETE", query_props=payload)
+    def delete(self, name, **query_props):
+        return self._mexe("metrics/%s" % name, method="DELETE", query_props=query_props)
 
     #
     # Dashboards!
