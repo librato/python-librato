@@ -41,6 +41,7 @@ from librato.queue import Queue
 from librato.metrics import Gauge, Counter
 from librato.instruments import Instrument
 from librato.dashboards import Dashboard
+from librato.annotations import Annotation
 
 log = logging.getLogger("librato")
 
@@ -260,6 +261,24 @@ class LibratoConnection(object):
         resp = self._mexe("instruments", method="POST", query_props=payload)
         return Instrument.from_dict(self, resp)
 
+    #
+    # Annotations
+    #
+
+    def list_annotation_streams(self, **query_props):
+        """List all annotation streams"""
+        resp = self._mexe("annotations", query_props=query_props)
+        return self._parse(resp, "annotations", Annotation)
+
+    def get_annotation_stream(self, name, **query_props):
+        """Get specific annotation by ID"""
+        resp = self._mexe("annotations/%s" % name, method="GET", query_props=query_props)
+        return Annotation.from_dict(self, resp)
+
+    def get_annotation(self, name, id, **query_props):
+        """Get specific annotation by ID"""
+        resp = self._mexe("annotations/%s/%s" % id, method="GET", query_props=query_props)
+        return Annotation.from_dict(self, resp)
     #
     # Queue
     #
