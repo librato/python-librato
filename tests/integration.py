@@ -39,37 +39,39 @@ class TestLibratoBasic(object):
     def test_list_metrics(self):
         metrics = self.conn.list_metrics()
 
-    def test_create_and_delete_gauge(self):
-        name, desc = 'Test', 'Test Gauge to be removed'
-        self.conn.submit(name, 10, description=desc)
-        gauge = self.conn.get(name)
-        assert gauge and gauge.name == name
-        assert gauge.description == desc
-        # Clean up gague
-        self.conn.delete(name)
+    def _add_and_verify_metric(self, name, value, desc, type='gauge'):
+        self.conn.submit(name, value, type=type, description=desc)
+        metric = self.conn.get(name)
+        assert metric and metric.name == name
+        assert metric.description == desc
+        return metric
+
+    def _delete_and_verify_metric(self, names):
+        self.conn.delete(names)
         time.sleep(2)
         # Make sure it's not there anymore
         try:
-            gauge = self.conn.get(name)
+            metric = self.conn.get(names)
         except:
-            gauge = None
-        assert(gauge is None)
+            metric = None
+        assert(metric is None)
+
+    def test_create_and_delete_gauge(self):
+        name, desc = 'Test', 'Test Gauge to be removed'
+        self._add_and_verify_metric(name, 10, desc)
+        self._delete_and_verify_metric(name)
 
     def test_create_and_delete_counter(self):
         name, desc = 'Test_counter', 'Test Counter to be removed'
-        self.conn.submit(name, 10, type='counter', description=desc)
-        counter = self.conn.get(name)
-        assert counter and counter.name == name
-        assert counter.description == desc
-        # Clean up gague
-        self.conn.delete(name)
-        # Make sure it's not there anymore
-        counter = None
-        try:
-            counter = self.conn.get_counter(name)
-        except:
-            counter = None
-        assert(counter is None)
+        self._add_and_verify_metric(name, 10, desc, type='counter')
+        self._delete_and_verify_metric(name)
+
+    def test_batch_delete(self):
+        name_one, desc_one = 'Test_one', 'Test gauge to be removed'
+        name_two, desc_two = 'Test_two', 'Test counter to be removed'
+        self._add_and_verify_metric(name_one, 10, desc_one)
+        self._add_and_verify_metric(name_two, 10, desc_two, type='counter')
+        self._delete_and_verify_metric([name_one, name_two])
 
     def test_save_gauge_metrics(self):
         name, desc = 'Test', 'Test Counter to be removed'
