@@ -144,19 +144,16 @@ class MockServer(object):
             metric = counters[name]
         return json.dumps(metric).encode('utf-8')
 
-    def delete_metric(self, payload):
+    def delete_metric(self, name, payload):
+        if not name:
+            raise Exception('Tried to DELETE a metric without providing '
+                            'a name')
         gauges = self.metrics['gauges']
         counters = self.metrics['counters']
-        if 'names' in payload:
-            for rm_name in payload['names']:
-                if rm_name in gauges:
-                    del gauges[rm_name]
-                if rm_name in counters:
-                    del counters[rm_name]
-        else:
-            raise Exception('Trying to DELETE metric without providing ' +
-                            'array of names')
-        return ''
+        if name in gauges:
+            del gauges[name]
+        if name in counters:
+            del counters[name]
 
     def __an_empty_list_metrics(self):
         answer = {}
@@ -212,7 +209,7 @@ class MockResponse(object):
         elif self._req_is_create_metric():
             return server.create_metric(r.body)
         elif self._req_is_delete():
-            return server.delete_metric(r.body)
+            return server.delete_metric(self._extract_from_url(), r.body)
         elif self._req_is_get_metric():
             return server.get_metric(self._extract_from_url(), r.body)
 
