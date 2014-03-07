@@ -196,8 +196,8 @@ class LibratoConnection(object):
     def update(self, name, **query_props):
         resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)
 
-    def delete(self, name):
-        return self._mexe("metrics/%s" % name, method="DELETE", query_props={})
+    def delete(self, name, **query_props):
+        return self._mexe("metrics/%s" % name, method="DELETE", query_props=query_props)
 
     #
     # Dashboards!
