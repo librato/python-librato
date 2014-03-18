@@ -32,6 +32,7 @@ import platform
 import time
 import logging
 from six.moves import http_client
+from six import string_types
 import urllib
 import base64
 import json
@@ -196,9 +197,13 @@ class LibratoConnection(object):
     def update(self, name, **query_props):
         resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)
 
-    def delete(self, name):
-        payload = {'names': [name]}
-        return self._mexe("metrics", method="DELETE", query_props=payload)
+    def delete(self, names):
+        path = "metrics/%s" % names
+        payload = {}
+        if not isinstance(names, string_types):
+            payload = {'names': names}
+            path = "metrics"
+        return self._mexe(path, method="DELETE", query_props=payload)
 
     #
     # Dashboards!

@@ -144,18 +144,22 @@ class MockServer(object):
             metric = counters[name]
         return json.dumps(metric).encode('utf-8')
 
-    def delete_metric(self, payload):
+    def delete_metric(self, name, payload):
         gauges = self.metrics['gauges']
         counters = self.metrics['counters']
-        if 'names' in payload:
-            for rm_name in payload['names']:
-                if rm_name in gauges:
-                    del gauges[rm_name]
-                if rm_name in counters:
-                    del counters[rm_name]
-        else:
-            raise Exception('Trying to DELETE metric without providing ' +
-                            'array of names')
+        if not payload:
+            payload = {}
+        if 'names' not in payload:
+            if name:
+                payload['names'] = [name]
+            else:
+                raise Exception('Trying to DELETE metric without providing ' +
+                                'a name or list of names')
+        for rm_name in payload['names']:
+            if rm_name in gauges:
+                del gauges[rm_name]
+            if rm_name in counters:
+                del counters[rm_name]
         return ''
 
     def __an_empty_list_metrics(self):
@@ -212,7 +216,12 @@ class MockResponse(object):
         elif self._req_is_create_metric():
             return server.create_metric(r.body)
         elif self._req_is_delete():
-            return server.delete_metric(r.body)
+            #check for single delete. Batches don't include name in the url
+            try:
+                name = self._extract_from_url()
+            except AttributeError:
+                name = None
+            return server.delete_metric(name, r.body)
         elif self._req_is_get_metric():
             return server.get_metric(self._extract_from_url(), r.body)
 

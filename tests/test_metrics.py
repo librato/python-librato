@@ -67,6 +67,13 @@ class TestLibrato(unittest.TestCase):
         self.conn.delete('test')
         assert len(self.conn.list_metrics()) == 0
 
+    def test_deleting_a_batch_of_gauges(self):
+        self.conn.submit('test', 100)
+        self.conn.submit('test2', 100)
+        assert len(self.conn.list_metrics()) == 2
+        self.conn.delete(['test', 'test2'])
+        assert len(self.conn.list_metrics()) == 0
+
     def test_deleting_a_counter(self):
         self.conn.submit('test', 200, type='counter')
         assert len(self.conn.list_metrics()) == 1
