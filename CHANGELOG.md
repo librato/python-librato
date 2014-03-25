@@ -1,5 +1,9 @@
 ## Changelog
 
+### Version 0.4.10
+* Separate deleting a single metric from deleting a batch of metrics.
+  Thanks @Bachmann1234.
+
 ### Version 0.4.9
 * Adding dashboard and instrument support. Thanks @sargun.
 
