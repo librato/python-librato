@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.11
+* Preliminary support for Annotations (retrieve only).
+
 ### Version 0.4.10
 * Separate deleting a single metric from deleting a batch of metrics.
   Thanks @Bachmann1234.
