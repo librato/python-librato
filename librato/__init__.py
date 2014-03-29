@@ -3,9 +3,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
+#     * Redistributions of source code must retain the above copyright #       notice, this list of conditions and the following disclaimer.  #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of Librato, Inc. nor the names of project contributors
@@ -42,6 +40,7 @@ from librato.queue import Queue
 from librato.metrics import Gauge, Counter
 from librato.instruments import Instrument
 from librato.dashboards import Dashboard
+from librato.annotations import Annotation
 
 log = logging.getLogger("librato")
 
@@ -121,6 +120,7 @@ class LibratoConnection(object):
         """ Process the response from the server """
         success = True
         resp_data = None
+        #print resp.read()
         not_a_server_error = resp.status < 500
 
         if not_a_server_error:
@@ -264,6 +264,44 @@ class LibratoConnection(object):
             payload[k] = v
         resp = self._mexe("instruments", method="POST", query_props=payload)
         return Instrument.from_dict(self, resp)
+
+    #
+    # Annotations
+    #
+
+    def list_annotation_streams(self, **query_props):
+        """List all annotation streams"""
+        resp = self._mexe("annotations", query_props=query_props)
+        return self._parse(resp, "annotations", Annotation)
+
+    def get_annotation_stream(self, name, **query_props):
+        """Get an annotation stream (add start_date to query props for events)"""
+        resp = self._mexe("annotations/%s" % name, method="GET", query_props=query_props)
+        return Annotation.from_dict(self, resp)
+
+    def get_annotation(self, name, id, **query_props):
+        """Get a specific annotation event by ID"""
+        resp = self._mexe("annotations/%s/%s" % (name,id), method="GET", query_props=query_props)
+        return Annotation.from_dict(self, resp)
+
+    def update_annotation_stream(self, name, **query_props):
+        """Update an annotation streams metadata"""
+        payload = Annotation(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("annotations/%s" % name, method="PUT", query_props=payload)
+        return Annotation.from_dict(self, resp)
+
+    def post_annotation(self, name, **query_props):
+        """Create an annotation event on :name. 
+		  If the annotation stream does not exist, it will be created automatically."""
+        resp = self._mexe("annotations/%s" % name, method="POST", query_props=query_props)
+        return resp
+
+    def delete_annotation_stream(self, name, **query_props):
+        """delete an annotation stream """
+        resp = self._mexe("annotations/%s" % name, method="DELETE", query_props=query_props)
+        return resp
 
     #
     # Queue
