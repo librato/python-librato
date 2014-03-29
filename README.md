@@ -136,24 +136,24 @@ for metric in api.list_metrics():
 
 ## Annotations
 
-List Annotation all annotation streams: 
+List Annotation all annotation streams:
 
-```
+```python
 for stream in api.list_annotation_streams
 print "%s:%s" % (stream.name,stream.display_name)
 ```
 
-View the metadata on a named annotation stream: 
+View the metadata on a named annotation stream:
 
-```
+```python
 stream=api.get_annotation_stream("api.pushes")
 print stream
 ```
 
 Retrieve all of the events inside a named annotation stream, by adding a
-start_time parameter to the get_annotation_stream() call: 
+start_time parameter to the get_annotation_stream() call:
 
-```
+```python
 stream=api.get_annotation_stream("api.pushes",start_time="1386050400")
 for source in stream.events:
 	print source
@@ -167,7 +167,7 @@ for source in stream.events:
 Submit a new annotation to a named annotation stream (creates the stream if it
 doesn't exist). Title is a required parameter, and all other parameters are optional
 
-```
+```python
 api.post_annotation("testing",title="foobarbiz")
 
 api.post_annotation("TravisCI",title="build %s"%travisBuildID, source=SystemSource, description="Application %s, Travis build %s"%(appName,travisBuildID))
@@ -175,7 +175,7 @@ api.post_annotation("TravisCI",title="build %s"%travisBuildID, source=SystemSour
 
 Delete a named annotation stream:
 
-```
+```python
 api.delete_annotation_stream("testing")
 ```
 
