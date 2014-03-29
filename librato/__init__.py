@@ -120,7 +120,6 @@ class LibratoConnection(object):
         """ Process the response from the server """
         success = True
         resp_data = None
-        #print resp.read()
         not_a_server_error = resp.status < 500
 
         if not_a_server_error:
@@ -268,7 +267,6 @@ class LibratoConnection(object):
     #
     # Annotations
     #
-
     def list_annotation_streams(self, **query_props):
         """List all annotation streams"""
         resp = self._mexe("annotations", query_props=query_props)
@@ -293,7 +291,7 @@ class LibratoConnection(object):
         return Annotation.from_dict(self, resp)
 
     def post_annotation(self, name, **query_props):
-        """Create an annotation event on :name. 
+        """Create an annotation event on :name.
 		  If the annotation stream does not exist, it will be created automatically."""
         resp = self._mexe("annotations/%s" % name, method="POST", query_props=query_props)
         return resp
