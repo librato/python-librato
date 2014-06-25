@@ -60,6 +60,12 @@ class Queue(object):
             self.connection._mexe("metrics", method="POST", query_props=c)
         self.chunks = [self._gen_empty_chunk()]
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.submit()
+
     # Private, sort of.
     #
     def _gen_empty_chunk(self):

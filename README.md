@@ -120,6 +120,20 @@ q.add('num_requests', 102, type='counter', source='server2')
 q.submit()
 ```
 
+Queues can also be used as context managers. Once the context block is complete the queue
+is submitted automatically. This is true even if an exception interrupts flow. In the 
+example below if ```potentially_dangerous_operation``` causes an exception the queue will
+submit the first measurement as it was the only one successfully added. 
+If the operation succeeds both measurements will be submitted.
+
+```python
+api = librato.connect(user, token
+with api.new_queue() as queue:
+    q.add('temperature', 22.1, source='upstairs')
+    potentially_dangerous_operation()
+    q.add('num_requests', 100, type='counter', source='server1')
+```
+
 ## Updating Metrics
 
 You can update the information for a metric by using the `update` method,

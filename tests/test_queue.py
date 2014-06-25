@@ -50,6 +50,17 @@ class TestLibratoQueue(unittest.TestCase):
         assert q._num_measurements_in_current_chunk() == 1
         assert len(q.chunks) == 2
 
+    def test_submit_context_manager(self):
+        try:
+            with self.conn.new_queue() as q:
+                q.add('temperature', 32)
+                raise ValueError
+        except ValueError:
+            gauge = self.conn.get('temperature', resolution=1, count=2)
+            assert gauge.name == 'temperature'
+            assert gauge.description is None
+            assert len(gauge.measurements['unassigned']) == 1
+
     def test_submit_one_measurement_batch_mode(self):
         q = self.q
         q.add('temperature', 22.1)
