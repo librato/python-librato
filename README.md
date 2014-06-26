@@ -127,7 +127,7 @@ submit the first measurement as it was the only one successfully added.
 If the operation succeeds both measurements will be submitted.
 
 ```python
-api = librato.connect(user, token
+api = librato.connect(user, token)
 with api.new_queue() as q:
     q.add('temperature', 22.1, source='upstairs')
     potentially_dangerous_operation()
