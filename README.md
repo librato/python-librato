@@ -128,7 +128,7 @@ If the operation succeeds both measurements will be submitted.
 
 ```python
 api = librato.connect(user, token
-with api.new_queue() as queue:
+with api.new_queue() as q:
     q.add('temperature', 22.1, source='upstairs')
     potentially_dangerous_operation()
     q.add('num_requests', 100, type='counter', source='server1')
