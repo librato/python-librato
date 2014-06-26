@@ -304,8 +304,8 @@ class LibratoConnection(object):
     #
     # Queue
     #
-    def new_queue(self):
-        return Queue(self)
+    def new_queue(self, **kwargs):
+        return Queue(self, **kwargs)
 
 
 def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):

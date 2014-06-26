@@ -39,6 +39,29 @@ class TestLibratoQueue(unittest.TestCase):
         assert len(q._current_chunk()['gauges']) == 0
         assert len(q._current_chunk()['counters']) == 1
 
+    def test_num_metrics_in_queue(self):
+        q = self.q
+        # With only one chunk
+        for _ in range(q.MAX_MEASUREMENTS_PER_CHUNK-10):
+            q.add('temperature', randint(20, 30))
+        assert q._num_measurements_in_queue() == 290
+        # Now ensure multiple chunks
+        for _ in range(100):
+            q.add('num_requests', randint(100, 300), type='counter')
+        assert q._num_measurements_in_queue() == 390
+
+    def test_auto_submit_on_metric_count(self):
+        q = self.conn.new_queue(auto_submit_count=10)
+        for _ in range(9):
+            q.add('temperature', randint(20, 30))
+        assert q._num_measurements_in_queue() == 9
+        metrics = self.conn.list_metrics()
+        assert len(metrics) == 0
+        q.add('temperature', randint(20, 30))
+        assert q._num_measurements_in_queue() == 0
+        metrics = self.conn.list_metrics()
+        assert len(metrics) == 1
+
     def test_reach_chunk_limit(self):
         q = self.q
         for i in range(1, q.MAX_MEASUREMENTS_PER_CHUNK+1):
