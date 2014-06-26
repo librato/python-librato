@@ -21,7 +21,6 @@
 
 import logging
 import nose
-import time
 import librato
 import os
 from random import randint
@@ -97,6 +96,9 @@ class TestLibratoBasic(object):
             q.add('temperature', randint(20, 30), source='downstairs', measure_time=time.time()+t)
         q.submit()
         self.conn.delete('temperature')
+
+    def test_submit_empty_queue(self):
+        self.conn.new_queue().submit()
 
     def test_send_batch_counter_measurements(self):
         q = self.conn.new_queue()
