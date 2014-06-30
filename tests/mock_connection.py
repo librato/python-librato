@@ -144,6 +144,17 @@ class MockServer(object):
             metric = counters[name]
         return json.dumps(metric).encode('utf-8')
 
+    def get_composite(self):
+        composite = {
+                'compose': 'something',
+                'measurements': [
+                      {
+                        'series': [{'value': 42, 'measure_time': 1403890800}]
+                      }
+                    ]
+                }
+        return json.dumps(composite).encode('utf-8')
+
     def delete_metric(self, name, payload):
         gauges = self.metrics['gauges']
         counters = self.metrics['counters']
@@ -224,7 +235,8 @@ class MockResponse(object):
             return server.delete_metric(name, r.body)
         elif self._req_is_get_metric():
             return server.get_metric(self._extract_from_url(), r.body)
-
+        elif self._req_is_get_composite():
+            return server.get_composite()
         elif self._req_is_list_of_instruments():
             return server.list_of_instruments()
         elif self._req_is_create_instrument():
@@ -264,6 +276,10 @@ class MockResponse(object):
     def _req_is_get_metric(self):
         return (self._method_is('GET') and
                 re.match('/v1/metrics/([\w_]+)', self.request.uri))
+
+    def _req_is_get_composite(self):
+        return (self._method_is('GET') and
+                re.match('/v1/metrics\?.*compose=.*', self.request.uri))
 
     def _req_is_send_value(self, what):
         return (self._method_is('POST') and

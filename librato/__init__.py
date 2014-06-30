@@ -185,13 +185,24 @@ class LibratoConnection(object):
         self._mexe("metrics", method="POST", query_props=payload)
 
     def get(self, name, **query_props):
-        resp = self._mexe("metrics/%s" % name, method="GET", query_props=query_props)
-        if resp['type'] == 'gauge':
-            return Gauge.from_dict(self, resp)
-        elif resp['type'] == 'counter':
-            return Gauge.from_dict(self, resp)
+        if 'compose' in query_props:
+            # Composite query
+            # Hit the /metrics API and ignore name to get composite result
+            resp = self._mexe("metrics", method="GET", query_props=query_props)
+            return resp
         else:
-            raise Exception('The server sent me something that is not a Gauge nor a Counter.')
+            resp = self._mexe("metrics/%s" % name, method="GET", query_props=query_props)
+            if resp['type'] == 'gauge':
+                return Gauge.from_dict(self, resp)
+            elif resp['type'] == 'counter':
+                return Gauge.from_dict(self, resp)
+            else:
+                raise Exception('The server sent me something that is not a Gauge nor a Counter.')
+
+    def get_composite(self, compose, **query_props):
+        query_props['compose'] = compose
+        # Pass in a blank name for now
+        return self.get('', **query_props)
 
     def update(self, name, **query_props):
         resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)

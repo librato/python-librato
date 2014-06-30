@@ -100,6 +100,12 @@ class TestLibrato(unittest.TestCase):
         assert len(counter.measurements['unassigned']) == 1
         assert counter.measurements['unassigned'][0]['value'] == 20
 
+    def test_get_composite_basic(self):
+        name = 'mygauge'
+        self.conn.submit(name, 10, description='this is a gauge')
+        composite = self.conn.get(name, compose='s("mygauge", "*"))')
+        self.assertIsInstance(composite, dict)
+
     def test_send_single_measurements_for_gauge_with_source(self):
         name, desc, src = 'Test', 'A Test Gauge.', 'from_source'
         self.conn.submit(name, 10, description=desc, source=src)
