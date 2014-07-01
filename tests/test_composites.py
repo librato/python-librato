@@ -37,25 +37,28 @@ class TestCompositeMetric(unittest.TestCase):
         c.load()
         s = c.series()
         self.assertIsInstance(s, list)
-        self.assertIn('value', s[0])
-        self.assertIn('measure_time', s[0])
+        self.assertIsInstance(s[0], list)
+        self.assertIn('value', s[0][0])
+        self.assertIn('measure_time', s[0][0])
         c.values()
 
     def test_values(self):
         c = CompositeMetric(self.conn, self.compose, 60, self.start_time)
         c.load()
         s = c.series()
-        first_value = s[0]['value']
+        first_value = s[0][0]['value']
         v = c.values()
         self.assertIsInstance(v, list)
-        self.assertIn(first_value, v)
+        self.assertIsInstance(v[0], list)
+        self.assertIn(first_value, v[0])
 
     def test_measure_times(self):
         c = CompositeMetric(self.conn, self.compose, 60, self.start_time)
         c.load()
         s = c.series()
-        first_measure_time= s[0]['measure_time']
+        first_measure_time= s[0][0]['measure_time']
         t = c.measure_times()
         self.assertIsInstance(t, list)
-        self.assertIn(first_measure_time, t)
+        self.assertIsInstance(t[0], list)
+        self.assertIn(first_measure_time, t[0])
 

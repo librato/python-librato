@@ -50,10 +50,14 @@ class CompositeMetric(object):
         return [m['source']['name'] for m in self.measurements if m['source']]
 
     def series(self):
-        return [m['series'] for m in self.measurements][0]
+        return [m['series'] for m in self.measurements]
 
     def measure_times(self):
-        return map(lambda m: m['measure_time'], self.series())
+        return self.extract_field_from_series('measure_time')
 
     def values(self):
-        return map(lambda m: m['value'], self.series())
+        return self.extract_field_from_series('value')
+
+    def extract_field_from_series(self, field):
+        return map(lambda row: map(lambda s: s[field], row), self.series())
+
