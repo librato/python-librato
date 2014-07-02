@@ -188,7 +188,9 @@ class LibratoConnection(object):
     def get(self, name, **query_props):
         if 'compose' in query_props:
             # Composite query
-            return CompositeMetric(self, **query_props).load()
+            comp = CompositeMetric(self, **query_props)
+            comp.load()
+            return comp
         else:
             resp = self._mexe("metrics/%s" % name, method="GET", query_props=query_props)
             if resp['type'] == 'gauge':
