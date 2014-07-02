@@ -38,6 +38,7 @@ import email.message
 from librato import exceptions
 from librato.queue import Queue
 from librato.metrics import Gauge, Counter
+from librato.composite_metrics import CompositeMetric
 from librato.instruments import Instrument
 from librato.dashboards import Dashboard
 from librato.annotations import Annotation
@@ -187,9 +188,7 @@ class LibratoConnection(object):
     def get(self, name, **query_props):
         if 'compose' in query_props:
             # Composite query
-            # Hit the /metrics API and ignore name to get composite result
-            resp = self._mexe("metrics", method="GET", query_props=query_props)
-            return resp
+            return CompositeMetric(self, **query_props).load()
         else:
             resp = self._mexe("metrics/%s" % name, method="GET", query_props=query_props)
             if resp['type'] == 'gauge':
@@ -202,7 +201,8 @@ class LibratoConnection(object):
     def get_composite(self, compose, **query_props):
         query_props['compose'] = compose
         # Pass in a blank name for now
-        return self.get('', **query_props)
+        #return self.get('', **query_props)
+        return self._mexe("metrics", method="GET", query_props=query_props)
 
     def update(self, name, **query_props):
         resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)

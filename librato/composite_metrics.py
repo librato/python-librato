@@ -24,40 +24,66 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class CompositeMetric(object):
-    def __init__(self, connection, compose, resolution, start_time, end_time=None):
+    def __init__(self, connection, **params):
         self.connection = connection
         self.measurements = {}
         self.query = {}
-        self.compose = compose
-        self.resolution = resolution
-        self.start_time = start_time
-        self.end_time = end_time
+        self.compose = params.get('compose')
+        self.resolution = params.get('resolution', 60)
+        self.start_time = params.get('start_time')
+        self.end_time = params.get('end_time')
 
+    def query_params(self):
+        params = {
+              'resolution': self.resolution,
+              'start_time': self.start_time
+              }
+        if self.end_time:
+            params['end_time'] = self.end_time
+        return params
+
+    # Return composite stream from client
     def get_composite(self):
         return self.connection.get_composite(
                 self.compose,
-                resolution=self.resolution,
-                start_time=self.start_time)
+                **self.query_params())
 
+    # Load composite stream and hydrate attributes
     def load(self):
         data = self.get_composite()
         self.measurements = data['measurements']
         self.query = data.get('query', {})
+        self.resolution = data.get('resolution')
         return data
 
-    # Override
-    def sources(self):
-        return [m['source']['name'] for m in self.measurements if m['source']]
+    def sources(self, unique=True):
+        result = [m['source']['name'] for m in self.measurements if m['source']]
+        if unique:
+            return sorted(set(result))
+        else:
+            return result
 
-    def series(self):
-        return [m['series'] for m in self.measurements]
+    def series(self, metric=None):
+        if metric:
+            return [m['series'] for m in self.measurements if m['metric']['name'] == metric]
+        else:
+            return [m['series'] for m in self.measurements]
 
-    def measure_times(self):
-        return self.extract_field_from_series('measure_time')
+    def metrics(self, unique=True):
+        result = [m['metric']['name'] for m in self.measurements if m['metric']]
+        if unique:
+            return sorted(set(result))
+        else:
+            return result
 
-    def values(self):
-        return self.extract_field_from_series('value')
+    def measure_times(self, metric=None):
+        return self.map_field_from_series('measure_time', metric)
 
-    def extract_field_from_series(self, field):
-        return map(lambda row: map(lambda s: s[field], row), self.series())
+    def values(self, metric=None):
+        return self.map_field_from_series('value', metric)
 
+    def map_field_from_series(self, field, metric=None):
+        return map(lambda row: map(lambda s: s[field], row), self.series(metric))
+
+    def next_time(self):
+        self.query['next_time']
