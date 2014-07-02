@@ -149,10 +149,43 @@ class MockServer(object):
                 'compose': 's("somemetric.*", "prod*")',
                 'measurements': [
                       {
-                        'series': [{'value': 42, 'measure_time': 1403890800}]
+                        'metric': {
+                            'name': 'somemetric.cpu',
+                            'type': 'gauge',
+                            'period': 60
+                        },
+                        'series': [
+                            {'value': 42, 'measure_time': 1403890800},
+                            {'value': 49, 'measure_time': 1403890860},
+                            {'value': 33, 'measure_time': 1403890920}
+                        ],
+                        'source': {
+                            'name': 'prod'
+                        },
+                        'period': 60
+                      },
+                      {
+                        'metric': {
+                            'name': 'somemetric.cpu',
+                            'type': 'gauge',
+                            'period': 60
+                        },
+                        'series': [
+                            {'value': 10, 'measure_time': 1403890800},
+                            {'value': 15, 'measure_time': 1403890860},
+                            {'value': 20, 'measure_time': 1403890920}
+                        ],
+                        'source': {
+                            'name': 'staging'
+                        },
+                        'period': 60
                       }
-                    ]
+                ],
+                'resolution': 60,
+                'query': {
+                    'next_time': None
                 }
+            }
         return json.dumps(composite).encode('utf-8')
 
     def delete_metric(self, name, payload):
