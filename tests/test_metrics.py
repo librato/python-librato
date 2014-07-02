@@ -1,6 +1,7 @@
 import logging
 import unittest
 import librato
+from librato.composite_metrics import CompositeMetric
 from mock_connection import MockConnect, server
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -104,7 +105,7 @@ class TestLibrato(unittest.TestCase):
         name = 'mygauge'
         self.conn.submit(name, 10, description='this is a gauge')
         composite = self.conn.get(name, compose='s("mygauge", "*"))')
-        self.assertIsInstance(composite, dict)
+        self.assertIsInstance(composite, CompositeMetric)
 
     def test_send_single_measurements_for_gauge_with_source(self):
         name, desc, src = 'Test', 'A Test Gauge.', 'from_source'

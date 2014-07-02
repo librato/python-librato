@@ -146,7 +146,7 @@ class MockServer(object):
 
     def get_composite(self):
         composite = {
-                'compose': 'something',
+                'compose': 's("somemetric.*", "prod*")',
                 'measurements': [
                       {
                         'series': [{'value': 42, 'measure_time': 1403890800}]
