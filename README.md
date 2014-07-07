@@ -127,11 +127,20 @@ submit the first measurement as it was the only one successfully added.
 If the operation succeeds both measurements will be submitted.
 
 ```python
-api = librato.connect(user, token
+api = librato.connect(user, token)
 with api.new_queue() as q:
     q.add('temperature', 22.1, source='upstairs')
     potentially_dangerous_operation()
     q.add('num_requests', 100, type='counter', source='server1')
+```
+
+Queues by default will collect metrics until they are told to submit. You may create a queue
+that autosubmits based on metric volume. 
+
+```python
+api = librato.connect(user, token)
+# Submit when the 400th metric is queued
+q = api.new_queue(auto_submit=400)
 ```
 
 ## Updating Metrics

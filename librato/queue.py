@@ -41,9 +41,10 @@ class Queue(object):
     """
     MAX_MEASUREMENTS_PER_CHUNK = 300  # based docs; on POST /metrics
 
-    def __init__(self, connection):
+    def __init__(self, connection, auto_submit_count=None):
         self.connection = connection
         self.chunks = [self._gen_empty_chunk()]
+        self.auto_submit_count = auto_submit_count
 
     def add(self, name, value, type='gauge', **query_props):
         nm = {}  # new measurement
@@ -54,6 +55,10 @@ class Queue(object):
             nm[pn] = v
 
         self._add_measurement(type, nm)
+
+        if (self.auto_submit_count and
+                self._num_measurements_in_queue() >= self.auto_submit_count):
+            self.submit()
 
     def submit(self):
         for c in self.chunks:
@@ -89,3 +94,7 @@ class Queue(object):
 
     def _current_chunk(self):
         return self.chunks[-1]
+
+    def _num_measurements_in_queue(self):
+        return (self._num_measurements_in_current_chunk() +
+                (self.MAX_MEASUREMENTS_PER_CHUNK * (len(self.chunks) - 1)))
