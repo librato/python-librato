@@ -61,9 +61,12 @@ class Queue(object):
             self.submit()
 
     def submit(self):
+        empty_chunks = [self._gen_empty_chunk()]
+        if self.chunks == empty_chunks:
+            return
         for c in self.chunks:
             self.connection._mexe("metrics", method="POST", query_props=c)
-        self.chunks = [self._gen_empty_chunk()]
+        self.chunks = empty_chunks
 
     def __enter__(self):
         return self
