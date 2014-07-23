@@ -62,21 +62,47 @@ CODES = {
     404: NotFound
 }
 
+# Parse error hash from the API
+class ErrorMessageParser(object):
+    # See http://dev.librato.com/v1/responses-errors
+    # Examples:
+    # {
+    #   "errors": {
+    #     "params": {
+    #       "name":["is not present"],
+    #       "start_time":["is not a number"]
+    #      }
+    #    }
+    #  }
+    #
+    #
+    # {
+    #   "errors": {
+    #     "request": [
+    #       "Please use secured connection through https!",
+    #       "Please provide credentials for authentication."
+    #     ]
+    #   }
+    # }
+
+    @classmethod
+    def parse(self, error_resp):
+        errors = error_resp['errors']
+        messages = []
+        for key in errors:
+            for v in errors[key]:
+                msg = "%s: %s" % (key, v)
+                if isinstance(errors[key], dict):
+                    msg += ": "
+                    # Join error messages with commas
+                    msg += ", ".join(errors[key][v])
+                messages.append(msg)
+        return ", ".join(messages)
 
 # http://dev.librato.com/v1/responses-errors
 def get(code, resp_data):
     if resp_data:
-        msg = ""
-        for key in resp_data['errors']:
-            for v in resp_data['errors'][key]:
-                # The API reports errors in a the JSON format which makes it easier to
-                # parse and evaluate them. As of now, there are two kinds of errors:
-                # params and request.
-                if isinstance(v, unicode):  # request type
-                    msg += "%s: %s\n" % (key, v)
-                else:  # params type
-                    for m in resp_data['errors'][key][v]:
-                        msg += "%s: %s %s\n" % (key, v, m)
+        msg = ErrorMessageParser.parse(resp_data)
     if code in CODES:
         return CODES[code](msg)
     else:
