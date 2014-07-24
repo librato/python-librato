@@ -2,53 +2,67 @@ import logging
 import unittest
 from librato import exceptions
 
-
-class TestErrorMessageParser(unittest.TestCase):
+class TestClientError(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_request_error(self):
+    def test_init(self):
+        ex = exceptions.ClientError(123, "Bad request etc")
+        self.assertIsInstance(ex, Exception)
+        self.assertEqual(123, ex.code)
+        # Sets message on Exception
+        self.assertEqual(ex.message, ex.error_message())
+
+    def test_parse_error_message_standard(self):
+        ex = exceptions.ClientError(400, "a standard message")
+        self.assertEqual("a standard message", ex._parse_error_message())
+
+    def test_parse_error_message_request(self):
         error_resp = {
           "errors": {
             "request": ["Not found"]
           }
         }
-        expected_msg = "request: Not found"
-        msg = exceptions.ErrorMessageParser.parse(error_resp)
-        self.assertEqual(expected_msg, msg)
+        ex = exceptions.ClientError(400, error_resp)
+        self.assertEqual("request: Not found", ex._parse_error_message())
 
-    def test_params_error(self):
+    def test_parse_error_message_params(self):
         error_resp = {
           "errors": {
             "params": {"measure_time": ["too far in past"]}
           }
         }
-        expected_msg = "params: measure_time: too far in past"
-        msg = exceptions.ErrorMessageParser.parse(error_resp)
-        self.assertEqual(expected_msg, msg)
+        ex = exceptions.ClientError(400, error_resp)
+        self.assertEqual("params: measure_time: too far in past", ex._parse_error_message())
 
-    def test_params_error_multi(self):
+    def test_parse_error_message_params(self):
         error_resp = {
           "errors": {
             "params": {"name": ["duplicate etc", "bad character etc"]}
           }
         }
-        expected_msg = "params: name: duplicate etc, bad character etc"
-        msg = exceptions.ErrorMessageParser.parse(error_resp)
-        self.assertEqual(expected_msg, msg)
+        ex = exceptions.ClientError(400, error_resp)
+        self.assertEqual("params: name: duplicate etc, bad character etc", ex._parse_error_message())
 
-    def test_multiple_params_error(self):
+    def test_parse_error_message_params_multiple(self):
         error_resp = {
           "errors": {
             "params": {
               "measure_time": ["too far in past"],
-              "name": ["is not present"]
+              "name": "mymetricname"
             }
           }
         }
-        msg = exceptions.ErrorMessageParser.parse(error_resp)
+        ex = exceptions.ClientError(400, error_resp)
+        msg = ex._parse_error_message()
         self.assertRegexpMatches(msg, "params: measure_time: too far in past")
-        self.assertRegexpMatches(msg, "params: name: is not present")
+        self.assertRegexpMatches(msg, "params: name: mymetricname")
+
+    def test_error_message(self):
+        ex = exceptions.ClientError(400, "Standard message")
+        self.assertEqual("[400] Standard message", ex.error_message())
+        ex = exceptions.ClientError(400, {"errors": {"request": ["Not found"]}})
+        self.assertEqual("[400] request: Not found", ex.error_message())
 
 
 if __name__ == '__main__':
