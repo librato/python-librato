@@ -11,7 +11,7 @@ class TestClientError(unittest.TestCase):
         self.assertIsInstance(ex, Exception)
         self.assertEqual(123, ex.code)
         # Sets message on Exception
-        self.assertEqual(ex.message, ex.error_message())
+        self.assertEqual(str(ex), ex.error_message())
 
     def test_parse_error_message_standard(self):
         ex = exceptions.ClientError(400, "a standard message")
