@@ -46,9 +46,9 @@ class TestErrorMessageParser(unittest.TestCase):
             }
           }
         }
-        expected_msg = "params: measure_time: too far in past, params: name: is not present"
         msg = exceptions.ErrorMessageParser.parse(error_resp)
-        self.assertEqual(expected_msg, msg)
+        self.assertRegexpMatches(msg, "params: measure_time: too far in past")
+        self.assertRegexpMatches(msg, "params: name: is not present")
 
 
 if __name__ == '__main__':
