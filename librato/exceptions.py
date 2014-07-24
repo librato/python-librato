@@ -55,7 +55,7 @@ class ClientError(Exception):
     #   }
     # }
     def _parse_error_message(self):
-        if isinstance(self.error_payload, str) or isinstance(self.error_payload, unicode):
+        if isinstance(self.error_payload, str):
             # Normal string
             return self.error_payload
         elif isinstance(self.error_payload, dict):
