@@ -83,7 +83,7 @@ class CompositeMetric(object):
         return self.map_field_from_series('value', metric)
 
     def map_field_from_series(self, field, metric=None):
-        return map(lambda row: map(lambda s: s[field], row), self.series(metric))
+        return [[m[field] for m in source] for source in self.series(metric)]
 
     def next_time(self):
         self.query['next_time']
