@@ -26,10 +26,54 @@
 
 class ClientError(Exception):
     """4xx client exceptions"""
-    def __init__(self, code, msg=None):
+    def __init__(self, code, error_payload=None):
         self.code = code
-        msg = "[%s] %s" % (code, msg)
-        Exception.__init__(self, msg)
+        self.error_payload = error_payload
+        Exception.__init__(self, self.error_message())
+
+    def error_message(self):
+        return "[%s] %s" % (self.code, self._parse_error_message())
+
+    # See http://dev.librato.com/v1/responses-errors
+    # Examples:
+    # {
+    #   "errors": {
+    #     "params": {
+    #       "name":["is not present"],
+    #       "start_time":["is not a number"]
+    #      }
+    #    }
+    #  }
+    #
+    #
+    # {
+    #   "errors": {
+    #     "request": [
+    #       "Please use secured connection through https!",
+    #       "Please provide credentials for authentication."
+    #     ]
+    #   }
+    # }
+    def _parse_error_message(self):
+        if isinstance(self.error_payload, str):
+            # Normal string
+            return self.error_payload
+        elif isinstance(self.error_payload, dict):
+            # Error hash
+            errors = self.error_payload['errors']
+            messages = []
+            for key in errors:
+                for v in errors[key]:
+                    msg = "%s: %s" % (key, v)
+                    if isinstance(errors[key], dict):
+                        msg += ": "
+                        if isinstance(errors[key][v], list):
+                          # Join error messages with commas
+                          msg += ", ".join(errors[key][v])
+                        else:
+                          msg += errors[key][v]
+                    messages.append(msg)
+            return ", ".join(messages)
 
 
 class BadRequest(ClientError):
@@ -62,22 +106,9 @@ CODES = {
     404: NotFound
 }
 
-
 # http://dev.librato.com/v1/responses-errors
 def get(code, resp_data):
-    if resp_data:
-        msg = ""
-        for key in resp_data['errors']:
-            for v in resp_data['errors'][key]:
-                # The API reports errors in a the JSON format which makes it easier to
-                # parse and evaluate them. As of now, there are two kinds of errors:
-                # params and request.
-                if isinstance(v, unicode):  # request type
-                    msg += "%s: %s\n" % (key, v)
-                else:  # params type
-                    for m in resp_data['errors'][key][v]:
-                        msg += "%s: %s %s\n" % (key, v, m)
     if code in CODES:
-        return CODES[code](msg)
+        return CODES[code](resp_data)
     else:
-        return ClientError(code, msg)
+        return ClientError(code, resp_data)
