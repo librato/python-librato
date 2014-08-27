@@ -193,7 +193,10 @@ doesn't exist). Title is a required parameter, and all other parameters are opti
 ```python
 api.post_annotation("testing",title="foobarbiz")
 
-api.post_annotation("TravisCI",title="build %s"%travisBuildID, source=SystemSource, description="Application %s, Travis build %s"%(appName,travisBuildID))
+api.post_annotation("TravisCI",title="build %s"%travisBuildID, 
+                     source=SystemSource, 
+                     description="Application %s, Travis build %s"%(appName,travisBuildID),
+                     links=[{'rel': 'travis', 'href': 'http://travisci.com/somebuild'}])
 ```
 
 Delete a named annotation stream:
