@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.12
+* Releasing new version. Auto submit in queue.
+
 ### Version 0.4.11
 * Preliminary support for Annotations (retrieve only).
 
