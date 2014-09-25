@@ -140,7 +140,7 @@ that autosubmits based on metric volume.
 ```python
 api = librato.connect(user, token)
 # Submit when the 400th metric is queued
-q = api.new_queue(auto_submit=400)
+q = api.new_queue(auto_submit_count=400)
 ```
 
 ## Updating Metrics
