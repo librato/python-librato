@@ -28,6 +28,8 @@ setup(
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Topic :: Internet',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
   ],
   dependency_links = [],
   install_requires = ['six'],
