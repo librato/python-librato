@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.13
+* Update setup.py to include supported Python versions
+
 ### Version 0.4.12
 * Releasing new version. Auto submit in queue.
 
