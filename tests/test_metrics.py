@@ -118,5 +118,41 @@ class TestLibrato(unittest.TestCase):
         assert len(counter.measurements[src]) == 1
         assert counter.measurements[src][0]['value'] == 111
 
+    def test_add_in_counter(self):
+        name, desc, src = 'Test', 'A Test Counter.', 'from_source'
+        self.conn.submit(name, 111, type='counter', description=desc, source=src)
+        counter = self.conn.get(name)
+        assert counter.name == name
+        assert counter.description == desc
+        assert len(counter.measurements[src]) == 1
+        assert counter.measurements[src][0]['value'] == 111
+
+        counter.add(1, source=src)
+
+        counter = self.conn.get(name)
+        assert counter.name == name
+        assert counter.description == desc
+        assert len(counter.measurements[src]) == 2
+        assert counter.measurements[src][-1]['value'] == 1
+
+    def test_add_in_gauge(self):
+        name, desc, src = 'Test', 'A Test Gauge.', 'from_source'
+        self.conn.submit(name, 10, description=desc, source=src)
+        gauge = self.conn.get(name)
+        assert gauge.name == name
+        assert gauge.description == desc
+        assert len(gauge.measurements[src]) == 1
+        assert gauge.measurements[src][0]['value'] == 10
+
+        gauge.add(1, source=src)
+
+        gauge = self.conn.get(name)
+        assert gauge.name == name
+        assert gauge.description == desc
+        assert len(gauge.measurements[src]) == 2
+        assert gauge.measurements[src][-1]['value'] == 1
+
+
+
 if __name__ == '__main__':
     unittest.main()
