@@ -30,7 +30,7 @@ class Queue(object):
     for storing a single measurement is not worth it.
 
     This class allows the user to queue measurements which will be sent in a
-    efficient matter.
+    efficient manner.
 
     Chunks are dicts of JSON objects for POST /metrics request.
     They have two keys 'gauges' and 'counters'. The value of these keys
