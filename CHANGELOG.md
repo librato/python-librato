@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.4.14
+* Fix issues in Gauge#add and Counter#add per #69
+
 ### Version 0.4.13
 * Update setup.py to include supported Python versions
 
