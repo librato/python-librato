@@ -48,7 +48,7 @@ class Queue(object):
 
     def add(self, name, value, type='gauge', **query_props):
         nm = {}  # new measurement
-        nm['name'] = name
+        nm['name'] = self.connection.sanitize(name)
         nm['value'] = value
         nm['type'] = type
         for pn, v in query_props.items():

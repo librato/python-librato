@@ -20,14 +20,17 @@
 # IN THE SOFTWARE.
 
 import logging
-import nose
+from contextlib import contextmanager
+import unittest
+from librato.exceptions import BadRequest
 import librato
 import os
 from random import randint
 import time
 logging.basicConfig(level=logging.INFO)
 
-class TestLibratoBasic(object):
+
+class TestLibratoBasic(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         """Initialize the Librato Connection"""
@@ -38,22 +41,53 @@ class TestLibratoBasic(object):
     def test_list_metrics(self):
         metrics = self.conn.list_metrics()
 
-    def _add_and_verify_metric(self, name, value, desc, type='gauge'):
-        self.conn.submit(name, value, type=type, description=desc)
-        metric = self.conn.get(name)
-        assert metric and metric.name == name
-        assert metric.description == desc
+    @contextmanager
+    def set_sanitizer(self, connection, sanitizer):
+        """
+        The connection we create does not have a sanitizer.
+        For tests involving a sanitizer use this context
+        manager to set one and it will ensure that when you are done
+        we go back to the default
+        """
+        original_sanitizer = connection.sanitize
+        connection.sanitize = sanitizer
+        try:
+            yield
+        finally:
+            self.conn.sanitize = original_sanitizer
+
+    def _add_and_verify_metric(self, name, value, desc, type='gauge', sanitizer=librato.sanitize_no_op):
+        with self.set_sanitizer(self.conn, sanitizer):
+            self.conn.submit(name, value, type=type, description=desc)
+            metric = self.conn.get(name)
+            assert metric and metric.name == sanitizer(name)
+            assert metric.description == desc
         return metric
 
-    def _delete_and_verify_metric(self, names):
-        self.conn.delete(names)
-        time.sleep(2)
-        # Make sure it's not there anymore
-        try:
-            metric = self.conn.get(names)
-        except:
-            metric = None
+    def _delete_and_verify_metric(self, names, sanitizer=librato.sanitize_no_op):
+        with self.set_sanitizer(self.conn, sanitizer):
+            self.conn.delete(names)
+            time.sleep(2)
+            # Make sure it's not there anymore
+            try:
+                metric = self.conn.get(names)
+            except:
+                metric = None
         assert(metric is None)
+
+    def test_long_sanitized_metric(self):
+        name, desc = 'a'*256, 'Too long, will error'
+        with self.assertRaises(BadRequest):
+            self._add_and_verify_metric(name, 10, desc)
+        self._add_and_verify_metric(name, 10, desc, sanitizer=librato.sanitize_metric_name)
+        self._delete_and_verify_metric(name, sanitizer=librato.sanitize_metric_name)
+
+    def test_invalid_sanitized_metric(self):
+        name, desc = r'I AM #*@#@983221 CRazy((\\\\] invalid', 'Crazy invalid'
+        with self.assertRaises(BadRequest):
+            self._add_and_verify_metric(name, 10, desc)
+        self._add_and_verify_metric(name, 10, desc, sanitizer=librato.sanitize_metric_name)
+        self._delete_and_verify_metric(name, sanitizer=librato.sanitize_metric_name)
 
     def test_create_and_delete_gauge(self):
         name, desc = 'Test', 'Test Gauge to be removed'
@@ -97,6 +131,22 @@ class TestLibratoBasic(object):
         q.submit()
         self.conn.delete('temperature')
 
+    def test_batch_sanitation(self):
+        name_one, name_two = 'a'*500, r'DSJAK#32102391S,m][][[{{]\\'
+
+        def run_batch():
+            q = self.conn.new_queue()
+            q.add(name_one, 10)
+            q.add(name_two, 10)
+            q.submit()
+
+        with self.assertRaises(BadRequest):
+            run_batch()
+        with self.set_sanitizer(self.conn, librato.sanitize_metric_name):
+            run_batch()
+
+        self.conn.delete([name_one, name_two])
+
     def test_submit_empty_queue(self):
         self.conn.new_queue().submit()
 
@@ -123,6 +173,19 @@ class TestLibratoBasic(object):
         assert gauge.attributes['display_min'] == 0
 
         self.conn.delete(name)
+
+    def test_sanitized_update(self):
+        name, desc = 'a'*1000, 'too long, really'
+        new_desc = 'different'
+        with self.set_sanitizer(self.conn, librato.sanitize_metric_name):
+            self.conn.submit(name, 10, description=desc)
+            gauge = self.conn.get(name)
+            assert gauge.description == desc
+        attrs = gauge.attributes['description'] = new_desc
+        with self.assertRaises(BadRequest):
+            self.conn.update(name, attributes=attrs)
+        with self.set_sanitizer(self.conn, librato.sanitize_metric_name):
+            self.conn.delete(name)
 
     def test_instruments(self):
         _c = self.conn
