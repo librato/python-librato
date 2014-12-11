@@ -32,7 +32,7 @@ username (email address) and token (long hexadecimal string).
 
 When creating your connection you may choose to provide a sanitization function
 This will be applied to any metric name you pass in. For example we provide a
-sanitzation function that will ensure your metrics are legal librato names.
+sanitization function that will ensure your metrics are legal librato names.
 This can be set as such
 
 ```python
