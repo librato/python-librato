@@ -14,6 +14,6 @@ class TestSanitization(unittest.TestCase):
             (valid_chars, valid_chars),
             (valid_chars.upper(), valid_chars.upper()),
             ('a'*500, 'a'*255),
-            ('   \t\nbat$$$*[]()m#@%^&=`~💩an', 'batman')  # throw in a unicode char
+            ('   \t\nbat$$$*[]()m#@%^&=`~an', '-----bat--------m--------an')  # throw in a unicode char
         ]:
             self.assertEquals(sanitize_metric_name(name), expected)
