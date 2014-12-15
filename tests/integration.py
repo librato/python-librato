@@ -20,40 +20,63 @@
 # IN THE SOFTWARE.
 
 import logging
-import nose
+from contextlib import contextmanager
+import unittest
+from librato.exceptions import BadRequest
 import librato
 import os
 from random import randint
 import time
 logging.basicConfig(level=logging.INFO)
 
-class TestLibratoBasic(object):
+
+class TestLibratoBasic(unittest.TestCase):
     @classmethod
     def setup_class(cls):
+        user = os.environ.get('LIBRATO_USER')
+        token = os.environ.get('LIBRATO_TOKEN')
         """Initialize the Librato Connection"""
-        assert("LIBRATO_USER" in os.environ and "LIBRATO_TOKEN" in os.environ), \
-            "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
-        cls.conn = librato.connect(os.environ['LIBRATO_USER'], os.environ['LIBRATO_TOKEN'])
+        assert user and token, "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
+        cls.conn = librato.connect(user, token)
+        cls.conn_sanitize = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
 
     def test_list_metrics(self):
         metrics = self.conn.list_metrics()
 
-    def _add_and_verify_metric(self, name, value, desc, type='gauge'):
-        self.conn.submit(name, value, type=type, description=desc)
-        metric = self.conn.get(name)
-        assert metric and metric.name == name
+    def _add_and_verify_metric(self, name, value, desc, connection=None, type='gauge'):
+        if not connection:
+            connection = self.conn
+        connection.submit(name, value, type=type, description=desc)
+        metric = connection.get(name)
+        assert metric and metric.name == connection.sanitize(name)
         assert metric.description == desc
         return metric
 
-    def _delete_and_verify_metric(self, names):
-        self.conn.delete(names)
+    def _delete_and_verify_metric(self, names, connection=None):
+        if not connection:
+            connection = self.conn
+        connection.delete(names)
         time.sleep(2)
         # Make sure it's not there anymore
         try:
-            metric = self.conn.get(names)
+            metric = connection.get(names)
         except:
             metric = None
         assert(metric is None)
+
+    def test_long_sanitized_metric(self):
+        name, desc = 'a'*256, 'Too long, will error'
+        with self.assertRaises(BadRequest):
+            self._add_and_verify_metric(name, 10, desc, self.conn)
+        self._add_and_verify_metric(name, 10, desc, self.conn_sanitize)
+        self._delete_and_verify_metric(name, self.conn_sanitize)
+
+    def test_invalid_sanitized_metric(self):
+        name, desc = r'I AM #*@#@983221 CRazy((\\\\] invalid', 'Crazy invalid'
+        with self.assertRaises(BadRequest):
+            self._add_and_verify_metric(name, 10, desc, self.conn)
+        self._add_and_verify_metric(name, 10, desc, self.conn_sanitize)
+        self._delete_and_verify_metric(name, self.conn_sanitize)
 
     def test_create_and_delete_gauge(self):
         name, desc = 'Test', 'Test Gauge to be removed'
@@ -97,6 +120,21 @@ class TestLibratoBasic(object):
         q.submit()
         self.conn.delete('temperature')
 
+    def test_batch_sanitation(self):
+        name_one, name_two = 'a'*500, r'DSJAK#32102391S,m][][[{{]\\'
+
+        def run_batch(connection):
+            q = connection.new_queue()
+            q.add(name_one, 10)
+            q.add(name_two, 10)
+            q.submit()
+
+        with self.assertRaises(BadRequest):
+            run_batch(self.conn)
+        run_batch(self.conn_sanitize)
+
+        self.conn_sanitize.delete([name_one, name_two])
+
     def test_submit_empty_queue(self):
         self.conn.new_queue().submit()
 
@@ -123,6 +161,18 @@ class TestLibratoBasic(object):
         assert gauge.attributes['display_min'] == 0
 
         self.conn.delete(name)
+
+    def test_sanitized_update(self):
+        name, desc = 'a'*1000, 'too long, really'
+        new_desc = 'different'
+        self.conn_sanitize.submit(name, 10, description=desc)
+        gauge = self.conn_sanitize.get(name)
+        assert gauge.description == desc
+
+        attrs = gauge.attributes['description'] = new_desc
+        with self.assertRaises(BadRequest):
+            self.conn.update(name, attributes=attrs)
+        self.conn_sanitize.delete(name)
 
     def test_instruments(self):
         _c = self.conn
