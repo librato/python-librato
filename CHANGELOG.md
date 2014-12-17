@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.5.0
+* Release 0.5.0 - adds the option to sanitize metric names; other minor changes
+
 ### Version 0.4.14
 * Fix issues in Gauge#add and Counter#add per #69
 
