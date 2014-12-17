@@ -20,7 +20,15 @@ class TestAggregator(unittest.TestCase):
 
     def test_initialize_source(self):
         assert Aggregator(self.conn).source is None
-        assert Aggregator(self.conn, 'my.source').source == 'my.source'
+        assert Aggregator(self.conn, source='my.source').source == 'my.source'
+
+    def test_initialize_period(self):
+        assert Aggregator(self.conn).period is None
+        assert Aggregator(self.conn, period=300).period == 300
+
+    def test_initialize_measure_time(self):
+        assert Aggregator(self.conn).measure_time is None
+        assert Aggregator(self.conn, measure_time=12345).measure_time == 12345
 
     def test_add_single_measurement(self):
         m = 'metric.one'

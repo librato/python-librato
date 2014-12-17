@@ -28,17 +28,17 @@ import time
 class Aggregator(object):
     """ Implements client-side *gauge* aggregation to reduce the number of measurements
     submitted.
-    Specify a period (default: 60) and the aggregator will automatically
+    Specify a period (default: None) and the aggregator will automatically
     floor the measure_times to that interval.
     """
 
-    def __init__(self, connection, source=None):
+    def __init__(self, connection, **args):
         self.connection = connection
         # Global source for all metrics sent into the aggregator
-        self.source = source
+        self.source = args.get('source')
         self.measurements = {}
-        self.period = None
-        self.measure_time = None
+        self.period = args.get('period')
+        self.measure_time = args.get('measure_time')
 
 
     def add(self, name, value):
@@ -70,8 +70,9 @@ class Aggregator(object):
         #    'measure_time': 1418838418 (optional)
         #    'source': 'mysource' (optional)
         # }
-        # Note: this would work too, but the mocks aren't set up for the hash format :-(
-        #result = {'gauges': dict(self.measurements)}
+        # Note: hash format would work too, but the mocks aren't currently set up
+        # for the hash format :-(
+        # i.e. result = {'gauges': dict(self.measurements)}
 
         body = []
         for metric_name in self.measurements:
