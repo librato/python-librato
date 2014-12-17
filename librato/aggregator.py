@@ -23,30 +23,36 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import time
 
 class Aggregator(object):
-    """ Implements client-side aggregation to reduce the number of measurements
-    submitted.  Specify a period (default: 60) and the aggregator will automatically
+    """ Implements client-side *gauge* aggregation to reduce the number of measurements
+    submitted.
+    Specify a period (default: 60) and the aggregator will automatically
     floor the measure_times to that interval.
     """
 
     def __init__(self, connection, source=None):
         self.connection = connection
+        # Global source for all metrics sent into the aggregator
         self.source = source
         self.measurements = {}
-        self.period = 60
+        self.period = None
+        self.measure_time = None
+
 
     def add(self, name, value):
         if name not in self.measurements:
             self.measurements[name] = {
-                #'value': value,
-                'count': 1, 'sum': value, 'min': value, 'max': value
+                'count': 1,
+                'sum': value,
+                'min': value,
+                'max': value
                 }
         else:
             m = self.measurements[name]
             m['sum'] += value
             m['count'] += 1
-            #m['value'] = float(m['sum']) / float(m['count'])
             if value < m['min']:
                 m['min'] = value
             if value > m['max']:
@@ -54,31 +60,67 @@ class Aggregator(object):
 
         return self.measurements
 
+
     def to_payload(self):
-        # Remove the 'value' field or API will throw an error
-        # 'value' will be calculated at the API
-        #for name in self.measurements:
-        #    # TODO: make a clone so we can delete that instead
-        #    v = self.measurements[name].get('value')
-        #    if v:
-        #        del(self.measurements[name]['value'])
+        # Map measurements into Librato POST (array) format
+        # {
+        #     'gauges': [
+        #         {'count': 1, 'max': 42, 'sum': 42, 'name': 'foo', 'min': 42}
+        #     ]
+        #    'measure_time': 1418838418 (optional)
+        #    'source': 'mysource' (optional)
+        # }
+        # Note: this would work too, but the mocks aren't set up for the hash format :-(
+        #result = {'gauges': dict(self.measurements)}
+
         body = []
-        for m in self.measurements:
-            h = self.measurements[m]
-            h['name'] = m
-            body.append(h)
+        for metric_name in self.measurements:
+            # Create a clone so we don't change self.measurements
+            vals = dict(self.measurements[metric_name])
+            vals["name"] = metric_name
+            body.append(vals)
 
         result = {'gauges': body}
+
         if self.source:
             result['source'] = self.source
+
+        mt = self.floor_measure_time()
+        if mt:
+            result['measure_time'] = mt
+
         return result
+
+
+
+    # Return floored measure time if period is set
+    # otherwise return user specified value if set
+    # otherwise return none
+    def floor_measure_time(self):
+        if self.period:
+            mt = None
+            if self.measure_time:
+                # Use user-specified time
+                mt = self.measure_time
+            else:
+                # Grab wall time
+                mt = int(time.time())
+            return mt - (mt % self.period)
+        elif self.measure_time:
+            # Use the user-specified value with no flooring
+            return self.measure_time
+
 
     def clear(self):
         self.measurements = {}
 
+
     def submit(self):
+        # Submit measurements to API
+        # This will actually return an empty 200 response (no body)
         self.connection._mexe("metrics",
                 method="POST",
                 query_props=self.to_payload())
-
+        # Clear measurements
+        self.clear()
 
