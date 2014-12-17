@@ -93,6 +93,14 @@ class Aggregator(object):
         return result
 
 
+    # Get/set the measure time if it is ever queried, that way you'll know the measure_time
+    # that was submitted, and we'll guarantee the same measure_time for all measurements
+    # extracted into a queue
+    def get_measure_time(self):
+        mt = self.floor_measure_time()
+        if mt:
+            self.measure_time = mt
+        return self.measure_time
 
     # Return floored measure time if period is set
     # otherwise return user specified value if set
@@ -114,6 +122,7 @@ class Aggregator(object):
 
     def clear(self):
         self.measurements = {}
+        self.measure_time = None
 
 
     def submit(self):

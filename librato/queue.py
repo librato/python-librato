@@ -60,6 +60,33 @@ class Queue(object):
                 self._num_measurements_in_queue() >= self.auto_submit_count):
             self.submit()
 
+    def add_aggregator(self, aggregator):
+        cloned_measurements = dict(aggregator.measurements)
+
+        # Find measure_time, if any
+        mt = aggregator.get_measure_time()
+
+        for name in cloned_measurements:
+            nm = cloned_measurements[name]
+            # Set metric name
+            nm['name'] = name
+            # Set measure_time
+            if mt:
+              nm['measure_time'] = mt
+            # Set source
+            if aggregator.source:
+                nm['source'] = aggregator.source
+
+            self._add_measurement('gauge', nm)
+
+        # Clear measurements from aggregator
+        aggregator.clear()
+
+        if (self.auto_submit_count and
+                self._num_measurements_in_queue() >= self.auto_submit_count):
+            self.submit()
+
+
     def submit(self):
         empty_chunks = [self._gen_empty_chunk()]
         if self.chunks == empty_chunks:

@@ -134,5 +134,33 @@ class TestLibratoQueue(unittest.TestCase):
         for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK+1):
             assert gauge.measurements['unassigned'][t-1]['value'] == t
 
+    def test_add_aggregator(self):
+        q = self.q
+        metrics = self.conn.list_metrics()
+        a = librato.aggregator.Aggregator(self.conn, source='mysource', period=10)
+        a.add('foo', 42)
+        a.add('bar', 37)
+        q.add_aggregator(a)
+
+        gauges = q.chunks[0]['gauges']
+        names = [g['name'] for g in gauges]
+
+        assert len(q.chunks) == 1
+
+        assert 'foo' in names
+        assert 'bar' in names
+
+        # All gauges should have the same source
+        assert gauges[0]['source'] == 'mysource'
+        assert gauges[1]['source'] == 'mysource'
+
+        # All gauges should have the same measure_time
+        assert 'measure_time' in gauges[0]
+        assert 'measure_time' in gauges[1]
+
+        # Test that time was snapped to 10s
+        assert gauges[0]['measure_time'] % 10 == 0
+
+
 if __name__ == '__main__':
     unittest.main()

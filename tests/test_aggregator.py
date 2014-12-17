@@ -83,6 +83,8 @@ class TestAggregator(unittest.TestCase):
              ],
             'source': 'mysource'
         }
+        assert 'gauges' in self.agg.to_payload()
+        assert 'counters' not in self.agg.to_payload()
 
     def test_to_payload_no_source(self):
         self.agg.source = None
@@ -106,11 +108,17 @@ class TestAggregator(unittest.TestCase):
         self.agg.add('test.metric', 42)
         assert 'value' not in self.agg.to_payload()
 
-    def test_clear(self):
+    def test_clear_clears_measurements(self):
         self.agg.add('test.metric', 42)
         assert len(self.agg.measurements) == 1
         self.agg.clear()
         assert self.agg.measurements == {}
+
+    def test_clear_clears_measure_time(self):
+        self.agg.measure_time = 12345
+        assert self.agg.measure_time
+        self.agg.clear()
+        assert self.agg.measure_time is None
 
     def test_connection(self):
         assert self.agg.connection == self.conn
