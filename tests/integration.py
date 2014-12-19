@@ -194,6 +194,10 @@ class TestLibratoBasic(unittest.TestCase):
 
         _c.create_dashboard("foo_", instruments = [ { "id": 1 }, { "id": 2 } ] )
         """
+    
+    def test_alerts(self):
+        alerts = self.conn.list_alerts()
+        assert isinstance (alerts['alerts'], list)
 
     def test_adding_a_new_instrument_with_composite_metric_stream(self):
         name = "my_INST_with_STREAMS"

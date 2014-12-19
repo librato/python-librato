@@ -43,6 +43,7 @@ from librato import exceptions
 from librato.queue import Queue
 from librato.metrics import Gauge, Counter
 from librato.instruments import Instrument
+from librato.alerts import Alert
 from librato.dashboards import Dashboard
 from librato.annotations import Annotation
 
@@ -322,6 +323,14 @@ class LibratoConnection(object):
         """delete an annotation stream """
         resp = self._mexe("annotations/%s" % name, method="DELETE", query_props=query_props)
         return resp
+
+    #
+    # Alerts
+    #
+    def list_alerts(self, **query_props):
+        """List all alerts"""
+        resp = self._mexe("alerts", query_props=query_props)
+        return self._parse(resp, "alerts", Alert)
 
     #
     # Queue

@@ -10,6 +10,7 @@ class MockServer(object):
     def clean(self):
         self.metrics = {'gauges': OrderedDict(), 'counters': OrderedDict()}
         self.instruments = OrderedDict()
+        self.alerts = OrderedDict()
         self.dashboards = OrderedDict()
         self.last_i_id = 0
         self.last_db_id = 0
@@ -90,6 +91,19 @@ class MockServer(object):
                             " exists %d", _id)
         else:
             return json.dumps(self.instruments[int(_id)]).encode('utf-8')
+    
+    def list_of_alerts(self):
+        answer = {}
+        answer["query"] = {}
+        answer["alerts"] = []
+        ins = answer["alerts"]
+        for _id, c_ins in self.alerts.items():
+            c_ins["id"] = _id
+            ins.append(c_ins)
+        return json.dumps(answer).encode('utf-8')
+
+    def create_instrument(self, payload):
+        self.last_i_id += 1
 
     def list_of_dashboards(self):
         answer = {}
@@ -234,6 +248,9 @@ class MockResponse(object):
         elif self._req_is_get_instrument():
             return server.get_instrument(r.uri)
 
+        elif self._req_is_list_of_alerts():
+            return server.list_of_alerts()
+        
         elif self._req_is_list_of_dashboards():
             return server.list_of_dashboards()
         elif self._req_is_create_dashboard():
@@ -283,6 +300,11 @@ class MockResponse(object):
     def _req_is_get_instrument(self):
         return (self._method_is('GET') and
                 re.match('/v1/instruments/\d+', self.request.uri))
+    
+    # Alerts
+    def _req_is_list_of_alerts(self):
+        return self._method_is('GET') and self._path_is('/v1/alerts')
+
 
     # dashboards
     def _req_is_create_dashboard(self):
