@@ -92,6 +92,12 @@ class MockServer(object):
         else:
             return json.dumps(self.instruments[int(_id)]).encode('utf-8')
     
+    def create_alert(self, payload):
+        self.last_i_id += 1
+        payload["id"] = self.last_i_id
+        self.alerts[self.last_i_id] = payload
+        return json.dumps(payload).encode('utf-8')
+
     def list_of_alerts(self):
         answer = {}
         answer["query"] = {}
@@ -250,6 +256,8 @@ class MockResponse(object):
 
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()
+        elif self._req_is_create_alert():
+            return server.create_alert(r.body)
         
         elif self._req_is_list_of_dashboards():
             return server.list_of_dashboards()
@@ -302,8 +310,10 @@ class MockResponse(object):
                 re.match('/v1/instruments/\d+', self.request.uri))
     
     # Alerts
+    def _req_is_create_alert(self):
+        return self._method_is('POST') and self._path_is('/v1/alerts')
     def _req_is_list_of_alerts(self):
-        return self._method_is('GET') and self._path_is('/v1/alerts')
+        return self._method_is('GET') and self._path_is('/v1/alerts?version=2')
 
 
     # dashboards

@@ -17,5 +17,26 @@ class TestLibratoInstruments(unittest.TestCase):
         ins = self.conn.list_alerts()
         assert len(ins) == 0
 
+    def test_adding_a_new_alert_without_services_or_conditions(self):
+        name = "my_alert"
+        alert = self.conn.create_alert(name)
+        assert type(alert) == librato.Alert
+        assert alert.name == name
+        assert alert.id != 0
+        assert len(alert.services) == 0
+        assert len(alert.conditions) == 0
+        assert len(self.conn.list_alerts()) == 1
+
+    def test_adding_a_new_alert_with_one_condition(self):
+        name = "my_alert"
+        alert = self.conn.create_alert(name)
+        alert.add_condition('above', 200, "metric_test")
+        assert alert.name == name
+        assert len(alert.services) == 0
+        assert len(alert.conditions) == 1
+        assert alert.conditions[0].condition_type == 'above'
+        assert alert.conditions[0].metric_name == 'metric_test'
+        assert alert.conditions[0].threshold == 200 
+
 if __name__ == '__main__':
     unittest.main()

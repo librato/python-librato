@@ -197,7 +197,30 @@ class TestLibratoBasic(unittest.TestCase):
     
     def test_alerts(self):
         alerts = self.conn.list_alerts()
-        assert isinstance (alerts['alerts'], list)
+    
+    def test_add_empty_alert(self):
+        name = "test_add_empty_alert" + str(time.time())
+        alert = self.conn.create_alert(name)
+        alerts = self.conn.list_alerts()
+        result = [a for a in alerts if a.id == alert.id]
+        assert len(result) == 1
+        assert result[0].id == alert.id
+        assert result[0].name == alert.name
+        assert len(result[0].conditions) == 0
+        assert len(result[0].services) == 0
+
+    def test_add_alert_with_one_condition(self):
+        name = "test_add_alert_with_one_condition" + str(time.time())
+        alert = self.conn.create_alert(name)
+        alert.add_condition('above', 200, "metric_test")
+        alert.save()
+        alerts = self.conn.list_alerts()
+        result = [a for a in alerts if a.id == alert.id]
+        assert len(result) == 1
+        assert len(result[0].conditions) == 1
+        assert result[0].conditions[0].condition_type == 'above'
+        assert result[0].conditions[0].metric_name == 'metric_test'
+
 
     def test_adding_a_new_instrument_with_composite_metric_stream(self):
         name = "my_INST_with_STREAMS"

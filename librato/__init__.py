@@ -327,9 +327,26 @@ class LibratoConnection(object):
     #
     # Alerts
     #
+    def create_alert(self, name, **query_props):
+        """Create a new alert"""
+        payload = Alert(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("alerts", method="POST", query_props=payload)
+        return Alert.from_dict(self, resp)
+
+    def update_alert(self, alert, **query_props):
+        """Update an existing dashboard"""
+        payload = alert.get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("alerts/%s" % alert.id,
+                          method="PUT", query_props=payload)
+        return resp
+
     def list_alerts(self, **query_props):
         """List all alerts"""
-        resp = self._mexe("alerts", query_props=query_props)
+        resp = self._mexe("alerts", query_props={'version':2})
         return self._parse(resp, "alerts", Alert)
 
     #
