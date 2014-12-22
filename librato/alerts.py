@@ -17,6 +17,16 @@ class Alert(object):
             else:
                 self.conditions.append(Condition(*c))
         self.services = []
+        for s in services:
+            print type(s)
+            if isinstance(s, Service):
+                self.services.append(s)
+            elif isinstance(s, dict):  # Probably parsing JSON here
+                self.services.append(Service.from_dict(s))
+            elif isinstance(s, int):
+                self.services.append(Service(s))
+            else:
+                self.services.append(Service(*s))
         self.attributes = attributes
         self.active = active
         self.rearm_seconds = rearm_seconds
@@ -26,6 +36,9 @@ class Alert(object):
         condition = Condition(condition_type, threshold, metric)
         self.conditions.append(condition)
         return condition
+    
+    def add_service(self, service_id):
+        self.services.append(Service(service_id))
 
     @classmethod
     def from_dict(cls, connection, data):
@@ -44,7 +57,7 @@ class Alert(object):
         return {'name': self.name,
                 'attributes': self.attributes,
                 'version': self.version,
-                'services': self.services,
+                'services': [x._id for x in self.services],
                 'conditions': [x.get_payload() for x in self.conditions]}
     
     def save(self):
@@ -73,3 +86,16 @@ class Condition(object):
                 'threshold': self.threshold,
                 'metric_name': self.metric_name,
                 'source': self.source}
+
+class Service(object):
+    def __init__(self, _id):
+        self._id = _id
+    
+    @classmethod
+    def from_dict(cls, data):
+        obj = cls(_id=data['id'])
+        return obj
+
+
+    def get_payload(self):
+        return {'id': self._id}

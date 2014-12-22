@@ -235,6 +235,16 @@ class TestLibratoBasic(unittest.TestCase):
         except:
             alert = None
         assert(alert is None)
+    def test_add_alert_with_a_service(self):
+        name = "test_add_alert_with_a_service" + str(time.time())
+        alert = self.conn.create_alert(name)
+        alert_id = alert._id
+        alert.add_service(3747)
+        alert.save()
+        alert = self.conn.get_alert(alert_id)
+        assert len(alert.services) == 1
+        assert len(alert.conditions) == 0
+        assert alert.services[0]._id == 3747
 
     def test_adding_a_new_instrument_with_composite_metric_stream(self):
         name = "my_INST_with_STREAMS"

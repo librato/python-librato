@@ -27,7 +27,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(alert.conditions) == 0
         assert len(self.conn.list_alerts()) == 1
 
-    def test_adding_a_new_alert_with_one_condition(self):
+    def test_adding_a_new_alert_with_a_condition(self):
         name = "my_alert"
         alert = self.conn.create_alert(name)
         alert.add_condition('above', 200, "metric_test")
@@ -47,6 +47,15 @@ class TestLibratoInstruments(unittest.TestCase):
         logging.info(type(alert._id))
         self.conn.delete_alert(alert._id)
         assert len(self.conn.list_alerts()) == 0
+    
+    def test_adding_a_new_alert_with_a_service(self):
+        name = "my_alert"
+        alert = self.conn.create_alert(name)
+        alert.add_service(1)
+        assert alert.name == name
+        assert len(alert.services) == 1
+        assert len(alert.conditions) == 0
+        assert alert.services[0]._id == 1
 
 if __name__ == '__main__':
     unittest.main()
