@@ -3,7 +3,7 @@
 class Alert(object):
     """Librato Alert Base class"""
 
-    def __init__(self, connection, name, id=None, description=None, version=2, conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
+    def __init__(self, connection, name, _id=None, description=None, version=2, conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
         self.connection = connection
         self.name = name
         self.description = description
@@ -20,7 +20,7 @@ class Alert(object):
         self.attributes = attributes
         self.active = active
         self.rearm_seconds = rearm_seconds
-        self.id = id
+        self._id = _id
 
     def add_condition(self, condition_type, threshold, metric):
         condition = Condition(condition_type, threshold, metric)
@@ -36,7 +36,7 @@ class Alert(object):
                   version=data['version'],
                   conditions=data['conditions'],
                   services=data['services'],
-                  id=data['id'],
+                  _id=data['id'],
                   attributes=data['attributes'])
         return obj
 

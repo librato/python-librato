@@ -340,9 +340,15 @@ class LibratoConnection(object):
         payload = alert.get_payload()
         for k, v in query_props.items():
             payload[k] = v
-        resp = self._mexe("alerts/%s" % alert.id,
+        resp = self._mexe("alerts/%s" % alert._id,
                           method="PUT", query_props=payload)
         return resp
+
+    def delete_alert(self, _id, **query_props):
+        """delete an annotation stream """
+        resp = self._mexe("alerts/%s" % _id, method="DELETE", query_props=query_props)
+        return resp
+
 
     def list_alerts(self, **query_props):
         """List all alerts"""

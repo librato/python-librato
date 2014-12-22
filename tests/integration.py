@@ -202,9 +202,9 @@ class TestLibratoBasic(unittest.TestCase):
         name = "test_add_empty_alert" + str(time.time())
         alert = self.conn.create_alert(name)
         alerts = self.conn.list_alerts()
-        result = [a for a in alerts if a.id == alert.id]
+        result = [a for a in alerts if a._id == alert._id]
         assert len(result) == 1
-        assert result[0].id == alert.id
+        assert result[0]._id == alert._id
         assert result[0].name == alert.name
         assert len(result[0].conditions) == 0
         assert len(result[0].services) == 0
@@ -215,11 +215,21 @@ class TestLibratoBasic(unittest.TestCase):
         alert.add_condition('above', 200, "metric_test")
         alert.save()
         alerts = self.conn.list_alerts()
-        result = [a for a in alerts if a.id == alert.id]
+        result = [a for a in alerts if a._id == alert._id]
         assert len(result) == 1
         assert len(result[0].conditions) == 1
         assert result[0].conditions[0].condition_type == 'above'
         assert result[0].conditions[0].metric_name == 'metric_test'
+
+    def test_delete_alert(self):
+        name = "test_delete_alert" + str(time.time())
+        alert = self.conn.create_alert(name)
+        alert_id = alert._id
+        alerts = self.conn.list_alerts()
+        assert len([a for a in alerts if a._id == alert_id]) == 1
+        self.conn.delete_alert(alert._id)
+        alerts = self.conn.list_alerts()
+        assert len([a for a in alerts if a._id == alert_id]) == 0
 
 
     def test_adding_a_new_instrument_with_composite_metric_stream(self):

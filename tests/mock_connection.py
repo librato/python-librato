@@ -92,20 +92,27 @@ class MockServer(object):
         else:
             return json.dumps(self.instruments[int(_id)]).encode('utf-8')
     
+    def __an_empty_list_metrics(self):
+        answer = {}
+
     def create_alert(self, payload):
         self.last_i_id += 1
         payload["id"] = self.last_i_id
         self.alerts[self.last_i_id] = payload
         return json.dumps(payload).encode('utf-8')
 
+    def delete_alert(self, _id, payload):
+        del self.alerts[int(_id)]
+        return ''
+
     def list_of_alerts(self):
         answer = {}
         answer["query"] = {}
         answer["alerts"] = []
-        ins = answer["alerts"]
-        for _id, c_ins in self.alerts.items():
-            c_ins["id"] = _id
-            ins.append(c_ins)
+        alert = answer["alerts"]
+        for _id, c_alert in self.alerts.items():
+            c_alert["id"] = _id
+            alert.append(c_alert)
         return json.dumps(answer).encode('utf-8')
 
     def create_instrument(self, payload):
@@ -258,6 +265,9 @@ class MockResponse(object):
             return server.list_of_alerts()
         elif self._req_is_create_alert():
             return server.create_alert(r.body)
+        elif self._req_is_delete_alert():
+            _id = self._extract_id_from_url()
+            return server.delete_alert(_id, r.body)
         
         elif self._req_is_list_of_dashboards():
             return server.list_of_dashboards()
@@ -284,7 +294,8 @@ class MockResponse(object):
         return self._method_is('POST') and self._path_is('/v1/metrics')
 
     def _req_is_delete(self):
-        return self._method_is('DELETE')
+        return (self._method_is('DELETE') and not
+                re.match('/v1/alerts/\d+', self.request.uri))
 
     def _req_is_get_metric(self):
         return (self._method_is('GET') and
@@ -314,6 +325,9 @@ class MockResponse(object):
         return self._method_is('POST') and self._path_is('/v1/alerts')
     def _req_is_list_of_alerts(self):
         return self._method_is('GET') and self._path_is('/v1/alerts?version=2')
+    def _req_is_delete_alert(self):
+        return (self._method_is('DELETE') and
+                re.match('/v1/alerts/\d+', self.request.uri))
 
 
     # dashboards
@@ -344,6 +358,14 @@ class MockResponse(object):
         except:
             raise
         return name
+
+    def _extract_id_from_url(self):
+        m = re.match('/v1/alerts/([\w_]+)', self.request.uri)
+        try:
+            _id = m.group(1)
+        except:
+            raise
+        return _id
 
 
 class MockConnect(object):

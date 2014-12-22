@@ -22,7 +22,7 @@ class TestLibratoInstruments(unittest.TestCase):
         alert = self.conn.create_alert(name)
         assert type(alert) == librato.Alert
         assert alert.name == name
-        assert alert.id != 0
+        assert alert._id != 0
         assert len(alert.services) == 0
         assert len(alert.conditions) == 0
         assert len(self.conn.list_alerts()) == 1
@@ -37,6 +37,16 @@ class TestLibratoInstruments(unittest.TestCase):
         assert alert.conditions[0].condition_type == 'above'
         assert alert.conditions[0].metric_name == 'metric_test'
         assert alert.conditions[0].threshold == 200 
+
+    def test_deleting_an_alert(self):
+        name = "my_alert"
+        alert = self.conn.create_alert(name)
+        #TODO: use requests directly instead of the client methods?
+        assert len(self.conn.list_alerts()) == 1
+        logging.info(alert._id)
+        logging.info(type(alert._id))
+        self.conn.delete_alert(alert._id)
+        assert len(self.conn.list_alerts()) == 0
 
 if __name__ == '__main__':
     unittest.main()
