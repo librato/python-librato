@@ -101,6 +101,9 @@ class MockServer(object):
         self.alerts[self.last_i_id] = payload
         return json.dumps(payload).encode('utf-8')
 
+    def get_alert(self, _id, payload):
+        return self.alerts[int(_id)]
+
     def delete_alert(self, _id, payload):
         del self.alerts[int(_id)]
         return ''

@@ -349,6 +349,10 @@ class LibratoConnection(object):
         resp = self._mexe("alerts/%s" % _id, method="DELETE", query_props=query_props)
         return resp
 
+    def get_alert(self, _id ,**query_props):
+        """Get specific alert"""
+        resp = self._mexe("alerts/%s" % _id, query_props={'version':2})
+        return Alert.from_dict(self, resp)
 
     def list_alerts(self, **query_props):
         """List all alerts"""

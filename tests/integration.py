@@ -225,12 +225,16 @@ class TestLibratoBasic(unittest.TestCase):
         name = "test_delete_alert" + str(time.time())
         alert = self.conn.create_alert(name)
         alert_id = alert._id
-        alerts = self.conn.list_alerts()
-        assert len([a for a in alerts if a._id == alert_id]) == 1
+        alert = self.conn.get_alert(alert_id)
+        assert alert.name == name
         self.conn.delete_alert(alert._id)
-        alerts = self.conn.list_alerts()
-        assert len([a for a in alerts if a._id == alert_id]) == 0
-
+        time.sleep(2)
+        # Make sure it's not there anymore
+        try:
+            alert = connection.get(names)
+        except:
+            alert = None
+        assert(alert is None)
 
     def test_adding_a_new_instrument_with_composite_metric_stream(self):
         name = "my_INST_with_STREAMS"
