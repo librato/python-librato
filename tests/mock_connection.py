@@ -102,21 +102,24 @@ class MockServer(object):
         self.alerts[self.last_a_id] = payload
         return json.dumps(payload).encode('utf-8')
 
-    def get_alert(self, _id, payload):
-        return self.alerts[int(_id)]
+    def get_alert(self, name, payload):
+        return self.list_of_alerts(name)
 
     def delete_alert(self, _id, payload):
         del self.alerts[int(_id)]
         return ''
 
-    def list_of_alerts(self):
+    def list_of_alerts(self, name=None):
         answer = {}
         answer["query"] = {}
         answer["alerts"] = []
         alert = answer["alerts"]
         for _id, c_alert in self.alerts.items():
             c_alert["id"] = _id
-            alert.append(c_alert)
+            if name is None:
+                alert.append(c_alert)
+            elif name==c_alert["name"]:
+                alert.append(c_alert)
         return json.dumps(answer).encode('utf-8')
 
     def list_of_dashboards(self):
@@ -264,12 +267,12 @@ class MockResponse(object):
 
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()
+        elif self._req_is_get_alert():
+            return server.get_alert(self._extract_name_from_url_parameters(), r.body)
         elif self._req_is_create_alert():
             return server.create_alert(r.body)
         elif self._req_is_delete_alert():
-            _id = self._extract_id_from_url()
-            return server.delete_alert(_id, r.body)
-        
+            return server.delete_alert(self._extract_id_from_url(), r.body)
         elif self._req_is_list_of_dashboards():
             return server.list_of_dashboards()
         elif self._req_is_create_dashboard():
@@ -284,8 +287,9 @@ class MockResponse(object):
       ----
       I am just mocking a RESTful Api server, I am not an actual server.
       path = %s
+      method = %s
       ----
-      """ % self.request.uri
+      """ % (self.request.uri, self.request.method)
             raise Exception(msg)
 
     def _req_is_list_of_metrics(self):
@@ -325,11 +329,12 @@ class MockResponse(object):
     def _req_is_create_alert(self):
         return self._method_is('POST') and self._path_is('/v1/alerts')
     def _req_is_list_of_alerts(self):
-        return self._method_is('GET') and self._path_is('/v1/alerts?version=2')
+        return self._method_is('GET') and self._path_is('/v1/alerts?version=2') and not self._req_is_get_alert()
+    def _req_is_get_alert(self):
+        return self._method_is('GET') and re.match('/v1/alerts\?version=2\&name=.+', self.request.uri)
     def _req_is_delete_alert(self):
         return (self._method_is('DELETE') and
                 re.match('/v1/alerts/\d+', self.request.uri))
-
 
     # dashboards
     def _req_is_create_dashboard(self):
@@ -367,6 +372,14 @@ class MockResponse(object):
         except:
             raise
         return _id
+
+    def _extract_name_from_url_parameters(self):
+        m = re.match('.*name=([\w_]+)', self.request.uri)
+        try:
+            name = m.group(1)
+        except:
+            raise
+        return name
 
 
 class MockConnect(object):

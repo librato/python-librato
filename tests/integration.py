@@ -202,7 +202,7 @@ class TestLibratoBasic(unittest.TestCase):
         name = "test_add_empty_alert" + str(time.time())
         alert = self.conn.create_alert(name)
         alert_id = alert._id
-        alert = self.conn.get_alert(alert_id)
+        alert = self.conn.get_alert(name)
         assert alert._id == alert_id
         assert alert.name == alert.name
         assert len(alert.conditions) == 0
@@ -214,7 +214,7 @@ class TestLibratoBasic(unittest.TestCase):
         alert.add_condition_for('metric_test').above(1)
         alert.save()
         alert_id = alert._id
-        alert = self.conn.get_alert(alert_id)
+        alert = self.conn.get_alert(name)
         assert alert._id == alert_id
         assert len(alert.conditions) == 1
         assert alert.conditions[0].condition_type == 'above'
@@ -224,9 +224,9 @@ class TestLibratoBasic(unittest.TestCase):
         name = "test_delete_alert" + str(time.time())
         alert = self.conn.create_alert(name)
         alert_id = alert._id
-        alert = self.conn.get_alert(alert_id)
+        alert = self.conn.get_alert(name)
         assert alert.name == name
-        self.conn.delete_alert(alert._id)
+        self.conn.delete_alert(name)
         time.sleep(2)
         # Make sure it's not there anymore
         try:
@@ -240,7 +240,7 @@ class TestLibratoBasic(unittest.TestCase):
         alert_id = alert._id
         alert.add_service(3747)
         alert.save()
-        alert = self.conn.get_alert(alert_id)
+        alert = self.conn.get_alert(name)
         assert len(alert.services) == 1
         assert len(alert.conditions) == 0
         assert alert.services[0]._id == 3747
@@ -251,7 +251,7 @@ class TestLibratoBasic(unittest.TestCase):
         alert_id = alert._id
         alert.add_condition_for('cpu').above(85).during(70)
         alert.save()
-        alert = self.conn.get_alert(alert_id)
+        alert = self.conn.get_alert(name)
         assert len(alert.services) == 0
         assert alert.conditions[0].condition_type == 'above'
         assert alert.conditions[0].duration == 70

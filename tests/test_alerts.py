@@ -39,8 +39,13 @@ class TestLibratoAlerts(unittest.TestCase):
         alert = self.conn.create_alert(self.name)
         #TODO: use requests directly instead of the client methods?
         assert len(self.conn.list_alerts()) == 1
-        self.conn.delete_alert(alert._id)
+        self.conn.delete_alert(self.name)
         assert len(self.conn.list_alerts()) == 0
+    
+    def test_deleting_an_inexistent_alert(self):
+        self.conn.create_alert('say_my_name')
+        self.conn.delete_alert('say_my_wrong_name')
+        assert self.conn.get_alert('say_my_name') is not None
     
     def test_adding_a_new_alert_with_a_service(self):
         alert = self.conn.create_alert(self.name)

@@ -346,15 +346,21 @@ class LibratoConnection(object):
                           method="PUT", query_props=payload)
         return resp
 
-    def delete_alert(self, _id, **query_props):
+    def delete_alert(self, name, **query_props):
         """delete an annotation stream """
-        resp = self._mexe("alerts/%s" % _id, method="DELETE", query_props=query_props)
+        alert = self.get_alert(name)
+        if alert is None:
+            return None
+        resp = self._mexe("alerts/%s" % alert._id, method="DELETE", query_props=query_props)
         return resp
 
-    def get_alert(self, _id ,**query_props):
+    def get_alert(self, name ,**query_props):
         """Get specific alert"""
-        resp = self._mexe("alerts/%s" % _id, query_props={'version':2})
-        return Alert.from_dict(self, resp)
+        resp = self._mexe("alerts", query_props={'version':2,'name':name})
+        alerts = self._parse(resp, "alerts", Alert)
+        if len(alerts) > 0:
+            return alerts[0]
+        return None
 
     def list_alerts(self, **query_props):
         """List all alerts"""
