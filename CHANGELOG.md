@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.5.1
+* Tweak behavior of optional metric name sanitizer; pypy support
+
 ### Version 0.5.0
 * Release 0.5.0 - adds the option to sanitize metric names; other minor changes
 
