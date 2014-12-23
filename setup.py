@@ -10,7 +10,7 @@ if sys.argv[-1] == 'publish':
 
 setup(
   name = "librato-metrics",
-  version = "0.4.13", # Update also in __init__ ; look into zest.releaser to avoid having two versions
+  version = "0.5.1", # Update also in __init__ ; look into zest.releaser to avoid having two versions
   description = "Python API Wrapper for Librato",
   long_description="Python Wrapper for the Librato Metrics API: http://dev.librato.com/v1/metrics",
   author = "Librato",

@@ -20,7 +20,10 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-__version__ = "0.4.13"
+import re
+import six
+
+__version__ = "0.5.1"
 
 # Defaults
 HOSTNAME = "metrics-api.librato.com"
@@ -30,6 +33,7 @@ import platform
 import time
 import logging
 from six.moves import http_client
+from six.moves import map
 from six import string_types
 import urllib
 import base64
@@ -54,6 +58,19 @@ except AttributeError:
     urlencode = urllib.urlencode        # py2
 
 
+def sanitize_metric_name(metric_name):
+    disallowed_character_pattern = r"(([^A-Za-z0-9.:\-_]|[\[\]]|\s)+)"
+    max_metric_name_length = 255
+    return re.sub(disallowed_character_pattern, '-', metric_name)[:max_metric_name_length]
+
+
+def sanitize_no_op(metric_name):
+    """
+    Default behavior, some people want the error
+    """
+    return metric_name
+
+
 class LibratoConnection(object):
     """Librato API Connection.
     Usage:
@@ -62,7 +79,7 @@ class LibratoConnection(object):
     [...]
     """
 
-    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):
+    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op):
         """Create a new connection to Librato Metrics.
         Doesn't actually connect yet or validate until you make a request.
 
@@ -83,6 +100,7 @@ class LibratoConnection(object):
         # unit testing.
         self.fake_n_errors = 0
         self.backoff_logic = lambda backoff: backoff*2
+        self.sanitize = sanitizer
 
     def _set_headers(self, headers):
         """ set headers for request """
@@ -178,25 +196,29 @@ class LibratoConnection(object):
 
     def submit(self, name, value, type="gauge", **query_props):
         payload = {'gauges': [], 'counters': []}
-        metric = {'name': name, 'value': value}
+        metric = {'name': self.sanitize(name), 'value': value}
         for k, v in query_props.items():
             metric[k] = v
         payload[type + 's'].append(metric)
         self._mexe("metrics", method="POST", query_props=payload)
 
     def get(self, name, **query_props):
-        resp = self._mexe("metrics/%s" % name, method="GET", query_props=query_props)
+        resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
         if resp['type'] == 'gauge':
             return Gauge.from_dict(self, resp)
         elif resp['type'] == 'counter':
-            return Gauge.from_dict(self, resp)
+            return Counter.from_dict(self, resp)
         else:
             raise Exception('The server sent me something that is not a Gauge nor a Counter.')
 
     def update(self, name, **query_props):
-        resp = self._mexe("metrics/%s" % name, method="PUT", query_props=query_props)
+        resp = self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
 
     def delete(self, names):
+        if isinstance(names, six.string_types):
+            names = self.sanitize(names)
+        else:
+            names = list(map(self.sanitize, names))
         path = "metrics/%s" % names
         payload = {}
         if not isinstance(names, string_types):
@@ -308,11 +330,11 @@ class LibratoConnection(object):
         return Queue(self, **kwargs)
 
 
-def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH):
+def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op):
     """
     Connect to Librato Metrics
     """
-    return LibratoConnection(username, api_key, hostname, base_path)
+    return LibratoConnection(username, api_key, hostname, base_path, sanitizer=sanitizer)
 
 
 def _getcharset(resp, default='utf-8'):

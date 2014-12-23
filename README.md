@@ -30,6 +30,17 @@ username (email address) and token (long hexadecimal string).
   api = librato.connect(user, token)
 ```
 
+When creating your connection you may choose to provide a sanitization function
+This will be applied to any metric name you pass in. For example we provide a
+sanitization function that will ensure your metrics are legal librato names.
+This can be set as such
+
+```python
+  api = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
+```
+
+By default no sanitization is done.
+
 ## Basic Usage
 
 To iterate over your metrics:
@@ -214,6 +225,8 @@ Do you want to contribute? Do you need a new feature? Please open a
 
 The original version of `python-librato` was conceived/authored/released by Chris Moyer (AKA [@kopertop](https://github.com/kopertop)). He's
 graciously handed over maintainership of the project to us and we're super-appreciative of his efforts.
+
+Thanks also to [@Bachmann1234](https://github.com/Bachmann1234) for continually improving this library.
 
 ## Copyright
 
