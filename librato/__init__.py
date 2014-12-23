@@ -59,7 +59,7 @@ except AttributeError:
 
 
 def sanitize_metric_name(metric_name):
-    disallowed_character_pattern = r"([^A-Za-z0-9.:\-_]|[\[\]]|\s)"
+    disallowed_character_pattern = r"(([^A-Za-z0-9.:\-_]|[\[\]]|\s)+)"
     max_metric_name_length = 255
     return re.sub(disallowed_character_pattern, '-', metric_name)[:max_metric_name_length]
 
