@@ -119,7 +119,7 @@ Sending a measurement in a single HTTP request is inefficient. The overhead
 both at protocol and backend level is very high. That's why we provide an
 alternative method to submit your measurements. The idea is to send measurements
 in batch mode. We push measurements that are stored and when we are
-ready, they will be submitted in an efficient matter. Here is an example:
+ready, they will be submitted in an efficient manner. Here is an example:
 
 ```python
 api = librato.connect(user, token)
@@ -152,6 +152,51 @@ that autosubmits based on metric volume.
 api = librato.connect(user, token)
 # Submit when the 400th metric is queued
 q = api.new_queue(auto_submit_count=400)
+```
+
+## Client-side Aggregation
+
+You can aggregate measurements before submission using the `Aggregator` class.  Optionally, specify a `measure_time` to submit that timestamp to the API.  You may also optionally specify a `period` to floor the timestamp to a particular interval.  If `period` is specified without a `measure_time`, the current timestamp will be used, and floored to `period`.  Specifying an optional `source` allows the aggregated measurement to report a source name.
+
+Aggregator instances can be sent immediately by calling `submit()` or added to a `Queue` by calling `queue.add_aggregator()`.
+
+```python
+from librato.aggregator import Aggregator
+
+api = librato.connect(email, token)
+
+a = Aggregator(api)
+a.add("foo", 42)
+a.add("bar", 5)
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
+a.submit()
+
+a = Aggregator(api, source='my.source', period=60)
+a.add("foo", 42)
+a.add("bar", 5)
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=my.source
+# measure_time = <now> - (<now> % 60)
+a.submit()
+
+a = Aggregator(api, period=60, measure_time=1419302671)
+a.add("foo", 42)
+a.add("bar", 5)
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
+# measure_time = <now> - (<now> % 60) = 1419302640
+a.submit()
+
+a = Aggregator(api, measure_time=1419302671)
+a.add("foo", 42)
+a.add("bar", 5)
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
+# measure_time = 1419302671
+a.submit()
+
+
+# You can also add an Aggregator instance to a queue
+q = librato.queue.Queue(api)
+q.add_aggregator(a)
+q.submit()
 ```
 
 ## Updating Metrics
