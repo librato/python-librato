@@ -3,12 +3,11 @@ import unittest
 import librato
 from mock_connection import MockConnect, server
 
-#logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
 
-class TestLibratoInstruments(unittest.TestCase):
+class TestLibratoAlerts(unittest.TestCase):
     def setUp(self):
         self.conn = librato.connect('user_test', 'key_test')
         server.clean()
@@ -43,8 +42,6 @@ class TestLibratoInstruments(unittest.TestCase):
         alert = self.conn.create_alert(name)
         #TODO: use requests directly instead of the client methods?
         assert len(self.conn.list_alerts()) == 1
-        logging.info(alert._id)
-        logging.info(type(alert._id))
         self.conn.delete_alert(alert._id)
         assert len(self.conn.list_alerts()) == 0
     

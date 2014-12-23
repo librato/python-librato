@@ -13,6 +13,7 @@ class MockServer(object):
         self.alerts = OrderedDict()
         self.dashboards = OrderedDict()
         self.last_i_id = 0
+        self.last_a_id = 0
         self.last_db_id = 0
 
     def list_of_metrics(self):
@@ -96,9 +97,9 @@ class MockServer(object):
         answer = {}
 
     def create_alert(self, payload):
-        self.last_i_id += 1
-        payload["id"] = self.last_i_id
-        self.alerts[self.last_i_id] = payload
+        self.last_a_id += 1
+        payload["id"] = self.last_a_id
+        self.alerts[self.last_a_id] = payload
         return json.dumps(payload).encode('utf-8')
 
     def get_alert(self, _id, payload):
@@ -117,9 +118,6 @@ class MockServer(object):
             c_alert["id"] = _id
             alert.append(c_alert)
         return json.dumps(answer).encode('utf-8')
-
-    def create_instrument(self, payload):
-        self.last_i_id += 1
 
     def list_of_dashboards(self):
         answer = {}
