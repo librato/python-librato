@@ -277,6 +277,8 @@ class LibratoConnection(object):
         for k, v in query_props.items():
             payload[k] = v
         resp = self._mexe("instruments/%s" % instrument.id, method="PUT", query_props=payload)
+        if resp is not None and resp.status >= 400:
+            raise exceptions.get(resp.status, resp_data)
         return resp
 
     def create_instrument(self, name, **query_props):

@@ -18,7 +18,6 @@ class Alert(object):
                 self.conditions.append(Condition(*c))
         self.services = []
         for s in services:
-            print type(s)
             if isinstance(s, Service):
                 self.services.append(s)
             elif isinstance(s, dict):  # Probably parsing JSON here
@@ -32,11 +31,11 @@ class Alert(object):
         self.rearm_seconds = rearm_seconds
         self._id = _id
 
-    def add_condition(self, condition_type, threshold, metric):
-        condition = Condition(condition_type, threshold, metric)
+    def add_condition_for(self, metric_name, source='*'):
+        condition = Condition(metric_name, source)
         self.conditions.append(condition)
         return condition
-    
+
     def add_service(self, service_id):
         self.services.append(Service(service_id))
 
@@ -64,28 +63,37 @@ class Alert(object):
         self.connection.update_alert(self)
 
 class Condition(object):
-    def __init__(self, condition_type, threshold, metric_name, source='*'):
-        self.condition_type = condition_type
-        self.threshold = threshold
+    def __init__(self, metric_name, source='*'):
         self.metric_name = metric_name
         self.source = source
+
+    def above(self, threshold, summary_function=None):
+        self.condition_type = 'above'
+        self.summary_function = summary_function
+        self.threshold = threshold
+        self.duration = None
+        return self
+
+    def during(self, duration):
+        self.duration = duration
     
     @classmethod
     def from_dict(cls, connection, data):
-        """Returns a condition object from a dictionary item,
-        which is usually from librato's API"""
-        obj = cls(condition_type=data['type'],
-                  threshold=data['threshold'],
-                  metric_name=data['metric_name'],
+        obj = cls(metric_name=data['metric_name'],
                   source=data['source'])
+        if data['type'] == 'above':
+           obj.above(data.get('threshold'), data.get('summary_function')).during(data.get('duration'))
         return obj
-
-
+    
     def get_payload(self):
-        return {'condition_type': self.condition_type,
-                'threshold': self.threshold,
+        obj = {'condition_type': self.condition_type,
                 'metric_name': self.metric_name,
                 'source': self.source}
+        if self.condition_type == 'above':
+            obj['threshold'] = self.threshold
+            obj['summary_function'] = self.summary_function
+            obj['duration'] = self.duration
+        return obj
 
 class Service(object):
     def __init__(self, _id):

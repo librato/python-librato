@@ -70,6 +70,11 @@ class ClientError(Exception):
                         if isinstance(errors[key][v], list):
                           # Join error messages with commas
                           msg += ", ".join(errors[key][v])
+                        elif isinstance(errors[key][v], dict):
+                          #TODO: refactor it
+                          for vv in errors[key][v]:
+                            msg += "%s: " % (vv)
+                            msg += ", ".join(errors[key][v][vv])
                         else:
                           msg += errors[key][v]
                     messages.append(msg)

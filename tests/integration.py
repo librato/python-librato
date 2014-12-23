@@ -201,25 +201,24 @@ class TestLibratoBasic(unittest.TestCase):
     def test_add_empty_alert(self):
         name = "test_add_empty_alert" + str(time.time())
         alert = self.conn.create_alert(name)
-        alerts = self.conn.list_alerts()
-        result = [a for a in alerts if a._id == alert._id]
-        assert len(result) == 1
-        assert result[0]._id == alert._id
-        assert result[0].name == alert.name
-        assert len(result[0].conditions) == 0
-        assert len(result[0].services) == 0
+        alert_id = alert._id
+        alert = self.conn.get_alert(alert_id)
+        assert alert._id == alert_id
+        assert alert.name == alert.name
+        assert len(alert.conditions) == 0
+        assert len(alert.services) == 0
 
     def test_add_alert_with_one_condition(self):
         name = "test_add_alert_with_one_condition" + str(time.time())
         alert = self.conn.create_alert(name)
-        alert.add_condition('above', 200, "metric_test")
+        alert.add_condition_for('metric_test').above(1)
         alert.save()
-        alerts = self.conn.list_alerts()
-        result = [a for a in alerts if a._id == alert._id]
-        assert len(result) == 1
-        assert len(result[0].conditions) == 1
-        assert result[0].conditions[0].condition_type == 'above'
-        assert result[0].conditions[0].metric_name == 'metric_test'
+        alert_id = alert._id
+        alert = self.conn.get_alert(alert_id)
+        assert alert._id == alert_id
+        assert len(alert.conditions) == 1
+        assert alert.conditions[0].condition_type == 'above'
+        assert alert.conditions[0].metric_name == 'metric_test'
 
     def test_delete_alert(self):
         name = "test_delete_alert" + str(time.time())
@@ -245,6 +244,19 @@ class TestLibratoBasic(unittest.TestCase):
         assert len(alert.services) == 1
         assert len(alert.conditions) == 0
         assert alert.services[0]._id == 3747
+    
+    def test_add_alert_with_an_above_condition(self):
+        name = "test_add_alert_with_an_above_condition" + str(time.time())
+        alert = self.conn.create_alert(name)
+        alert_id = alert._id
+        alert.add_condition_for('cpu').above(85).during(70)
+        alert.save()
+        alert = self.conn.get_alert(alert_id)
+        assert len(alert.services) == 0
+        assert alert.conditions[0].condition_type == 'above'
+        assert alert.conditions[0].duration == 70
+        assert alert.conditions[0].threshold == 85
+        assert alert.conditions[0].source == '*'
 
     def test_adding_a_new_instrument_with_composite_metric_stream(self):
         name = "my_INST_with_STREAMS"
