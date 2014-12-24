@@ -74,6 +74,12 @@ class Condition(object):
         self.duration = None
         return self
 
+    def stops_reporting_for(self, duration, summary_function=None):
+        self.condition_type = 'absent'
+        self.summary_function = summary_function
+        self.duration = duration
+        return self
+
     def during(self, duration):
         self.duration = duration
     
@@ -83,6 +89,8 @@ class Condition(object):
                   source=data['source'])
         if data['type'] == 'above':
            obj.above(data.get('threshold'), data.get('summary_function')).during(data.get('duration'))
+        elif data['type'] == 'absent':
+           obj.stops_reporting_for(data.get('duration'), data.get('summary_function'))
         return obj
     
     def get_payload(self):
@@ -91,6 +99,9 @@ class Condition(object):
                 'source': self.source}
         if self.condition_type == 'above':
             obj['threshold'] = self.threshold
+            obj['summary_function'] = self.summary_function
+            obj['duration'] = self.duration
+        elif self.condition_type == 'absent':
             obj['summary_function'] = self.summary_function
             obj['duration'] = self.duration
         return obj
