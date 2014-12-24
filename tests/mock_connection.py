@@ -331,7 +331,7 @@ class MockResponse(object):
     def _req_is_list_of_alerts(self):
         return self._method_is('GET') and self._path_is('/v1/alerts?version=2') and not self._req_is_get_alert()
     def _req_is_get_alert(self):
-        return self._method_is('GET') and re.match('/v1/alerts\?version=2\&name=.+', self.request.uri)
+        return self._method_is('GET') and re.match('/v1/alerts\?(version=2|name=.+)\&(name=.+|version=2)', self.request.uri)
     def _req_is_delete_alert(self):
         return (self._method_is('DELETE') and
                 re.match('/v1/alerts/\d+', self.request.uri))

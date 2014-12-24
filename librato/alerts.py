@@ -46,6 +46,7 @@ class Alert(object):
         obj = cls(connection,
                   data['name'],
                   version=data['version'],
+                  description=data['description'],
                   conditions=data['conditions'],
                   services=data['services'],
                   _id=data['id'],
@@ -56,6 +57,7 @@ class Alert(object):
         return {'name': self.name,
                 'attributes': self.attributes,
                 'version': self.version,
+                'description': self.description,
                 'services': [x._id for x in self.services],
                 'conditions': [x.get_payload() for x in self.conditions]}
     
@@ -69,6 +71,13 @@ class Condition(object):
 
     def above(self, threshold, summary_function=None):
         self.condition_type = 'above'
+        self.summary_function = summary_function
+        self.threshold = threshold
+        self.duration = None
+        return self
+
+    def below(self, threshold, summary_function=None):
+        self.condition_type = 'below'
         self.summary_function = summary_function
         self.threshold = threshold
         self.duration = None
@@ -89,6 +98,8 @@ class Condition(object):
                   source=data['source'])
         if data['type'] == 'above':
            obj.above(data.get('threshold'), data.get('summary_function')).during(data.get('duration'))
+        elif data['type'] == 'below':
+           obj.below(data.get('threshold'), data.get('summary_function')).during(data.get('duration'))
         elif data['type'] == 'absent':
            obj.stops_reporting_for(data.get('duration'), data.get('summary_function'))
         return obj
@@ -97,7 +108,7 @@ class Condition(object):
         obj = {'condition_type': self.condition_type,
                 'metric_name': self.metric_name,
                 'source': self.source}
-        if self.condition_type == 'above':
+        if self.condition_type == 'above' or self.condition_type == 'below':
             obj['threshold'] = self.threshold
             obj['summary_function'] = self.summary_function
             obj['duration'] = self.duration

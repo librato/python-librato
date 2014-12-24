@@ -25,6 +25,10 @@ class TestLibratoAlerts(unittest.TestCase):
         assert len(alert.services) == 0
         assert len(alert.conditions) == 0
         assert len(self.conn.list_alerts()) == 1
+    
+    def test_adding_an_alert_with_description(self):
+        alert = self.conn.create_alert(self.name, description="test_description")
+        assert alert.description == "test_description"
 
     def test_adding_a_new_alert_with_a_condition(self):
         alert = self.conn.create_alert(self.name)
@@ -60,6 +64,16 @@ class TestLibratoAlerts(unittest.TestCase):
         assert len(alert.conditions) == 1
         condition = alert.conditions[0]
         assert condition.condition_type == 'above'
+        assert condition.metric_name == 'metric_test'
+        assert condition.threshold == 200
+        assert condition.duration == 5
+
+    def test_add_below_condition(self):
+        alert = self.conn.create_alert(self.name)
+        alert.add_condition_for('metric_test').below(200, 'average').during(5)
+        assert len(alert.conditions) == 1
+        condition = alert.conditions[0]
+        assert condition.condition_type == 'below'
         assert condition.metric_name == 'metric_test'
         assert condition.threshold == 200
         assert condition.duration == 5
