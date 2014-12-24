@@ -234,7 +234,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
             self.conn.delete_alert(name)
     
     def test_add_empty_alert(self):
-        name = "test_add_empty_alert" + str(time.time())
+        name = self.unique_name("test_add_empty_alert")
         alert = self.conn.create_alert(name)
         alert_id = alert._id
         alert = self.conn.get_alert(name)
@@ -244,7 +244,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert len(alert.services) == 0
 
     def test_add_alert_with_a_condition(self):
-        name = "test_add_alert_with_a_condition" + str(time.time())
+        name = self.unique_name("test_add_alert_with_a_condition")
         alert = self.conn.create_alert(name)
         alert.add_condition_for('metric_test').above(1)
         alert.save()
@@ -256,7 +256,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert alert.conditions[0].metric_name == 'metric_test'
 
     def test_delete_alert(self):
-        name = "test_delete_alert" + str(time.time())
+        name = self.unique_name("test_delete_alert")
         alert = self.conn.create_alert(name)
         alert_id = alert._id
         alert = self.conn.get_alert(name)
@@ -271,7 +271,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert(alert is None)
 
     def test_add_alert_with_a_service(self):
-        name = "test_add_alert_with_a_service" + str(time.time())
+        name = self.unique_name("test_add_alert_with_a_service")
         alert = self.conn.create_alert(name)
         alert_id = alert._id
         alert.add_service(3747)
@@ -282,7 +282,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert alert.services[0]._id == 3747
 
     def test_add_alert_with_an_above_condition(self):
-        name = "test_add_alert_with_an_above_condition" + str(time.time())
+        name = self.unique_name("test_add_alert_with_an_above_condition")
         alert = self.conn.create_alert(name)
         alert_id = alert._id
         alert.add_condition_for('cpu').above(85).during(70)
@@ -295,7 +295,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert alert.conditions[0].source == '*'
 
     def test_add_alert_with_an_absent_condition(self):
-        name = "test_add_alert_with_an_absent_condition" + str(time.time())
+        name = self.unique_name("test_add_alert_with_an_absent_condition")
         alert = self.conn.create_alert(name)
         alert.add_condition_for('cpu').stops_reporting_for(60)
         alert.save()
@@ -308,13 +308,18 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert condition.source == '*'
 
     def test_add_alert_with_multiple_conditions(self):
-        name = "test_add_alert_with_multiple_conditions" + str(time.time())
+        name = self.unique_name("test_add_alert_with_multiple_conditions")
         alert=self.conn.create_alert(name)
         alert.add_condition_for('cpu').above(0, 'sum')
         alert.add_condition_for('cpu').stops_reporting_for(3600)
         alert.add_condition_for('cpu').stops_reporting_for(3600)
         alert.add_condition_for('cpu').above(0, 'count')
         alert.save()
+
+    def unique_name(self, prefix):
+        name = prefix + str(time.time())
+        self.alerts_created_during_test.append(name)
+        return name
 
 
 if __name__ == '__main__':
