@@ -32,8 +32,8 @@ class Instrument(object):
                 'attributes': self.attributes,
                 'streams': [x.get_payload() for x in self.streams]}
 
-    def new_stream(self, metric, source='*'):
-        stream = Stream(metric, source)
+    def new_stream(self, metric=None, source='*', composite=None):
+        stream = Stream(metric, source, composite)
         self.streams.append(stream)
         return stream
 
@@ -42,9 +42,10 @@ class Instrument(object):
 
 
 class Stream(object):
-    def __init__(self, metric, source='*'):
+    def __init__(self, metric=None, source='*', composite=None):
         self.metric = metric
         self.source = source
+        self.composite = composite
 
     def get_payload(self):
         return {'metric': self.metric,
