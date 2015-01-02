@@ -68,6 +68,7 @@ class TestLibratoInstruments(unittest.TestCase):
 
         ins.new_stream(composite='my_composite_string_with_no_validation')
         self.conn.update_instrument(ins)
+        ins = self.conn.get_instrument(1)
         assert ins.name == name
         assert len(ins.streams) == 1
         assert ins.id == 1
