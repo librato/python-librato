@@ -30,15 +30,28 @@ class Instrument(object):
     def get_payload(self):
         return {'name': self.name,
                 'attributes': self.attributes,
-                'streams': [x.get_payload() for x in self.streams]}
+                'streams': self.streams_payload()}
 
     def new_stream(self, metric=None, source='*', composite=None):
         stream = Stream(metric, source, composite)
         self.streams.append(stream)
         return stream
 
+    def streams_payload(self):
+        return [s.get_payload() for s in self.streams]
+
+    def is_persisted(self):
+        return self.id is not None
+
     def save(self):
-        self.connection.update_instrument(self)
+        if not self.is_persisted():
+            dummy_inst = self.connection.create_instrument(
+                    self.name,
+                    attributes=self.attributes,
+                    streams=self.streams_payload())
+            self.id = dummy_inst.id
+        else:
+            self.connection.update_instrument(self)
 
 
 class Stream(object):

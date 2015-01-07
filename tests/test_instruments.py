@@ -74,5 +74,11 @@ class TestLibratoInstruments(unittest.TestCase):
         assert ins.id == 1
         assert ins.streams[0].composite == "my_composite_string_with_no_validation"
 
+    def test_is_persisted(self):
+        i = librato.Instrument(self.conn, 'test inst')
+        assert i.is_persisted() == False
+        i = librato.Instrument(self.conn, 'test inst', id=1234)
+        assert i.is_persisted() == True
+
 if __name__ == '__main__':
     unittest.main()

@@ -207,6 +207,22 @@ class TestLibratoBasic(unittest.TestCase):
         assert len(ins.streams) == 1
         assert ins.streams[0].composite == 's("cpu", "*")'
 
+    def test_instrument_save_creates_new_record(self):
+        instrument_name = 'my instrument name'
+        i = librato.Instrument(self.conn, instrument_name)
+        assert i.id is None
+        i.save()
+        assert i.name == instrument_name
+
+    def test_instrument_save_updates_existing_record(self):
+        instrument_name = 'my instrument name'
+        i = self.conn.create_instrument(instrument_name)
+        assert i.name == instrument_name
+        i.name = 'NEW instrument name'
+        i.save()
+        i = self.conn.get_instrument(i.id)
+        assert i.name == 'NEW instrument name'
+
 if __name__ == '__main__':
     # TO run a specific test:
     # $ nosetests tests/integration.py:TestLibratoBasic.test_update_metrics_attributes
