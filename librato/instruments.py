@@ -44,7 +44,7 @@ class Instrument(object):
         return self.id is not None
 
     def save(self):
-        if self.is_persisted():
+        if not self.is_persisted():
             dummy_inst = self.connection.create_instrument(
                     self.name,
                     attributes=self.attributes,
