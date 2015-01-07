@@ -13,7 +13,7 @@ class Alert(object):
             if isinstance(c, Condition):
                 self.conditions.append(c)
             elif isinstance(c, dict):  # Probably parsing JSON here
-                self.conditions.append(Condition.from_dict(self, c))
+                self.conditions.append(Condition.from_dict(c))
             else:
                 self.conditions.append(Condition(*c))
         self.services = []
@@ -93,7 +93,7 @@ class Condition(object):
         self.duration = duration
     
     @classmethod
-    def from_dict(cls, connection, data):
+    def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
                   source=data['source'])
         if data['type'] == 'above':
