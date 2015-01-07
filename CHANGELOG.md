@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.6.0
+* New release: client-side aggregation support
+
 ### Version 0.5.1
 * Tweak behavior of optional metric name sanitizer; pypy support
 
