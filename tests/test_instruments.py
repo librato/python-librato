@@ -40,6 +40,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(ins.streams) == 1
         assert ins.id == 1
         assert ins.streams[0].metric == "a_gauge"
+        assert ins.streams[0].composite == None
 
     def test_get_instrument(self):
         name = "my_INST_with_STREAMS"
@@ -55,6 +56,23 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(si.streams) == 1
         assert si.id == 1
         assert si.streams[0].metric == "a_gauge"
+        assert si.streams[0].composite == None
+
+    def test_adding_a_new_instrument_with_composite_metric_stream(self):
+        name = "my_INST_with_STREAMS"
+        ins = self.conn.create_instrument(name)
+        assert type(ins) == librato.Instrument
+        assert ins.name == name
+        assert len(ins.streams) == 0
+        assert ins.id == 1
+
+        ins.new_stream(composite='my_composite_string_with_no_validation')
+        self.conn.update_instrument(ins)
+        ins = self.conn.get_instrument(1)
+        assert ins.name == name
+        assert len(ins.streams) == 1
+        assert ins.id == 1
+        assert ins.streams[0].composite == "my_composite_string_with_no_validation"
 
 if __name__ == '__main__':
     unittest.main()
