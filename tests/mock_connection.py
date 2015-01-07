@@ -24,7 +24,7 @@ class MockServer(object):
 
     def create_metric(self, payload):
         for metric_type in ['gauge', 'counter']:
-            for metric in payload[metric_type + 's']:
+            for metric in payload.get(metric_type + 's', []):
                 name = metric['name']
                 self.add_metric_to_store(metric, metric_type)
 

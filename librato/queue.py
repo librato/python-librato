@@ -30,7 +30,7 @@ class Queue(object):
     for storing a single measurement is not worth it.
 
     This class allows the user to queue measurements which will be sent in a
-    efficient matter.
+    efficient manner.
 
     Chunks are dicts of JSON objects for POST /metrics request.
     They have two keys 'gauges' and 'counters'. The value of these keys
@@ -59,6 +59,33 @@ class Queue(object):
         if (self.auto_submit_count and
                 self._num_measurements_in_queue() >= self.auto_submit_count):
             self.submit()
+
+    def add_aggregator(self, aggregator):
+        cloned_measurements = dict(aggregator.measurements)
+
+        # Find measure_time, if any
+        mt = aggregator.get_measure_time()
+
+        for name in cloned_measurements:
+            nm = cloned_measurements[name]
+            # Set metric name
+            nm['name'] = name
+            # Set measure_time
+            if mt:
+              nm['measure_time'] = mt
+            # Set source
+            if aggregator.source:
+                nm['source'] = aggregator.source
+
+            self._add_measurement('gauge', nm)
+
+        # Clear measurements from aggregator
+        aggregator.clear()
+
+        if (self.auto_submit_count and
+                self._num_measurements_in_queue() >= self.auto_submit_count):
+            self.submit()
+
 
     def submit(self):
         empty_chunks = [self._gen_empty_chunk()]
