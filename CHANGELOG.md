@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.7.0
+* Release 0.7.0: allow "composite" to be specified when adding a new Stream to an Instrument.  Also allow a new Instrument object to be saved directly.
+
 ### Version 0.6.0
 * New release: client-side aggregation support
 
