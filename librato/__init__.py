@@ -43,6 +43,7 @@ from librato import exceptions
 from librato.queue import Queue
 from librato.metrics import Gauge, Counter
 from librato.instruments import Instrument
+from librato.alerts import Alert
 from librato.dashboards import Dashboard
 from librato.annotations import Annotation
 
@@ -322,6 +323,47 @@ class LibratoConnection(object):
         """delete an annotation stream """
         resp = self._mexe("annotations/%s" % name, method="DELETE", query_props=query_props)
         return resp
+
+    #
+    # Alerts
+    #
+    def create_alert(self, name, **query_props):
+        """Create a new alert"""
+        payload = Alert(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("alerts", method="POST", query_props=payload)
+        return Alert.from_dict(self, resp)
+
+    def update_alert(self, alert, **query_props):
+        """Update an existing dashboard"""
+        payload = alert.get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("alerts/%s" % alert._id,
+                          method="PUT", query_props=payload)
+        return resp
+
+    def delete_alert(self, name, **query_props):
+        """delete an annotation stream """
+        alert = self.get_alert(name)
+        if alert is None:
+            return None
+        resp = self._mexe("alerts/%s" % alert._id, method="DELETE", query_props=query_props)
+        return resp
+
+    def get_alert(self, name ,**query_props):
+        """Get specific alert"""
+        resp = self._mexe("alerts", query_props={'version':2,'name':name})
+        alerts = self._parse(resp, "alerts", Alert)
+        if len(alerts) > 0:
+            return alerts[0]
+        return None
+
+    def list_alerts(self, **query_props):
+        """List all alerts"""
+        resp = self._mexe("alerts", query_props={'version':2})
+        return self._parse(resp, "alerts", Alert)
 
     #
     # Queue

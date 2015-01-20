@@ -10,8 +10,10 @@ class MockServer(object):
     def clean(self):
         self.metrics = {'gauges': OrderedDict(), 'counters': OrderedDict()}
         self.instruments = OrderedDict()
+        self.alerts = OrderedDict()
         self.dashboards = OrderedDict()
         self.last_i_id = 0
+        self.last_a_id = 0
         self.last_db_id = 0
 
     def list_of_metrics(self):
@@ -90,6 +92,35 @@ class MockServer(object):
                             " exists %d", _id)
         else:
             return json.dumps(self.instruments[int(_id)]).encode('utf-8')
+    
+    def __an_empty_list_metrics(self):
+        answer = {}
+
+    def create_alert(self, payload):
+        self.last_a_id += 1
+        payload["id"] = self.last_a_id
+        self.alerts[self.last_a_id] = payload
+        return json.dumps(payload).encode('utf-8')
+
+    def get_alert(self, name, payload):
+        return self.list_of_alerts(name)
+
+    def delete_alert(self, _id, payload):
+        del self.alerts[int(_id)]
+        return ''
+
+    def list_of_alerts(self, name=None):
+        answer = {}
+        answer["query"] = {}
+        answer["alerts"] = []
+        alert = answer["alerts"]
+        for _id, c_alert in self.alerts.items():
+            c_alert["id"] = _id
+            if name is None:
+                alert.append(c_alert)
+            elif name==c_alert["name"]:
+                alert.append(c_alert)
+        return json.dumps(answer).encode('utf-8')
 
     def list_of_dashboards(self):
         answer = {}
@@ -234,6 +265,14 @@ class MockResponse(object):
         elif self._req_is_get_instrument():
             return server.get_instrument(r.uri)
 
+        elif self._req_is_list_of_alerts():
+            return server.list_of_alerts()
+        elif self._req_is_get_alert():
+            return server.get_alert(self._extract_name_from_url_parameters(), r.body)
+        elif self._req_is_create_alert():
+            return server.create_alert(r.body)
+        elif self._req_is_delete_alert():
+            return server.delete_alert(self._extract_id_from_url(), r.body)
         elif self._req_is_list_of_dashboards():
             return server.list_of_dashboards()
         elif self._req_is_create_dashboard():
@@ -248,8 +287,9 @@ class MockResponse(object):
       ----
       I am just mocking a RESTful Api server, I am not an actual server.
       path = %s
+      method = %s
       ----
-      """ % self.request.uri
+      """ % (self.request.uri, self.request.method)
             raise Exception(msg)
 
     def _req_is_list_of_metrics(self):
@@ -259,7 +299,8 @@ class MockResponse(object):
         return self._method_is('POST') and self._path_is('/v1/metrics')
 
     def _req_is_delete(self):
-        return self._method_is('DELETE')
+        return (self._method_is('DELETE') and not
+                re.match('/v1/alerts/\d+', self.request.uri))
 
     def _req_is_get_metric(self):
         return (self._method_is('GET') and
@@ -283,6 +324,17 @@ class MockResponse(object):
     def _req_is_get_instrument(self):
         return (self._method_is('GET') and
                 re.match('/v1/instruments/\d+', self.request.uri))
+    
+    # Alerts
+    def _req_is_create_alert(self):
+        return self._method_is('POST') and self._path_is('/v1/alerts')
+    def _req_is_list_of_alerts(self):
+        return self._method_is('GET') and self._path_is('/v1/alerts?version=2') and not self._req_is_get_alert()
+    def _req_is_get_alert(self):
+        return self._method_is('GET') and re.match('/v1/alerts\?(version=2|name=.+)\&(name=.+|version=2)', self.request.uri)
+    def _req_is_delete_alert(self):
+        return (self._method_is('DELETE') and
+                re.match('/v1/alerts/\d+', self.request.uri))
 
     # dashboards
     def _req_is_create_dashboard(self):
@@ -307,6 +359,22 @@ class MockResponse(object):
 
     def _extract_from_url(self):
         m = re.match('/v1/metrics/([\w_]+)', self.request.uri)
+        try:
+            name = m.group(1)
+        except:
+            raise
+        return name
+
+    def _extract_id_from_url(self):
+        m = re.match('/v1/alerts/([\w_]+)', self.request.uri)
+        try:
+            _id = m.group(1)
+        except:
+            raise
+        return _id
+
+    def _extract_name_from_url_parameters(self):
+        m = re.match('.*name=([\w_]+)', self.request.uri)
         try:
             name = m.group(1)
         except:

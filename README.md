@@ -261,6 +261,38 @@ Delete a named annotation stream:
 api.delete_annotation_stream("testing")
 ```
 
+## Alerts
+
+List all alerts:
+
+```python
+for alert in api.list_alerts():
+    print alert.name
+```
+
+Create alerts with an _above_ condition:
+```python
+alert = api.create_alert(name)
+alert.add_condition_for('metric_name').above(1) # immediately
+alert.add_condition_for('metric_name').above(1).duration(60) # duration of the threshold to trigger the alert
+alert.add_condition_for('metric_name').above(1, 'sum') # custom summary function
+alert.save()
+```
+
+Create alerts with a _below_ condition:
+```python
+api.create_alert(name)
+alert.add_condition_for('metric_name').below(1) # the same syntax from above conditions
+alert.save()
+```
+
+Create alerts with an _absent_ condition:
+```python
+api.create_alert(name)
+alert.add_condition_for('metric_name').stops_reporting_for(1) # duration of the threshold to trigger the alert
+alert.save()
+```
+
 ## Contribution
 
 Do you want to contribute? Do you need a new feature? Please open a

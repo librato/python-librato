@@ -58,6 +58,20 @@ class TestClientError(unittest.TestCase):
         self.assertRegexpMatches(msg, "params: measure_time: too far in past")
         self.assertRegexpMatches(msg, "params: name: mymetricname")
 
+    def test_parse_error_message_params_multiple_2nd_level(self):
+        error_resp = {
+          "errors": {
+            "params": {
+              "conditions": {
+                "duration": ["must be"]
+              }
+            }
+          }
+        }
+        ex = exceptions.ClientError(400, error_resp)
+        msg = ex._parse_error_message()
+        self.assertRegexpMatches(msg, "must be")
+
     def test_error_message(self):
         ex = exceptions.ClientError(400, "Standard message")
         self.assertEqual("[400] Standard message", ex.error_message())

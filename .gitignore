@@ -1,5 +1,6 @@
 curl
 *.vim
+*.swp
 
 htmlcov
 play.py

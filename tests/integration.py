@@ -29,8 +29,7 @@ from random import randint
 import time
 logging.basicConfig(level=logging.INFO)
 
-
-class TestLibratoBasic(unittest.TestCase):
+class TestLibratoBase(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         user = os.environ.get('LIBRATO_USER')
@@ -39,6 +38,9 @@ class TestLibratoBasic(unittest.TestCase):
         assert user and token, "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
         cls.conn = librato.connect(user, token)
         cls.conn_sanitize = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
+
+
+class TestLibratoBasic(TestLibratoBase):
 
     def test_list_metrics(self):
         metrics = self.conn.list_metrics()
@@ -222,6 +224,103 @@ class TestLibratoBasic(unittest.TestCase):
         i.save()
         i = self.conn.get_instrument(i.id)
         assert i.name == 'NEW instrument name'
+
+class TestLibratoAlertsIntegration(TestLibratoBase):
+
+    alerts_created_during_test=[]
+
+    def tearDown(self):
+        for name in self.alerts_created_during_test:
+            self.conn.delete_alert(name)
+    
+    def test_add_empty_alert(self):
+        name = self.unique_name("test_add_empty_alert")
+        alert = self.conn.create_alert(name)
+        alert_id = alert._id
+        alert = self.conn.get_alert(name)
+        assert alert._id == alert_id
+        assert alert.name == alert.name
+        assert len(alert.conditions) == 0
+        assert len(alert.services) == 0
+
+    def test_add_alert_with_a_condition(self):
+        name = self.unique_name("test_add_alert_with_a_condition")
+        alert = self.conn.create_alert(name)
+        alert.add_condition_for('metric_test').above(1)
+        alert.save()
+        alert_id = alert._id
+        alert = self.conn.get_alert(name)
+        assert alert._id == alert_id
+        assert len(alert.conditions) == 1
+        assert alert.conditions[0].condition_type == 'above'
+        assert alert.conditions[0].metric_name == 'metric_test'
+
+    def test_delete_alert(self):
+        name = self.unique_name("test_delete_alert")
+        alert = self.conn.create_alert(name)
+        alert_id = alert._id
+        alert = self.conn.get_alert(name)
+        assert alert.name == name
+        self.conn.delete_alert(name)
+        time.sleep(2)
+        # Make sure it's not there anymore
+        try:
+            alert = connection.get(names)
+        except:
+            alert = None
+        assert(alert is None)
+
+    def test_add_alert_with_a_service(self):
+        name = self.unique_name("test_add_alert_with_a_service")
+        alert = self.conn.create_alert(name)
+        alert_id = alert._id
+        alert.add_service(3747)
+        alert.save()
+        alert = self.conn.get_alert(name)
+        assert len(alert.services) == 1
+        assert len(alert.conditions) == 0
+        assert alert.services[0]._id == 3747
+
+    def test_add_alert_with_an_above_condition(self):
+        name = self.unique_name("test_add_alert_with_an_above_condition")
+        alert = self.conn.create_alert(name)
+        alert_id = alert._id
+        alert.add_condition_for('cpu').above(85).duration(70)
+        alert.save()
+        alert = self.conn.get_alert(name)
+        assert len(alert.services) == 0
+        assert alert.conditions[0].condition_type == 'above'
+        assert alert.conditions[0]._duration == 70
+        assert alert.conditions[0].threshold == 85
+        assert alert.conditions[0].source == '*'
+
+    def test_add_alert_with_an_absent_condition(self):
+        name = self.unique_name("test_add_alert_with_an_absent_condition")
+        alert = self.conn.create_alert(name)
+        alert.add_condition_for('cpu').stops_reporting_for(60)
+        alert.save()
+        alert = self.conn.get_alert(name)
+        assert len(alert.conditions) == 1
+        condition = alert.conditions[0]
+        assert condition.condition_type == 'absent'
+        assert condition.metric_name == 'cpu'
+        assert condition._duration == 60
+        assert condition.source == '*'
+
+    def test_add_alert_with_multiple_conditions(self):
+        name = self.unique_name("test_add_alert_with_multiple_conditions")
+        alert=self.conn.create_alert(name)
+        alert.add_condition_for('cpu').above(0, 'sum')
+        alert.add_condition_for('cpu').stops_reporting_for(3600)
+        alert.add_condition_for('cpu').stops_reporting_for(3600)
+        alert.add_condition_for('cpu').above(0, 'count')
+        alert.save()
+
+    def unique_name(self, prefix):
+        name = prefix + str(time.time())
+        self.alerts_created_during_test.append(name)
+        return name
+
 
 if __name__ == '__main__':
     # TO run a specific test:
