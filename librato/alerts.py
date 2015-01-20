@@ -73,33 +73,33 @@ class Condition(object):
         self.condition_type = 'above'
         self.summary_function = summary_function
         self.threshold = threshold
-        self.duration = None
+        self._duration = None
         return self
 
     def below(self, threshold, summary_function=None):
         self.condition_type = 'below'
         self.summary_function = summary_function
         self.threshold = threshold
-        self.duration = None
+        self._duration = None
         return self
 
     def stops_reporting_for(self, duration, summary_function=None):
         self.condition_type = 'absent'
         self.summary_function = summary_function
-        self.duration = duration
+        self._duration = duration
         return self
 
-    def during(self, duration):
-        self.duration = duration
+    def duration(self, duration):
+        self._duration = duration
     
     @classmethod
     def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
                   source=data['source'])
         if data['type'] == 'above':
-           obj.above(data.get('threshold'), data.get('summary_function')).during(data.get('duration'))
+           obj.above(data.get('threshold'), data.get('summary_function')).duration(data.get('duration'))
         elif data['type'] == 'below':
-           obj.below(data.get('threshold'), data.get('summary_function')).during(data.get('duration'))
+           obj.below(data.get('threshold'), data.get('summary_function')).duration(data.get('duration'))
         elif data['type'] == 'absent':
            obj.stops_reporting_for(data.get('duration'), data.get('summary_function'))
         return obj
@@ -111,10 +111,10 @@ class Condition(object):
         if self.condition_type == 'above' or self.condition_type == 'below':
             obj['threshold'] = self.threshold
             obj['summary_function'] = self.summary_function
-            obj['duration'] = self.duration
+            obj['duration'] = self._duration
         elif self.condition_type == 'absent':
             obj['summary_function'] = self.summary_function
-            obj['duration'] = self.duration
+            obj['duration'] = self._duration
         return obj
 
 class Service(object):

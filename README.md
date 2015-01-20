@@ -274,7 +274,7 @@ Create alerts with an _above_ condition:
 ```python
 alert = api.create_alert(name)
 alert.add_condition_for('metric_name').above(1) # immediately
-alert.add_condition_for('metric_name').above(1).during(60) # duration of the threshold to trigger the alert
+alert.add_condition_for('metric_name').above(1).duration(60) # duration of the threshold to trigger the alert
 alert.add_condition_for('metric_name').above(1, 'sum') # custom summary function
 alert.save()
 ```

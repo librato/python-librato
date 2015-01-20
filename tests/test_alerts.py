@@ -60,23 +60,23 @@ class TestLibratoAlerts(unittest.TestCase):
 
     def test_add_above_condition(self):
         alert = self.conn.create_alert(self.name)
-        alert.add_condition_for('metric_test').above(200, 'average').during(5)
+        alert.add_condition_for('metric_test').above(200, 'average').duration(5)
         assert len(alert.conditions) == 1
         condition = alert.conditions[0]
         assert condition.condition_type == 'above'
         assert condition.metric_name == 'metric_test'
         assert condition.threshold == 200
-        assert condition.duration == 5
+        assert condition._duration == 5
 
     def test_add_below_condition(self):
         alert = self.conn.create_alert(self.name)
-        alert.add_condition_for('metric_test').below(200, 'average').during(5)
+        alert.add_condition_for('metric_test').below(200, 'average').duration(5)
         assert len(alert.conditions) == 1
         condition = alert.conditions[0]
         assert condition.condition_type == 'below'
         assert condition.metric_name == 'metric_test'
         assert condition.threshold == 200
-        assert condition.duration == 5
+        assert condition._duration == 5
     
     def test_add_absent_condition(self):
         alert = self.conn.create_alert(self.name)
@@ -85,7 +85,7 @@ class TestLibratoAlerts(unittest.TestCase):
         condition = alert.conditions[0]
         assert condition.condition_type == 'absent'
         assert condition.metric_name == 'metric_test'
-        assert condition.duration == 5
+        assert condition._duration == 5
 
 if __name__ == '__main__':
     unittest.main()

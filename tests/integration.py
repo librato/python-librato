@@ -285,12 +285,12 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         name = self.unique_name("test_add_alert_with_an_above_condition")
         alert = self.conn.create_alert(name)
         alert_id = alert._id
-        alert.add_condition_for('cpu').above(85).during(70)
+        alert.add_condition_for('cpu').above(85).duration(70)
         alert.save()
         alert = self.conn.get_alert(name)
         assert len(alert.services) == 0
         assert alert.conditions[0].condition_type == 'above'
-        assert alert.conditions[0].duration == 70
+        assert alert.conditions[0]._duration == 70
         assert alert.conditions[0].threshold == 85
         assert alert.conditions[0].source == '*'
 
@@ -304,7 +304,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         condition = alert.conditions[0]
         assert condition.condition_type == 'absent'
         assert condition.metric_name == 'cpu'
-        assert condition.duration == 60
+        assert condition._duration == 60
         assert condition.source == '*'
 
     def test_add_alert_with_multiple_conditions(self):
