@@ -280,7 +280,7 @@ Delete a named annotation stream:
 api.delete_annotation_stream("testing")
 ```
 
-## Alerts
+## ~~Alerts~~ (PENDING RELEASE on 1/22)
 
 List all alerts:
 
