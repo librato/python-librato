@@ -212,6 +212,15 @@ class LibratoConnection(object):
         else:
             raise Exception('The server sent me something that is not a Gauge nor a Counter.')
 
+    def get_composite(self, compose, **query_props):
+        if 'resolution' not in query_props:
+            # Default to raw resolution
+            query_props['resolution'] = 1
+        if 'start_time' not in query_props:
+            raise Exception("You must provide a 'start_time'")
+        query_props['compose'] = compose
+        return self._mexe("metrics", method="GET", query_props=query_props)
+
     def update(self, name, **query_props):
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
 

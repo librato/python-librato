@@ -89,6 +89,25 @@ To retrieve a specific metric:
   counter = api.get("connections")
 ```
 
+To retrieve a composite metric:
+
+```python
+  # Get average temperature in all cities for last 8 hours
+  compose = 'mean(s("temperature", "*", {function: "mean", period: "3600"}))'
+  start_time = int(time.time()) - 8 * 3600
+  resp = api.get_composite(compose, start_time=start_time)
+  resp['measurements'][0]['series']
+  # [
+  #   {u'measure_time': 1421744400, u'value': 41.23944444444444},
+  #   {u'measure_time': 1421748000, u'value': 40.07611111111111},
+  #   {u'measure_time': 1421751600, u'value': 38.77444444444445},
+  #   {u'measure_time': 1421755200, u'value': 38.05833333333333},
+  #   {u'measure_time': 1421758800, u'value': 37.983333333333334},
+  #   {u'measure_time': 1421762400, u'value': 38.93333333333333},
+  #   {u'measure_time': 1421766000, u'value': 40.556666666666665}
+  # ]
+```
+
 For sending more measurements:
 
 ```python
