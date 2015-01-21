@@ -228,11 +228,18 @@ class TestLibratoBasic(TestLibratoBase):
 class TestLibratoAlertsIntegration(TestLibratoBase):
 
     alerts_created_during_test=[]
+    gauges_used_during_test = ['metric_test', 'cpu']
+
+    def setUp(self):
+        # Ensure metric names exist so we can create conditions on them
+        for m in self.gauges_used_during_test:
+            # Create or just update a gauge metric
+            self.conn.submit(m, 42)
 
     def tearDown(self):
         for name in self.alerts_created_during_test:
             self.conn.delete_alert(name)
-    
+
     def test_add_empty_alert(self):
         name = self.unique_name("test_add_empty_alert")
         alert = self.conn.create_alert(name)

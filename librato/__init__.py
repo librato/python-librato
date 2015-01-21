@@ -345,7 +345,7 @@ class LibratoConnection(object):
         return Alert.from_dict(self, resp)
 
     def update_alert(self, alert, **query_props):
-        """Update an existing dashboard"""
+        """Update an existing alert"""
         payload = alert.get_payload()
         for k, v in query_props.items():
             payload[k] = v
@@ -353,12 +353,13 @@ class LibratoConnection(object):
                           method="PUT", query_props=payload)
         return resp
 
-    def delete_alert(self, name, **query_props):
-        """delete an annotation stream """
+    # Delete an alert by name (not by id)
+    def delete_alert(self, name):
+        """delete an alert"""
         alert = self.get_alert(name)
         if alert is None:
             return None
-        resp = self._mexe("alerts/%s" % alert._id, method="DELETE", query_props=query_props)
+        resp = self._mexe("alerts/%s" % alert._id, method="DELETE")
         return resp
 
     def get_alert(self, name ,**query_props):
@@ -369,10 +370,19 @@ class LibratoConnection(object):
             return alerts[0]
         return None
 
-    def list_alerts(self, **query_props):
-        """List all alerts"""
-        resp = self._mexe("alerts", query_props={'version':2})
-        return self._parse(resp, "alerts", Alert)
+    # List alerts (defaults to v2 only)
+    def list_alerts(self, active_only=True, **query_props):
+        """List all alerts (default to active only)"""
+        # Only v2 is supported
+        # TODO: remove this when v1 is deprecated at the API
+        query_props['version'] = 2
+        # Note: query_props may contain 'name' which would filter by name
+        resp = self._mexe("alerts", query_props=query_props)
+        alerts = self._parse(resp, "alerts", Alert)
+        if active_only:
+            return list(filter(lambda a: a.active, alerts))
+        else:
+            return alerts
 
     #
     # Queue

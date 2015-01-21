@@ -77,7 +77,7 @@ class TestLibratoAlerts(unittest.TestCase):
         assert condition.metric_name == 'metric_test'
         assert condition.threshold == 200
         assert condition._duration == 5
-    
+
     def test_add_absent_condition(self):
         alert = self.conn.create_alert(self.name)
         alert.add_condition_for('metric_test').stops_reporting_for(5)
@@ -86,6 +86,20 @@ class TestLibratoAlerts(unittest.TestCase):
         assert condition.condition_type == 'absent'
         assert condition.metric_name == 'metric_test'
         assert condition._duration == 5
+
+    def test_immediate_condition(self):
+        cond = librato.alerts.Condition('foo')
+
+        cond._duration = None
+        assert cond.immediate() == True
+
+        # Not even sure this is a valid case, but testing anyway
+        cond._duration = 0
+        assert cond.immediate() == True
+
+        cond._duration = 60
+        assert cond.immediate() == False
+
 
 if __name__ == '__main__':
     unittest.main()
