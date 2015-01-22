@@ -1,5 +1,3 @@
-
-
 class Alert(object):
     """Librato Alert Base class"""
 
@@ -50,6 +48,7 @@ class Alert(object):
                   conditions=data['conditions'],
                   services=data['services'],
                   _id=data['id'],
+                  active=data['active'],
                   attributes=data['attributes'])
         return obj
 
@@ -60,59 +59,79 @@ class Alert(object):
                 'description': self.description,
                 'services': [x._id for x in self.services],
                 'conditions': [x.get_payload() for x in self.conditions]}
-    
+
     def save(self):
         self.connection.update_alert(self)
 
 class Condition(object):
+    ABOVE = 'above'
+    BELOW = 'below'
+    ABSENT = 'absent'
+
+    # Note this is 'average' not 'mean'
+    SUMMARY_FUNCTION_AVERAGE = 'average'
+
     def __init__(self, metric_name, source='*'):
         self.metric_name = metric_name
         self.source = source
+        self.summary_function = None
 
-    def above(self, threshold, summary_function=None):
-        self.condition_type = 'above'
+    def above(self, threshold, summary_function=SUMMARY_FUNCTION_AVERAGE):
+        self.condition_type = self.ABOVE
         self.summary_function = summary_function
         self.threshold = threshold
+        # This implies an immediate trigger
         self._duration = None
         return self
 
-    def below(self, threshold, summary_function=None):
-        self.condition_type = 'below'
+    def below(self, threshold, summary_function=SUMMARY_FUNCTION_AVERAGE):
+        self.condition_type = self.BELOW
         self.summary_function = summary_function
         self.threshold = threshold
+        # This implies an immediate trigger
         self._duration = None
         return self
 
-    def stops_reporting_for(self, duration, summary_function=None):
-        self.condition_type = 'absent'
-        self.summary_function = summary_function
+    # Stops reporting for a duration (in seconds)
+    def stops_reporting_for(self, duration):
+        self.condition_type = self.ABSENT
+        self.summary_function = None
         self._duration = duration
         return self
 
     def duration(self, duration):
         self._duration = duration
-    
+
+    # An alert condition is either "immediate" or "time windowed"
+    def immediate(self):
+        if self._duration is None or self._duration == 0:
+            return True
+        else:
+            return False
+
     @classmethod
     def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
                   source=data['source'])
-        if data['type'] == 'above':
-           obj.above(data.get('threshold'), data.get('summary_function')).duration(data.get('duration'))
-        elif data['type'] == 'below':
-           obj.below(data.get('threshold'), data.get('summary_function')).duration(data.get('duration'))
-        elif data['type'] == 'absent':
-           obj.stops_reporting_for(data.get('duration'), data.get('summary_function'))
+        if data['type'] == Condition.ABOVE:
+            obj.above(data.get('threshold'), data.get('summary_function'))
+            obj.duration(data.get('duration'))
+        elif data['type'] == Condition.BELOW:
+            obj.below(data.get('threshold'), data.get('summary_function'))
+            obj.duration(data.get('duration'))
+        elif data['type'] == Condition.ABSENT:
+            obj.stops_reporting_for(data.get('duration'))
         return obj
-    
+
     def get_payload(self):
         obj = {'condition_type': self.condition_type,
                 'metric_name': self.metric_name,
                 'source': self.source}
-        if self.condition_type == 'above' or self.condition_type == 'below':
+        if self.condition_type in [self.ABOVE, self.BELOW]:
             obj['threshold'] = self.threshold
             obj['summary_function'] = self.summary_function
             obj['duration'] = self._duration
-        elif self.condition_type == 'absent':
+        elif self.condition_type == self.ABSENT:
             obj['summary_function'] = self.summary_function
             obj['duration'] = self._duration
         return obj
@@ -120,7 +139,6 @@ class Condition(object):
 class Service(object):
     def __init__(self, _id):
         self._id = _id
-    
     @classmethod
     def from_dict(cls, data):
         obj = cls(_id=data['id'])
