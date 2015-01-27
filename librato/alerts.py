@@ -49,6 +49,7 @@ class Alert(object):
                   services=data['services'],
                   _id=data['id'],
                   active=data['active'],
+                  rearm_seconds=data['rearm_seconds'],
                   attributes=data['attributes'])
         return obj
 
@@ -57,6 +58,8 @@ class Alert(object):
                 'attributes': self.attributes,
                 'version': self.version,
                 'description': self.description,
+                'rearm_seconds': self.rearm_seconds,
+                'active': self.active,
                 'services': [x._id for x in self.services],
                 'conditions': [x.get_payload() for x in self.conditions]}
 
