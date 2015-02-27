@@ -1,5 +1,9 @@
 import logging
 import unittest
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch
 import librato
 from mock_connection import MockConnect, server
 
@@ -15,6 +19,28 @@ class TestLibrato(unittest.TestCase):
     def test_list_metrics_when_there_are_no_metrics(self):
         metrics = self.conn.list_metrics()
         assert len(metrics) == 0
+
+    def test_list_all_metrics(self):
+        def mock_list(**args):
+            offset = args['offset']
+            length = args['length']
+            # I don't care what the metrics are
+            # this is about testing the logic and the calls
+            result = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
+            return result[offset:length+offset]
+
+        expected_call_list = [({'length': 5, 'offset': 0},),
+                              ({'length': 5, 'offset': 5},),
+                              ({'length': 5, 'offset': 10},)]
+        with patch.object(
+                self.conn,
+                'list_metrics',
+        ) as list_prop:
+            list_prop.side_effect = mock_list
+            metrics = list(self.conn.list_all_metrics(length=5))
+            assert len(metrics) == 12
+            assert list_prop.call_count == 3
+            assert list_prop.call_args_list == expected_call_list
 
     def test_list_metrics_adding_gauge(self):
         """ Notice that the api forces you to send a value even when you are
