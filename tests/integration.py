@@ -249,6 +249,14 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert alert.name == alert.name
         assert len(alert.conditions) == 0
         assert len(alert.services) == 0
+    
+    def test_inactive_alert_with_rearm_seconds(self):
+        name = self.unique_name("test_inactive_alert_with_rearm_seconds")
+        alert = self.conn.create_alert(name, active=False, rearm_seconds=1200)
+        alert_id = alert._id
+        alert = self.conn.get_alert(name)
+        assert alert.rearm_seconds == 1200
+        assert alert.active == False
 
     def test_add_alert_with_a_condition(self):
         name = self.unique_name("test_add_alert_with_a_condition")
