@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.8.1
+* Return `rearm_seconds` and `active` properties for alerts
+
 ### Version 0.8.0
 * Release support for Alerts
 
