@@ -43,13 +43,14 @@ class Alert(object):
         which is usually from librato's API"""
         obj = cls(connection,
                   data['name'],
-                  version=data['version'],
+                  _id=data['id'],
                   description=data['description'],
+                  version=data['version'],
                   conditions=data['conditions'],
                   services=data['services'],
-                  _id=data['id'],
+                  attributes=data['attributes'],
                   active=data['active'],
-                  attributes=data['attributes'])
+                  rearm_seconds=data['rearm_seconds'])
         return obj
 
     def get_payload(self):
