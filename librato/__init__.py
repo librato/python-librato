@@ -190,10 +190,25 @@ class LibratoConnection(object):
     # Metrics
     #
     def list_metrics(self, **query_props):
-        """List all the metrics available"""
+        """List a page of metrics"""
         from librato.metrics import Metric
         resp = self._mexe("metrics", query_props=query_props)
         return self._parse(resp, "metrics", Metric)
+
+    def list_all_metrics(self, **query_props):
+        """List all avaliable metrics"""
+        if 'length' not in query_props:
+            query_props['length'] = 100
+        if 'offset' not in query_props:
+            query_props['offset'] = 0
+        page_size = query_props['length']
+        while True:
+            metric_list = self.list_metrics(**query_props)
+            for m in metric_list:
+                yield m
+            query_props['offset'] += page_size
+            if len(metric_list) < page_size:
+                break
 
     def submit(self, name, value, type="gauge", **query_props):
         payload = {'gauges': [], 'counters': []}

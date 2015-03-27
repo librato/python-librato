@@ -8,4 +8,5 @@ python:
 install:
   - "pip install . --use-mirrors"
   - "pip install six --use-mirrors"
+  - "pip install mock --use-mirrors"
 script: nosetests tests/
