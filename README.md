@@ -50,6 +50,9 @@ To iterate over your metrics:
     print m.name
 ```
 
+or use `list_all_metrics()` to itereate over all your metrics with 
+tranparent pagination.
+
 Let's now create a Metric:
 
 ```python
