@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.8.2
+* New method to retrieve all metrics with pagination. Thanks @Bachmann1234.
+
 ### Version 0.8.1
 * Return `rearm_seconds` and `active` properties for alerts
 
