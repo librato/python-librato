@@ -2,6 +2,7 @@ python-librato
 ==============
 
 [![Build Status](https://secure.travis-ci.org/librato/python-librato.png?branch=master)](http://travis-ci.org/librato/python-librato)
+[![codecov.io](https://codecov.io/github/librato/python-librato/coverage.svg?branch=master)](https://codecov.io/github/librato/python-librato?branch=master)
 
 A Python wrapper for the Librato Metrics API.
 
