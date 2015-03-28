@@ -11,5 +11,5 @@ install:
   - "pip install mock --use-mirrors"
   - "pip install codecov --use-mirrors"
   - "pip install nose-cov --use-mirrors"
-script: nosetests tests/
+script: nosetests tests/ --with-cov --cov-config=.coveragerc
 after_success: codecov
