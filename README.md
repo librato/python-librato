@@ -30,7 +30,7 @@ username (email address) and token (long hexadecimal string).
   api = librato.connect(user, token)
 ```
 
-When creating your connection you may choose to provide a sanitization function
+When creating your connection you may choose to provide a sanitization function.
 This will be applied to any metric name you pass in. For example we provide a
 sanitization function that will ensure your metrics are legal librato names.
 This can be set as such
