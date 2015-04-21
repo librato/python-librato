@@ -239,10 +239,10 @@ class LibratoConnection(object):
     def create_composite(self, name, compose, **query_props):
         query_props['composite'] = compose
         query_props['type'] = 'composite'
-        return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
+        return self.update(name, **query_props)
 
     def update(self, name, **query_props):
-        resp = self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
+        return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
 
     def delete(self, names):
         if isinstance(names, six.string_types):
