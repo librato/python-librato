@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.8.3
+* Persisting composite metrics.
+
 ### Version 0.8.2
 * New method to retrieve all metrics with pagination. Thanks @Bachmann1234.
 
