@@ -120,6 +120,12 @@ For sending more measurements:
     api.submit('connections', num_con, type='counter')
 ```
 
+To create a composite metric:
+
+```python
+  api.create_composite('humidity', 'sum(s("all.*", "*"))', description="a test composite") 
+```
+
 Let's now iterate over the measurements of our Metrics:
 
 ```python
