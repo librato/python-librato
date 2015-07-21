@@ -160,14 +160,15 @@ class LibratoConnection(object):
         """Internal method for executing a command.
            If we get server errors we exponentially wait before retrying
         """
-        conn = self._setup_connection()
         headers = self._set_headers(p_headers)
         success = False
         backoff = 1
         resp_data = None
         while not success:
+            conn = self._setup_connection()
             resp = self._make_request(conn, path, headers, query_props, method)
             resp_data, success, backoff = self._process_response(resp, backoff)
+            conn.close()
         return resp_data
 
     def _do_we_want_to_fake_server_errors(self):
