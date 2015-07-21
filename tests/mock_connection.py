@@ -325,7 +325,7 @@ class MockResponse(object):
     def _req_is_get_instrument(self):
         return (self._method_is('GET') and
                 re.match('/v1/instruments/\d+', self.request.uri))
-    
+
     # Alerts
     def _req_is_create_alert(self):
         return self._method_is('POST') and self._path_is('/v1/alerts')
@@ -409,3 +409,6 @@ class MockConnect(object):
         else:
             fake_error = False
         return MockResponse(self, fake_error)
+
+    def close(self):
+        pass
