@@ -50,7 +50,7 @@ To iterate over your metrics:
     print m.name
 ```
 
-or use `list_all_metrics()` to iterate over all your metrics with 
+or use `list_all_metrics()` to iterate over all your metrics with
 transparent pagination.
 
 Let's now create a Metric:
@@ -123,7 +123,7 @@ For sending more measurements:
 To create a composite metric:
 
 ```python
-  api.create_composite('humidity', 'sum(s("all.*", "*"))', description="a test composite") 
+  api.create_composite('humidity', 'sum(s("all.*", "*"))', description="a test composite")
 ```
 
 Let's now iterate over the measurements of our Metrics:
@@ -160,9 +160,9 @@ q.submit()
 ```
 
 Queues can also be used as context managers. Once the context block is complete the queue
-is submitted automatically. This is true even if an exception interrupts flow. In the 
+is submitted automatically. This is true even if an exception interrupts flow. In the
 example below if ```potentially_dangerous_operation``` causes an exception the queue will
-submit the first measurement as it was the only one successfully added. 
+submit the first measurement as it was the only one successfully added.
 If the operation succeeds both measurements will be submitted.
 
 ```python
@@ -174,7 +174,7 @@ with api.new_queue() as q:
 ```
 
 Queues by default will collect metrics until they are told to submit. You may create a queue
-that autosubmits based on metric volume. 
+that autosubmits based on metric volume.
 
 ```python
 api = librato.connect(user, token)
@@ -277,8 +277,8 @@ doesn't exist). Title is a required parameter, and all other parameters are opti
 ```python
 api.post_annotation("testing",title="foobarbiz")
 
-api.post_annotation("TravisCI",title="build %s"%travisBuildID, 
-                     source=SystemSource, 
+api.post_annotation("TravisCI",title="build %s"%travisBuildID,
+                     source=SystemSource,
                      description="Application %s, Travis build %s"%(appName,travisBuildID),
                      links=[{'rel': 'travis', 'href': 'http://travisci.com/somebuild'}])
 ```
@@ -320,6 +320,13 @@ api.create_alert(name)
 alert.add_condition_for('metric_name').stops_reporting_for(1) # duration of the threshold to trigger the alert
 alert.save()
 ```
+
+## Misc
+
+### Timeouts
+
+Timeouts are provided by the underlying http client. By default we timeout at 10 seconds. You can change
+that by using `api.set_timeout(timeout)`.
 
 ## Contribution
 

@@ -392,7 +392,7 @@ class MockConnect(object):
       .status
       .read() -> raw json body of the answer
     """
-    def __init__(self, hostname, fake_n_errors=0):
+    def __init__(self, hostname, fake_n_errors=0, timeout=10):
         self.hostname = hostname
         self.fake_n_errors = fake_n_errors
 

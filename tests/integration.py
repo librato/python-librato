@@ -21,6 +21,7 @@
 
 import logging
 from contextlib import contextmanager
+import nose
 import unittest
 from librato.exceptions import BadRequest
 import librato
@@ -249,7 +250,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         assert alert.name == alert.name
         assert len(alert.conditions) == 0
         assert len(alert.services) == 0
-    
+
     def test_inactive_alert_with_rearm_seconds(self):
         name = self.unique_name("test_inactive_alert_with_rearm_seconds")
         alert = self.conn.create_alert(name, active=False, rearm_seconds=1200)
