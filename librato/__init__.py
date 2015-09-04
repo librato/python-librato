@@ -28,6 +28,7 @@ __version__ = "0.8.3"
 # Defaults
 HOSTNAME = "metrics-api.librato.com"
 BASE_PATH = "/v1/"
+DEFAULT_TIMEOUT = 10
 
 import platform
 import time
@@ -102,6 +103,7 @@ class LibratoConnection(object):
         self.fake_n_errors = 0
         self.backoff_logic = lambda backoff: backoff*2
         self.sanitize = sanitizer
+        self.timeout = DEFAULT_TIMEOUT
 
     def _set_headers(self, headers):
         """ set headers for request """
@@ -169,7 +171,7 @@ class LibratoConnection(object):
             resp = self._make_request(conn, path, headers, query_props, method)
             try:
                 resp_data, success, backoff = self._process_response(resp, backoff)
-            except httplib.ResponseNotReady:
+            except http_client.ResponseNotReady:
                 conn.close()
                 conn = self._setup_connection()
         conn.close()
@@ -182,7 +184,7 @@ class LibratoConnection(object):
         if self._do_we_want_to_fake_server_errors():
             return HTTPSConnection(self.hostname, fake_n_errors=self.fake_n_errors)
         else:
-            return HTTPSConnection(self.hostname)
+            return HTTPSConnection(self.hostname, timeout=self.timeout)
 
     def _parse(self, resp, name, cls):
         """Parse to an object"""
@@ -415,6 +417,11 @@ class LibratoConnection(object):
     def new_queue(self, **kwargs):
         return Queue(self, **kwargs)
 
+    #
+    # misc
+    #
+    def set_timeout(self, timeout):
+        self.timeout = timeout
 
 def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op):
     """
