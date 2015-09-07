@@ -17,6 +17,15 @@ class TestClientError(unittest.TestCase):
         ex = exceptions.ClientError(400, "a standard message")
         self.assertEqual("a standard message", ex._parse_error_message())
 
+    def test_parse_error_message_request_scalar(self):
+        error_resp = {
+          "errors": {
+            "request": "test error message"
+          }
+        }
+        ex = exceptions.ClientError(400, error_resp)
+        self.assertEqual("request: test error message", ex._parse_error_message())
+
     def test_parse_error_message_request(self):
         error_resp = {
           "errors": {
@@ -25,6 +34,15 @@ class TestClientError(unittest.TestCase):
         }
         ex = exceptions.ClientError(400, error_resp)
         self.assertEqual("request: Not found", ex._parse_error_message())
+
+    def test_parse_error_message_request_multiple(self):
+        error_resp = {
+          "errors": {
+            "request": ["Not found", "Another error"]
+          }
+        }
+        ex = exceptions.ClientError(400, error_resp)
+        self.assertEqual("request: Not found, request: Another error", ex._parse_error_message())
 
     def test_parse_error_message_params(self):
         error_resp = {
@@ -35,7 +53,7 @@ class TestClientError(unittest.TestCase):
         ex = exceptions.ClientError(400, error_resp)
         self.assertEqual("params: measure_time: too far in past", ex._parse_error_message())
 
-    def test_parse_error_message_params(self):
+    def test_parse_error_message_params_multi_message(self):
         error_resp = {
           "errors": {
             "params": {"name": ["duplicate etc", "bad character etc"]}
@@ -63,14 +81,14 @@ class TestClientError(unittest.TestCase):
           "errors": {
             "params": {
               "conditions": {
-                "duration": ["must be"]
+                "duration": ["must be set"]
               }
             }
           }
         }
         ex = exceptions.ClientError(400, error_resp)
         msg = ex._parse_error_message()
-        self.assertRegexpMatches(msg, "must be")
+        self.assertEqual(msg, 'params: conditions: duration: must be set')
 
     def test_error_message(self):
         ex = exceptions.ClientError(400, "Standard message")

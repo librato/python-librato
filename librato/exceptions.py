@@ -54,31 +54,51 @@ class ClientError(Exception):
     #     ]
     #   }
     # }
+    #
+    #
+    # {
+    #   "errors": {
+    #     "request": "The requested data resolution is unavailable for the
+    #                   given time range. Please try a different resolution."
+    #   }
+    # }
+    #
     def _parse_error_message(self):
         if isinstance(self.error_payload, str):
-            # Normal string
+            # Payload is just a string
             return self.error_payload
         elif isinstance(self.error_payload, dict):
-            # Error hash
-            errors = self.error_payload['errors']
+            payload = self.error_payload['errors']
             messages = []
-            for key in errors:
-                for v in errors[key]:
-                    msg = "%s: %s" % (key, v)
-                    if isinstance(errors[key], dict):
-                        msg += ": "
-                        if isinstance(errors[key][v], list):
-                          # Join error messages with commas
-                          msg += ", ".join(errors[key][v])
-                        elif isinstance(errors[key][v], dict):
-                          #TODO: refactor it
-                          for vv in errors[key][v]:
-                            msg += "%s: " % (vv)
-                            msg += ", ".join(errors[key][v][vv])
-                        else:
-                          msg += errors[key][v]
+            for key in payload:
+                error_list = payload[key]
+                if isinstance(error_list, str):
+                    # The error message is a scalar string, just tack it on
+                    msg = "%s: %s" % (key, error_list)
                     messages.append(msg)
+                elif isinstance(error_list, list):
+                    for error_message in error_list:
+                        msg = "%s: %s" % (key, error_message)
+                        messages.append(msg)
+                elif isinstance(error_list, dict):
+                    for k in error_list:
+                        # e.g. "params: measure_time: "
+                        msg = "%s: %s: " % (key, k)
+                        msg += self._flatten_error_message(error_list[k])
+                        messages.append(msg)
             return ", ".join(messages)
+
+    def _flatten_error_message(self, error_msg):
+        if isinstance(error_msg, str):
+            return error_msg
+        elif isinstance(error_msg, list):
+            # Join with commas
+            return ", ".join(error_msg)
+        elif isinstance(error_msg, dict):
+            # Flatten out the dict
+            for k in error_msg:
+                messages = ", ".join(error_msg[k])
+                return "%s: %s" % (k, messages)
 
 
 class BadRequest(ClientError):
