@@ -133,6 +133,16 @@ class MockServer(object):
             dbs.append(c_dbs)
         return json.dumps(answer).encode('utf-8')
 
+    def get_annotation_stream(self):
+        name = 'My_Annotation'
+        annotation_resp = {}
+        annotation_resp['name'] = name
+        annotation_resp['display_name'] = name
+        annotation_resp['events'] = {'event':'mocked event'}
+        annotation_resp['query'] = {'query': 'mocked query'}
+        return json.dumps(annotation_resp).encode('utf-8')
+
+
     def create_dashboard(self, payload):
         self.last_db_id += 1
         payload["id"] = self.last_i_id
@@ -276,6 +286,8 @@ class MockResponse(object):
             return server.delete_alert(self._extract_id_from_url(), r.body)
         elif self._req_is_list_of_dashboards():
             return server.list_of_dashboards()
+        elif self._req_is_get_annotation_stream():
+            return server.get_annotation_stream()
         elif self._req_is_create_dashboard():
             return server.create_dashboard(r.body)
         elif self._req_is_get_dashboard():
@@ -343,6 +355,9 @@ class MockResponse(object):
 
     def _req_is_list_of_dashboards(self):
         return self._method_is('GET') and self._path_is('/v1/dashboards')
+
+    def _req_is_get_annotation_stream(self):
+        return self._method_is('GET') and self._path_is('/v1/annotations/My_Annotation')
 
     def _req_is_get_dashboard(self):
         return (self._method_is('GET') and
