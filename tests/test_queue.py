@@ -1,6 +1,7 @@
 import logging
 import unittest
 import librato
+from librato.aggregator import Aggregator
 from mock_connection import MockConnect, server
 from random import randint
 
@@ -137,7 +138,7 @@ class TestLibratoQueue(unittest.TestCase):
     def test_add_aggregator(self):
         q = self.q
         metrics = self.conn.list_metrics()
-        a = librato.aggregator.Aggregator(self.conn, source='mysource', period=10)
+        a = Aggregator(self.conn, source='mysource', period=10)
         a.add('foo', 42)
         a.add('bar', 37)
         q.add_aggregator(a)
