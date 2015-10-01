@@ -35,6 +35,7 @@ class Metric(object):
         self.description = description
         self.measurements = {}
         self.query = {}
+        self.composite = None
 
     def __getitem__(self, name):
         return self.attributes[name]
@@ -57,6 +58,7 @@ class Metric(object):
         obj.description = data['description'] if 'description' in data else None
         obj.measurements = data['measurements'] if 'measurements' in data else {}
         obj.query = data['query'] if 'query' in data else {}
+        obj.composite = data['composite'] if 'composite' in data else None
 
         return obj
 
