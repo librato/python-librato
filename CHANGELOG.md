@@ -1,5 +1,12 @@
 ## Changelog
 
+### Version 0.8.5
+* Same as 0.8.4. Resubmitting to pypi.
+
+### Version 0.8.4
+* Add timeout support.
+* Various Bug fixes. Thanks @marcelocure
+
 ### Version 0.8.3
 * Persisting composite metrics.
 
