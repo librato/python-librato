@@ -10,7 +10,9 @@ class Instrument(object):
             if isinstance(i, Stream):
                 self.streams.append(i)
             elif isinstance(i, dict):  # Probably parsing JSON here
-                self.streams.append(Stream(i.get('metric'), i.get('source'), i.get('composite'), i.get('units_short')))
+                stream = Stream(i.get('metric'), i.get('source'), i.get('composite'),
+                        i.get('units_short'), i.get('units_long'))
+                self.streams.append(stream)
             else:
                 self.streams.append(Stream(*i))
         self.attributes = attributes
@@ -32,8 +34,9 @@ class Instrument(object):
                 'attributes': self.attributes,
                 'streams': self.streams_payload()}
 
-    def new_stream(self, metric=None, source='*', composite=None, units_short=None):
-        stream = Stream(metric, source, composite, units_short)
+    def new_stream(self, metric=None, source='*', composite=None,
+            units_short=None, units_long=None):
+        stream = Stream(metric, source, composite, units_short, units_long)
         self.streams.append(stream)
         return stream
 
@@ -55,11 +58,13 @@ class Instrument(object):
 
 
 class Stream(object):
-    def __init__(self, metric=None, source='*', composite=None, units_short=None):
+    def __init__(self, metric=None, source='*', composite=None,
+            units_short=None, units_long=None):
         self.metric = metric
         self.composite = composite
         self.source = source
         self.units_short = units_short
+        self.units_long = units_long
         if self.composite:
             self.source = None
 
@@ -67,4 +72,5 @@ class Stream(object):
         return {'metric': self.metric,
                 'composite': self.composite,
                 'source': self.source,
-                'units_short': self.units_short}
+                'units_short': self.units_short,
+                'units_long': self.units_long}

@@ -66,7 +66,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(ins.streams) == 0
         assert ins.id == 1
 
-        ins.new_stream(composite='s("cpu", "*")', units_short='%')
+        ins.new_stream(composite='s("cpu", "*")', units_short='%', units_long='percentage')
         self.conn.update_instrument(ins)
         ins = self.conn.get_instrument(1)
         assert ins.name == name
@@ -74,6 +74,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert ins.id == 1
         assert ins.streams[0].composite == 's("cpu", "*")'
         assert ins.streams[0].units_short == '%'
+        assert ins.streams[0].units_long == 'percentage'
 
     def test_is_persisted(self):
         i = librato.Instrument(self.conn, 'test inst')
