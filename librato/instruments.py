@@ -11,7 +11,7 @@ class Instrument(object):
                 self.streams.append(i)
             elif isinstance(i, dict):  # Probably parsing JSON here
                 stream = Stream(i.get('metric'), i.get('source'), i.get('composite'),
-                        i.get('units_short'), i.get('units_long'), i.get('min'))
+                        i.get('units_short'), i.get('units_long'), i.get('min'), i.get('max'))
                 self.streams.append(stream)
             else:
                 self.streams.append(Stream(*i))
@@ -35,8 +35,9 @@ class Instrument(object):
                 'streams': self.streams_payload()}
 
     def new_stream(self, metric=None, source='*', composite=None,
-            units_short=None, units_long=None, display_min=None):
-        stream = Stream(metric, source, composite, units_short, units_long, display_min)
+            units_short=None, units_long=None, display_min=None, display_max=None):
+        stream = Stream(metric, source, composite,
+               units_short, units_long, display_min, display_max)
         self.streams.append(stream)
         return stream
 
@@ -59,13 +60,14 @@ class Instrument(object):
 
 class Stream(object):
     def __init__(self, metric=None, source='*', composite=None,
-            units_short=None, units_long=None, display_min=None):
+            units_short=None, units_long=None, display_min=None, display_max=None):
         self.metric = metric
         self.composite = composite
         self.source = source
         self.units_short = units_short
         self.units_long = units_long
         self.display_min = display_min
+        self.display_max = display_max
         if self.composite:
             self.source = None
 
@@ -75,4 +77,5 @@ class Stream(object):
                 'source': self.source,
                 'units_short': self.units_short,
                 'units_long': self.units_long,
-                'min': self.display_min}
+                'min': self.display_min,
+                'max': self.display_max}
