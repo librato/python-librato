@@ -10,7 +10,7 @@ class Instrument(object):
             if isinstance(i, Stream):
                 self.streams.append(i)
             elif isinstance(i, dict):  # Probably parsing JSON here
-                self.streams.append(Stream(i.get('metric'), i.get('source'), i.get('composite')))
+                self.streams.append(Stream(i.get('metric'), i.get('source'), i.get('composite'), i.get('units_short')))
             else:
                 self.streams.append(Stream(*i))
         self.attributes = attributes
@@ -32,8 +32,8 @@ class Instrument(object):
                 'attributes': self.attributes,
                 'streams': self.streams_payload()}
 
-    def new_stream(self, metric=None, source='*', composite=None):
-        stream = Stream(metric, source, composite)
+    def new_stream(self, metric=None, source='*', composite=None, units_short=None):
+        stream = Stream(metric, source, composite, units_short)
         self.streams.append(stream)
         return stream
 
@@ -55,14 +55,16 @@ class Instrument(object):
 
 
 class Stream(object):
-    def __init__(self, metric=None, source='*', composite=None):
+    def __init__(self, metric=None, source='*', composite=None, units_short=None):
         self.metric = metric
         self.composite = composite
         self.source = source
+        self.units_short = units_short
         if self.composite:
             self.source = None
 
     def get_payload(self):
         return {'metric': self.metric,
                 'composite': self.composite,
-                'source': self.source}
+                'source': self.source,
+                'units_short': self.units_short}

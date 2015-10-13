@@ -58,7 +58,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert si.streams[0].metric == "a_gauge"
         assert si.streams[0].composite == None
 
-    def test_adding_a_new_instrument_with_composite_metric_stream(self):
+    def test_adding_a_new_instrument_with_stream_properties(self):
         name = "my_INST_with_STREAMS"
         ins = self.conn.create_instrument(name)
         assert type(ins) == librato.Instrument
@@ -66,13 +66,14 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(ins.streams) == 0
         assert ins.id == 1
 
-        ins.new_stream(composite='my_composite_string_with_no_validation')
+        ins.new_stream(composite='s("cpu", "*")', units_short='%')
         self.conn.update_instrument(ins)
         ins = self.conn.get_instrument(1)
         assert ins.name == name
         assert len(ins.streams) == 1
         assert ins.id == 1
-        assert ins.streams[0].composite == "my_composite_string_with_no_validation"
+        assert ins.streams[0].composite == 's("cpu", "*")'
+        assert ins.streams[0].units_short == '%'
 
     def test_is_persisted(self):
         i = librato.Instrument(self.conn, 'test inst')
