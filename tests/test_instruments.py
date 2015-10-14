@@ -66,7 +66,8 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(ins.streams) == 0
         assert ins.id == 1
 
-        ins.new_stream(composite='s("cpu", "*")', units_short='%', units_long='percentage',
+        ins.new_stream(composite='s("cpu", "*")', name='CPU',
+                units_short='%', units_long='percentage',
                 display_min=0, display_max=100, summary_function='average',
                 transform_function='x/1', period=60)
         self.conn.update_instrument(ins)
@@ -75,6 +76,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(ins.streams) == 1
         assert ins.id == 1
         assert ins.streams[0].composite == 's("cpu", "*")'
+        assert ins.streams[0].name == 'CPU'
         assert ins.streams[0].units_short == '%'
         assert ins.streams[0].units_long == 'percentage'
         assert ins.streams[0].display_min == 0

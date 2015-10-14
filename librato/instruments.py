@@ -11,9 +11,9 @@ class Instrument(object):
                 self.streams.append(i)
             elif isinstance(i, dict):  # Probably parsing JSON here
                 stream = Stream(i.get('metric'), i.get('source'), i.get('composite'),
-                        i.get('units_short'), i.get('units_long'), i.get('min'), i.get('max'),
-                        i.get('summary_function'), i.get('transform_function'),
-                        i.get('period'))
+                        i.get('name'), i.get('units_short'), i.get('units_long'),
+                        i.get('min'), i.get('max'), i.get('summary_function'),
+                        i.get('transform_function'), i.get('period'))
                 self.streams.append(stream)
             else:
                 self.streams.append(Stream(*i))
@@ -36,10 +36,10 @@ class Instrument(object):
                 'attributes': self.attributes,
                 'streams': self.streams_payload()}
 
-    def new_stream(self, metric=None, source='*', composite=None,
+    def new_stream(self, metric=None, source='*', composite=None, name=None,
             units_short=None, units_long=None, display_min=None, display_max=None,
             summary_function='average', transform_function=None, period=None):
-        stream = Stream(metric, source, composite,
+        stream = Stream(metric, source, composite, name,
                units_short, units_long, display_min, display_max,
                summary_function, transform_function, period)
         self.streams.append(stream)
@@ -63,12 +63,13 @@ class Instrument(object):
 
 
 class Stream(object):
-    def __init__(self, metric=None, source='*', composite=None,
+    def __init__(self, metric=None, source='*', composite=None, name=None,
             units_short=None, units_long=None, display_min=None, display_max=None,
             summary_function='average', transform_function=None, period=None):
         self.metric = metric
         self.composite = composite
         self.source = source
+        self.name = name
         self.units_short = units_short
         self.units_long = units_long
         self.display_min = display_min
@@ -83,6 +84,7 @@ class Stream(object):
         return {'metric': self.metric,
                 'composite': self.composite,
                 'source': self.source,
+                'name': self.name,
                 'units_short': self.units_short,
                 'units_long': self.units_long,
                 'min': self.display_min,

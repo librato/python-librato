@@ -202,7 +202,8 @@ class TestLibratoBasic(TestLibratoBase):
         name = "my_INST_with_STREAMS"
         ins = self.conn.create_instrument(name)
         ins_id = ins.id
-        ins.new_stream(composite='s("cpu", "*")', units_short='%', units_long='percentage',
+        ins.new_stream(composite='s("cpu", "*")', name='CPU',
+                units_short='%', units_long='percentage',
                 display_min=0, display_max=100, summary_function='average',
                 transform_function='x/1', period=60)
         self.conn.update_instrument(ins)
@@ -211,6 +212,7 @@ class TestLibratoBasic(TestLibratoBase):
         assert ins.id == ins_id
         assert len(ins.streams) == 1
         assert ins.streams[0].composite == 's("cpu", "*")'
+        assert ins.streams[0].name == 'CPU'
         assert ins.streams[0].units_short == '%'
         assert ins.streams[0].units_long == 'percentage'
         assert ins.streams[0].display_min == 0
