@@ -195,27 +195,27 @@ api = librato.connect(email, token)
 
 a = Aggregator(api)
 a.add("foo", 42)
-a.add("bar", 5)
+a.add("foo", 5)
 # count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
 a.submit()
 
 a = Aggregator(api, source='my.source', period=60)
 a.add("foo", 42)
-a.add("bar", 5)
+a.add("foo", 5)
 # count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=my.source
 # measure_time = <now> - (<now> % 60)
 a.submit()
 
 a = Aggregator(api, period=60, measure_time=1419302671)
 a.add("foo", 42)
-a.add("bar", 5)
+a.add("foo", 5)
 # count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
 # measure_time = <now> - (<now> % 60) = 1419302640
 a.submit()
 
 a = Aggregator(api, measure_time=1419302671)
 a.add("foo", 42)
-a.add("bar", 5)
+a.add("foo", 5)
 # count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
 # measure_time = 1419302671
 a.submit()
