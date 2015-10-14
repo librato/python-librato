@@ -12,7 +12,8 @@ class Instrument(object):
             elif isinstance(i, dict):  # Probably parsing JSON here
                 stream = Stream(i.get('metric'), i.get('source'), i.get('composite'),
                         i.get('units_short'), i.get('units_long'), i.get('min'), i.get('max'),
-                        i.get('summary_function'), i.get('transform_function'))
+                        i.get('summary_function'), i.get('transform_function'),
+                        i.get('period'))
                 self.streams.append(stream)
             else:
                 self.streams.append(Stream(*i))
@@ -37,10 +38,10 @@ class Instrument(object):
 
     def new_stream(self, metric=None, source='*', composite=None,
             units_short=None, units_long=None, display_min=None, display_max=None,
-            summary_function='average', transform_function=None):
+            summary_function='average', transform_function=None, period=None):
         stream = Stream(metric, source, composite,
                units_short, units_long, display_min, display_max,
-               summary_function, transform_function)
+               summary_function, transform_function, period)
         self.streams.append(stream)
         return stream
 
@@ -64,7 +65,7 @@ class Instrument(object):
 class Stream(object):
     def __init__(self, metric=None, source='*', composite=None,
             units_short=None, units_long=None, display_min=None, display_max=None,
-            summary_function='average', transform_function=None):
+            summary_function='average', transform_function=None, period=None):
         self.metric = metric
         self.composite = composite
         self.source = source
@@ -74,6 +75,7 @@ class Stream(object):
         self.display_max = display_max
         self.summary_function = summary_function
         self.transform_function = transform_function
+        self.period = period
         if self.composite:
             self.source = None
 
@@ -86,4 +88,5 @@ class Stream(object):
                 'min': self.display_min,
                 'max': self.display_max,
                 'summary_function': self.summary_function,
-                'transform_function': self.transform_function}
+                'transform_function': self.transform_function,
+                'period': self.period}
