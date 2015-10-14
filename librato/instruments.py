@@ -11,7 +11,7 @@ class Instrument(object):
                 self.streams.append(i)
             elif isinstance(i, dict):  # Probably parsing JSON here
                 stream = Stream(i.get('metric'), i.get('source'), i.get('composite'),
-                        i.get('units_short'), i.get('units_long'), i.get('min'), i.get('max'))
+                        i.get('units_short'), i.get('units_long'), i.get('min'), i.get('max'), i.get('summary_function'))
                 self.streams.append(stream)
             else:
                 self.streams.append(Stream(*i))
@@ -35,9 +35,9 @@ class Instrument(object):
                 'streams': self.streams_payload()}
 
     def new_stream(self, metric=None, source='*', composite=None,
-            units_short=None, units_long=None, display_min=None, display_max=None):
+            units_short=None, units_long=None, display_min=None, display_max=None, summary_function='average'):
         stream = Stream(metric, source, composite,
-               units_short, units_long, display_min, display_max)
+               units_short, units_long, display_min, display_max, summary_function)
         self.streams.append(stream)
         return stream
 
@@ -60,7 +60,7 @@ class Instrument(object):
 
 class Stream(object):
     def __init__(self, metric=None, source='*', composite=None,
-            units_short=None, units_long=None, display_min=None, display_max=None):
+            units_short=None, units_long=None, display_min=None, display_max=None, summary_function='average'):
         self.metric = metric
         self.composite = composite
         self.source = source
@@ -68,6 +68,7 @@ class Stream(object):
         self.units_long = units_long
         self.display_min = display_min
         self.display_max = display_max
+        self.summary_function = summary_function
         if self.composite:
             self.source = None
 
@@ -78,4 +79,5 @@ class Stream(object):
                 'units_short': self.units_short,
                 'units_long': self.units_long,
                 'min': self.display_min,
-                'max': self.display_max}
+                'max': self.display_max,
+                'summary_function': self.summary_function}
