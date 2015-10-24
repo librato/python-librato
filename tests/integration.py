@@ -204,7 +204,7 @@ class TestLibratoBasic(TestLibratoBase):
         ins.new_stream(composite='s("cpu", "*")', name='CPU',
                 units_short='%', units_long='percentage',
                 display_min=0, display_max=100, summary_function='average',
-                transform_function='x/1', period=60)
+                transform_function='x/1', period=60, color='#52D74C')
         self.conn.update_instrument(ins)
         ins = self.conn.get_instrument(ins.id)
         assert ins.name == name
@@ -219,6 +219,7 @@ class TestLibratoBasic(TestLibratoBase):
         assert ins.streams[0].summary_function == 'average'
         assert ins.streams[0].transform_function == 'x/1'
         assert ins.streams[0].period == 60
+        assert ins.streams[0].color == '#52D74C'
 
     def test_adding_a_new_instrument_with_metric_stream_properties(self):
         name = "my_INST_with_STREAMS"
@@ -227,7 +228,7 @@ class TestLibratoBasic(TestLibratoBase):
         ins.new_stream(metric='cpu', name='CPU', source='*',
                 units_short='%', units_long='percentage',
                 display_min=0, display_max=100, summary_function='average',
-                transform_function='x/1', period=60, group_function='average')
+                transform_function='x/1', period=60, group_function='average', color='#52D74C')
         self.conn.update_instrument(ins)
         ins = self.conn.get_instrument(ins.id)
         assert ins.name == name
@@ -244,6 +245,7 @@ class TestLibratoBasic(TestLibratoBase):
         assert ins.streams[0].transform_function == 'x/1'
         assert ins.streams[0].period == 60
         assert ins.streams[0].group_function == 'average'
+        assert ins.streams[0].color == '#52D74C'
 
     def test_instrument_save_creates_new_record(self):
         instrument_name = 'my instrument name'
