@@ -13,7 +13,8 @@ class Instrument(object):
                 stream = Stream(i.get('metric'), i.get('source'), i.get('composite'),
                         i.get('name'), i.get('units_short'), i.get('units_long'),
                         i.get('min'), i.get('max'), i.get('summary_function'),
-                        i.get('transform_function'), i.get('period'))
+                        i.get('transform_function'), i.get('period'),
+                        i.get('group_function'))
                 self.streams.append(stream)
             else:
                 self.streams.append(Stream(*i))
@@ -38,10 +39,11 @@ class Instrument(object):
 
     def new_stream(self, metric=None, source='*', composite=None, name=None,
             units_short=None, units_long=None, display_min=None, display_max=None,
-            summary_function='average', transform_function=None, period=None):
+            summary_function='average', transform_function=None, period=None,
+            group_function='average'):
         stream = Stream(metric, source, composite, name,
                units_short, units_long, display_min, display_max,
-               summary_function, transform_function, period)
+               summary_function, transform_function, period, group_function)
         self.streams.append(stream)
         return stream
 
@@ -65,7 +67,8 @@ class Instrument(object):
 class Stream(object):
     def __init__(self, metric=None, source='*', composite=None, name=None,
             units_short=None, units_long=None, display_min=None, display_max=None,
-            summary_function='average', transform_function=None, period=None):
+            summary_function='average', transform_function=None, period=None,
+            group_function='average'):
         self.metric = metric
         self.composite = composite
         self.source = source
@@ -77,8 +80,11 @@ class Stream(object):
         self.summary_function = summary_function
         self.transform_function = transform_function
         self.period = period
+        self.group_function = group_function
+
         if self.composite:
             self.source = None
+            self.group_function = None
 
     def get_payload(self):
         return {'metric': self.metric,
@@ -91,4 +97,5 @@ class Stream(object):
                 'max': self.display_max,
                 'summary_function': self.summary_function,
                 'transform_function': self.transform_function,
-                'period': self.period}
+                'period': self.period,
+                'group_function': self.group_function}

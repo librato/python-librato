@@ -58,7 +58,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert si.streams[0].metric == "a_gauge"
         assert si.streams[0].composite == None
 
-    def test_adding_a_new_instrument_with_stream_properties(self):
+    def test_adding_a_new_instrument_with_composite_stream_properties(self):
         name = "my_INST_with_STREAMS"
         ins = self.conn.create_instrument(name)
         assert type(ins) == librato.Instrument
@@ -84,6 +84,35 @@ class TestLibratoInstruments(unittest.TestCase):
         assert ins.streams[0].summary_function == 'average'
         assert ins.streams[0].transform_function == 'x/1'
         assert ins.streams[0].period == 60
+
+    def test_adding_a_new_instrument_with_metric_stream_properties(self):
+        name = "my_INST_with_STREAMS"
+        ins = self.conn.create_instrument(name)
+        assert type(ins) == librato.Instrument
+        assert ins.name == name
+        assert len(ins.streams) == 0
+        assert ins.id == 1
+
+        ins.new_stream(metric='cpu', name='CPU', source='*',
+                units_short='%', units_long='percentage',
+                display_min=0, display_max=100, summary_function='average',
+                transform_function='x/1', period=60, group_function='average')
+        self.conn.update_instrument(ins)
+        ins = self.conn.get_instrument(1)
+        assert ins.name == name
+        assert len(ins.streams) == 1
+        assert ins.id == 1
+        assert ins.streams[0].metric == 'cpu'
+        assert ins.streams[0].name == 'CPU'
+        assert ins.streams[0].source == '*'
+        assert ins.streams[0].units_short == '%'
+        assert ins.streams[0].units_long == 'percentage'
+        assert ins.streams[0].display_min == 0
+        assert ins.streams[0].display_max == 100
+        assert ins.streams[0].summary_function == 'average'
+        assert ins.streams[0].transform_function == 'x/1'
+        assert ins.streams[0].period == 60
+        assert ins.streams[0].group_function == 'average'
 
     def test_is_persisted(self):
         i = librato.Instrument(self.conn, 'test inst')
