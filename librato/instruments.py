@@ -10,12 +10,7 @@ class Instrument(object):
             if isinstance(i, Stream):
                 self.streams.append(i)
             elif isinstance(i, dict):  # Probably parsing JSON here
-                stream = Stream(i.get('metric'), i.get('source'), i.get('composite'),
-                        i.get('name'), i.get('units_short'), i.get('units_long'),
-                        i.get('min'), i.get('max'), i.get('summary_function'),
-                        i.get('transform_function'), i.get('period'),
-                        i.get('group_function'), i.get('color'))
-                self.streams.append(stream)
+                self.streams.append(Stream.from_dict(i))
             else:
                 self.streams.append(Stream(*i))
         self.attributes = attributes
@@ -37,14 +32,8 @@ class Instrument(object):
                 'attributes': self.attributes,
                 'streams': self.streams_payload()}
 
-    def new_stream(self, metric=None, source='*', composite=None, name=None,
-            units_short=None, units_long=None, display_min=None, display_max=None,
-            summary_function='average', transform_function=None, period=None,
-            group_function='average', color=None):
-        stream = Stream(metric, source, composite, name,
-               units_short, units_long, display_min, display_max,
-               summary_function, transform_function, period,
-               group_function, color)
+    def new_stream(self, *args, **kwargs):
+        stream = Stream(*args, **kwargs)
         self.streams.append(stream)
         return stream
 
@@ -87,6 +76,18 @@ class Stream(object):
         if self.composite:
             self.source = None
             self.group_function = None
+
+    @classmethod
+    def from_dict(cls, data):
+        """Returns a instrument object from a dictionary item,
+        which is usually from librato's API"""
+
+        obj = cls(data.get('metric'), data.get('source'), data.get('composite'),
+            data.get('name'), data.get('units_short'), data.get('units_long'),
+            data.get('min'), data.get('max'), data.get('summary_function'),
+            data.get('transform_function'), data.get('period'),
+            data.get('group_function'), data.get('color'))
+        return obj
 
     def get_payload(self):
         return {'metric': self.metric,

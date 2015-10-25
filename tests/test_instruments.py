@@ -33,13 +33,14 @@ class TestLibratoInstruments(unittest.TestCase):
         assert ins.id == 1
 
         self.conn.submit('a_gauge', 12, description='the desc for a gauge')
-        ins.new_stream('a_gauge')
+        ins.new_stream('a_gauge', source='a_source')
         self.conn.update_instrument(ins)
         #list_ins = self.conn.list_instruments()
         assert ins.name == name
         assert len(ins.streams) == 1
         assert ins.id == 1
-        assert ins.streams[0].metric == "a_gauge"
+        assert ins.streams[0].metric == 'a_gauge'
+        assert ins.streams[0].source == 'a_source'
         assert ins.streams[0].composite == None
 
     def test_get_instrument(self):
@@ -47,7 +48,7 @@ class TestLibratoInstruments(unittest.TestCase):
         ins = self.conn.create_instrument(name)
 
         self.conn.submit('a_gauge', 12, description='the desc for a gauge')
-        ins.new_stream('a_gauge')
+        ins.new_stream('a_gauge', color='#52D74C')
         self.conn.update_instrument(ins)
 
         si = self.conn.get_instrument(ins.id)  # si ; same instrument
@@ -55,8 +56,9 @@ class TestLibratoInstruments(unittest.TestCase):
         assert si.name == name
         assert len(si.streams) == 1
         assert si.id == 1
-        assert si.streams[0].metric == "a_gauge"
+        assert si.streams[0].metric == 'a_gauge'
         assert si.streams[0].composite == None
+        assert si.streams[0].color == '#52D74C'
 
     def test_adding_a_new_instrument_with_composite_stream_properties(self):
         name = "my_INST_with_STREAMS"
