@@ -119,6 +119,26 @@ class TestLibratoInstruments(unittest.TestCase):
         assert ins.streams[0].group_function == 'average'
         assert ins.streams[0].color == '#52D74C'
 
+    def test_adding_a_new_instrument_omits_composite_conflicting_properties(self):
+        name = "my_INST_with_STREAMS"
+        ins = self.conn.create_instrument(name)
+        assert type(ins) == librato.Instrument
+        assert ins.name == name
+        assert len(ins.streams) == 0
+        assert ins.id == 1
+
+        ins.new_stream(composite='s("cpu", "*")', name='CPU',
+                metric='cpu', source='*', group_function='average')
+        self.conn.update_instrument(ins)
+        ins = self.conn.get_instrument(1)
+        assert ins.name == name
+        assert len(ins.streams) == 1
+        assert ins.id == 1
+        assert ins.streams[0].composite == 's("cpu", "*")'
+        assert ins.streams[0].metric == None
+        assert ins.streams[0].source == None
+        assert ins.streams[0].group_function == None
+
     def test_is_persisted(self):
         i = librato.Instrument(self.conn, 'test inst')
         assert i.is_persisted() == False

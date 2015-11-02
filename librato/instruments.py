@@ -73,7 +73,9 @@ class Stream(object):
         self.group_function = group_function
         self.color = color
 
+        # Omit conflicting properties (http://dev.librato.com/v1/instruments)
         if self.composite:
+            self.metric = None
             self.source = None
             self.group_function = None
 
