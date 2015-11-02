@@ -189,6 +189,7 @@ class LibratoConnection(object):
             p_headers = {}
             p_headers['Proxy-Authorization'] = 'Basic ' + base64.b64encode(auth)
             conn.set_tunnel(HOSTNAME, 443, p_headers)
+            return conn
 
     def _parse(self, resp, name, cls):
         """Parse to an object"""
