@@ -321,6 +321,38 @@ alert.add_condition_for('metric_name').stops_reporting_for(1) # duration of the 
 alert.save()
 ```
 
+## Instruments
+
+Create a new instrument with a composite:
+
+```python
+ins = api.create_instrument(name='CPU instrument')
+ins.new_stream(composite='s("cpu", "*")', name='CPU',
+    units_short='%', units_long='percentage',
+    display_min=0, display_max=100, summary_function='average',
+    transform_function='x/1', period=60, color='#52D74C')
+ins.attributes = {
+    'display_integral': False,
+    'display_stacked': False
+}
+api.update_instrument(ins)
+```
+
+Create a new instrument with a metric:
+
+```python
+ins = api.create_instrument(name='CPU instrument')
+ins.new_stream(metric='cpu', name='CPU', source='*',
+    units_short='%', units_long='percentage',
+    display_min=0, display_max=100, summary_function='average',
+    transform_function='x/1', period=60, color='#52D74C',
+    group_function='average')
+ins.attributes = {
+    'display_integral': False,
+    'display_stacked': False
+}
+api.update_instrument(ins)
+```
 ## Misc
 
 ### Timeouts
