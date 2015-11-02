@@ -184,7 +184,11 @@ class LibratoConnection(object):
         if self._do_we_want_to_fake_server_errors():
             return HTTPSConnection(self.hostname, fake_n_errors=self.fake_n_errors)
         else:
-            return HTTPSConnection(self.hostname, timeout=self.timeout)
+            conn = HTTPSConnection("proxy_host", "proxy_port", timeout=self.timeout)
+            auth = '%s:%s' % ("proxy_username", "proxy_password")
+            p_headers = {}
+            p_headers['Proxy-Authorization'] = 'Basic ' + base64.b64encode(auth)
+            conn.set_tunnel(HOSTNAME, 443, p_headers)
 
     def _parse(self, resp, name, cls):
         """Parse to an object"""
