@@ -50,7 +50,6 @@ class Queue(object):
         nm = {}  # new measurement
         nm['name'] = self.connection.sanitize(name)
         nm['value'] = value
-        nm['type'] = type
         for pn, v in query_props.items():
             nm[pn] = v
 
@@ -72,7 +71,7 @@ class Queue(object):
             nm['name'] = name
             # Set measure_time
             if mt:
-              nm['measure_time'] = mt
+                nm['measure_time'] = mt
             # Set source
             if aggregator.source:
                 nm['source'] = aggregator.source
@@ -85,7 +84,6 @@ class Queue(object):
         if (self.auto_submit_count and
                 self._num_measurements_in_queue() >= self.auto_submit_count):
             self.submit()
-
 
     def submit(self):
         empty_chunks = [self._gen_empty_chunk()]
