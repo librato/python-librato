@@ -52,6 +52,7 @@ log = logging.getLogger("librato")
 
 # Alias HTTPSConnection so the tests can mock it out.
 HTTPSConnection = http_client.HTTPSConnection
+HTTPConnection = http_client.HTTPConnection
 
 # Alias urlencode, it moved between py2 and py3.
 try:
@@ -81,7 +82,7 @@ class LibratoConnection(object):
     [...]
     """
 
-    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op):
+    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https"):
         """Create a new connection to Librato Metrics.
         Doesn't actually connect yet or validate until you make a request.
 
@@ -96,6 +97,10 @@ class LibratoConnection(object):
         except:
             raise TypeError("Librato only supports ascii for the credentials")
 
+        if protocol not in ["http", "https"]:
+            raise ValueError("Unsupported protocol: {}".format(protocol))
+
+        self.protocol = protocol
         self.hostname = hostname
         self.base_path = base_path
         # these two attributes ared used to control fake server errors when doing
@@ -135,6 +140,7 @@ class LibratoConnection(object):
         log.info("method=%s uri=%s" % (method, uri))
         log.info("body(->): %s" % body)
         conn.request(method, uri, body=body, headers=headers)
+
         return conn.getresponse()
 
     def _process_response(self, resp, backoff):
@@ -181,10 +187,12 @@ class LibratoConnection(object):
         return self.fake_n_errors > 0
 
     def _setup_connection(self):
+        connection_class = HTTPSConnection if self.protocol == "https" else HTTPConnection
+
         if self._do_we_want_to_fake_server_errors():
-            return HTTPSConnection(self.hostname, fake_n_errors=self.fake_n_errors)
+            return connection_class(self.hostname, fake_n_errors=self.fake_n_errors)
         else:
-            return HTTPSConnection(self.hostname, timeout=self.timeout)
+            return connection_class(self.hostname, timeout=self.timeout)
 
     def _parse(self, resp, name, cls):
         """Parse to an object"""
@@ -423,11 +431,11 @@ class LibratoConnection(object):
     def set_timeout(self, timeout):
         self.timeout = timeout
 
-def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op):
+def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https"):
     """
     Connect to Librato Metrics
     """
-    return LibratoConnection(username, api_key, hostname, base_path, sanitizer=sanitizer)
+    return LibratoConnection(username, api_key, hostname, base_path, sanitizer=sanitizer, protocol=protocol)
 
 
 def _getcharset(resp, default='utf-8'):
