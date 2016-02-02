@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 0.8.6
+* Allow http for local dev (thanks @vaidy4github)
+
 ### Version 0.8.5
 * Same as 0.8.4. Resubmitting to pypi.
 
