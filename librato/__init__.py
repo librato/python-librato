@@ -47,6 +47,7 @@ from librato.instruments import Instrument
 from librato.alerts import Alert
 from librato.dashboards import Dashboard
 from librato.annotations import Annotation
+from librato.spaces import Space, Chart
 
 log = logging.getLogger("librato")
 
@@ -419,6 +420,81 @@ class LibratoConnection(object):
         else:
             return alerts
 
+    #
+    # Spaces!
+    #
+    def list_spaces(self, **query_props):
+        """List all spaces"""
+        resp = self._mexe("spaces", query_props=query_props)
+        return self._parse(resp, "spaces", Space)
+
+    def get_space(self, id, **query_props):
+        """Get specific space by ID"""
+        resp = self._mexe("spaces/%s" % id,
+                          method="GET", query_props=query_props)
+        return Space.from_dict(self, resp)
+
+    def update_space(self, space, **query_props):
+        """Update an existing space"""
+        payload = space.get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces/%s" % space.id,
+                          method="PUT", query_props=payload)
+        return resp
+
+    def create_space(self, name, **query_props):
+        payload = Space(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces", method="POST", query_props=payload)
+        return Space.from_dict(self, resp)
+
+    def delete_space(self, id):
+        """delete a space"""
+        resp = self._mexe("spaces/%s" % id, method="DELETE")
+        return resp
+
+    #
+    # Charts!
+    #
+    def list_charts_in_space(self, space, **query_props):
+        """List all charts from space"""
+        resp = self._mexe("spaces/%s/charts" % space.id, query_props=query_props)
+        return self._parse(resp, "charts", Chart)
+
+    def get_chart_from_space(self, chart_id, space, **query_props):
+        """Get specific chart by ID from space"""
+        # TODO: Add better handling around 404s
+        resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart_id), method="GET", query_props=query_props)
+        return Chart.from_dict(self, resp)
+
+    def get_chart_from_space_id(self, chart_id, space_id, **query_props):
+        """Get specific chart by ID from space"""
+        # TODO: Add better handling around 404s
+        resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="GET", query_props=query_props)
+        return Chart.from_dict(self, resp)
+
+    def update_chart_in_space(self, chart, space, **query_props):
+        """Update an existing chart"""
+        payload = chart.get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart.id), method="PUT", query_props=payload)
+        return resp
+
+    def create_chart_in_space(self, name, space, **query_props):
+        """Create a new chart in space"""
+        payload = Chart(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces/%s/charts" % space.id, method="POST", query_props=payload)
+        return Chart.from_dict(self, resp)
+
+    def delete_chart_from_space(self,chart_id, space_id, **query_props):
+        """delete a chart from a space"""
+        resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="DELETE")
+        return resp
     #
     # Queue
     #
