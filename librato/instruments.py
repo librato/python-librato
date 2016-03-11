@@ -1,3 +1,4 @@
+from librato.streams import Stream
 
 class Instrument(object):
     """Librato Instrument Base class"""
@@ -52,17 +53,3 @@ class Instrument(object):
             self.id = dummy_inst.id
         else:
             self.connection.update_instrument(self)
-
-
-class Stream(object):
-    def __init__(self, metric=None, source='*', composite=None):
-        self.metric = metric
-        self.composite = composite
-        self.source = source
-        if self.composite:
-            self.source = None
-
-    def get_payload(self):
-        return {'metric': self.metric,
-                'composite': self.composite,
-                'source': self.source}
