@@ -434,6 +434,14 @@ class LibratoConnection(object):
                           method="GET", query_props=query_props)
         return Space.from_dict(self, resp)
 
+    def find_space(self, name, **query_props):
+        """Find specific space by Name"""
+        spaces = self.list_spaces(query_props=query_props)
+        # Find the Space by name
+        space = [s for s in spaces if s.name == name][0]
+        # Now use the ID to hydrate the space attributes (charts)
+        return self.get_space(space.id, query_props=query_props)
+
     def update_space(self, space, **query_props):
         """Update an existing space"""
         payload = space.get_payload()
@@ -470,7 +478,7 @@ class LibratoConnection(object):
         return Chart.from_dict(self, resp)
 
     def get_chart_from_space_id(self, chart_id, space_id, **query_props):
-        """Get specific chart by ID from space"""
+        """Get specific chart by ID from space ID"""
         # TODO: Add better handling around 404s
         resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="GET", query_props=query_props)
         return Chart.from_dict(self, resp)

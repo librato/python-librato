@@ -1,5 +1,4 @@
-from instruments import Stream
-
+from librato.streams import Stream
 
 class Space(object):
     """Librato Space Base class"""
@@ -29,11 +28,11 @@ class Space(object):
         return {'name': self.name,
                 'charts': self.chart_ids}
 
-    def get_instruments(self):
+    def charts(self):
         if self._charts is None:
             charts = []
             for c in self.chart_ids:
-                charts.append(self.connection.get_chart(c))
+                charts.append(self.connection.get_chart_from_space_id(c, self.id))
             self._charts = charts
 
         return self._charts[:]
