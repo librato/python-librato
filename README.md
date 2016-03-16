@@ -342,4 +342,4 @@ Thanks also to [@Bachmann1234](https://github.com/Bachmann1234) for continually 
 
 ## Copyright
 
-Copyright (c) 2011-2014 [Librato Inc.](http://librato.com) See LICENSE for details.
+Copyright (c) 2011-2016 [Librato Inc.](http://librato.com) See LICENSE for details.
