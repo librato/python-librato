@@ -373,6 +373,14 @@ class TestLibratoSpacesIntegration(TestLibratoBase):
         assert(a_spaces[0].id == old_id)
         assert(a_spaces[0].name == "bar")
 
+    def test_get_space(self):
+        name = self.my_spaces[0]
+        a_spaces = self.conn.list_spaces(name=name)
+        s = self.conn.get_space(a_spaces[0].id)
+        assert(s.name == name)
+        assert(a_spaces[0].id == s.id)
+
+
 if __name__ == '__main__':
     # TO run a specific test:
     # $ nosetests tests/integration.py:TestLibratoBasic.test_update_metrics_attributes
