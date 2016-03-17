@@ -381,6 +381,67 @@ class TestLibratoSpacesIntegration(TestLibratoBase):
         assert(a_spaces[0].id == s.id)
 
 
+class TestLibratoChartsIntegration(TestLibratoBase):
+    my_spaces = ["A great space1"]
+    my_charts = ["py_chart1", "py_chart2", "bar"]
+
+    def setUp(self):
+        for s in self.my_spaces:
+            self.conn.create_space(s)
+
+    def tearDown(self):
+        for s in self.conn.list_spaces():
+            if s.name in self.my_spaces:
+                for c in self.conn.list_charts_in_space(s):
+                    self.conn.delete_chart_from_space(c['id'], s.id)
+                self.conn.delete_space(s.id)
+
+    def test_basic_charts_no_streams(self):
+        # list
+        a_spaces = self.conn.list_spaces(name=self.my_spaces[0])
+        a_charts = self.conn.list_charts_in_space(a_spaces[0])
+        assert(len(a_charts) == 0)
+
+        # get chart from space
+        self.conn.create_chart_in_space("foo", a_spaces[0])
+        a_charts = self.conn.list_charts_in_space(a_spaces[0])
+        chart = self.conn.get_chart_from_space(a_charts[0]['id'], a_spaces[0])
+        assert(chart.name == "foo")
+
+        # update chart from space
+        self.conn.update_chart_in_space(chart, a_spaces[0], name="bar")
+        chart = self.conn.get_chart_from_space(a_charts[0]['id'], a_spaces[0])
+        assert(chart.name == "bar")
+
+        # delete_chart
+        self.conn.delete_chart_from_space(chart.id, a_spaces[0].id)
+        a_charts = self.conn.list_charts_in_space(a_spaces[0])
+        assert(len(a_charts) == 0)
+
+    def test_basic_charts_with_streams(self):
+        # Add a chart in the space
+        a_spaces = self.conn.list_spaces(name=self.my_spaces[0])
+        self.conn.create_chart_in_space("foo", a_spaces[0])
+        a_charts = self.conn.list_charts_in_space(a_spaces[0])
+        chart = self.conn.get_chart_from_space(a_charts[0]['id'], a_spaces[0])
+        assert(chart.name == "foo")
+
+        # remove streams
+        chart.streams = []
+        self.conn.update_chart_in_space(chart, a_spaces[0])
+        chart = self.conn.get_chart_from_space(a_charts[0]['id'], a_spaces[0])
+        assert(len(chart.streams) == 0)
+
+        # Add a stream
+        self.conn.submit('a_metric', 21, description='desc here')
+        chart.new_stream('a_metric')
+        self.conn.update_chart_in_space(chart, a_spaces[0])
+        chart = self.conn.get_chart_from_space(a_charts[0]['id'], a_spaces[0])
+        assert(chart.name == 'foo')
+        assert(len(chart.streams) == 1)
+        assert(chart.streams[0].metric == 'a_metric')
+
+
 if __name__ == '__main__':
     # TO run a specific test:
     # $ nosetests tests/integration.py:TestLibratoBasic.test_update_metrics_attributes
