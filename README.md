@@ -321,6 +321,27 @@ alert.add_condition_for('metric_name').stops_reporting_for(1) # duration of the 
 alert.save()
 ```
 
+Add a description to an alert (default description is empty):
+```python
+api.create_alert(name, description='An alert description')
+```
+
+Add a service to an alert:
+```python
+api.create_alert(name)
+alert.add_service(service ID)
+alert.save()
+```
+
+You can find the service ID by going to your service configuration and grabbing the ID from the URL.
+
+To restrict the alert to a specific source (default is `*`):
+```python
+api.create_alert(name)
+alert.add_condition_for('metric_name', source='source name')
+alert.save()
+```
+
 ## Misc
 
 ### Timeouts
