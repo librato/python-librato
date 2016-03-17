@@ -24,6 +24,7 @@ from contextlib import contextmanager
 import nose
 import unittest
 from librato.exceptions import BadRequest
+from librato.spaces import Space
 import librato
 import os
 from random import randint
@@ -337,6 +338,40 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         self.alerts_created_during_test.append(name)
         return name
 
+class TestLibratoSpacesIntegration(TestLibratoBase):
+    my_spaces=["py_space1", "py_space2", "bar"]
+
+    def setUp(self):
+        for n in self.my_spaces:
+            self.conn.create_space(n)
+
+    def tearDown(self):
+        for s in self.conn.list_spaces():
+            if s.name in self.my_spaces:
+                self.conn.delete_space(s.id)
+
+    def test_list_spaces(self):
+        name = "foo"
+        a_spaces = self.conn.list_spaces(name=name)
+        if len(a_spaces) == 0:
+            self.conn.create_space(name)
+        a_spaces = self.conn.list_spaces(name=name)
+        assert(len(a_spaces) == 1)
+        assert(a_spaces[0].name == name)
+
+    def test_update_spaces(self):
+        name = self.my_spaces[0]
+        a_spaces = self.conn.list_spaces(name=name)
+        assert(len(a_spaces) == 1)
+        old_id = a_spaces[0].id
+        s = a_spaces[0]
+
+        s.name = "bar"
+        self.conn.update_space(s)
+        a_spaces = self.conn.list_spaces(name="bar")
+        print  a_spaces[0].id, old_id
+        assert(a_spaces[0].id == old_id)
+        assert(a_spaces[0].name == "bar")
 
 if __name__ == '__main__':
     # TO run a specific test:
