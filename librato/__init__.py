@@ -445,6 +445,7 @@ class LibratoConnection(object):
     def update_space(self, space, **query_props):
         """Update an existing space"""
         payload = space.get_payload()
+        del payload['charts']
         for k, v in query_props.items():
             payload[k] = v
         resp = self._mexe("spaces/%s" % space.id,
@@ -453,6 +454,7 @@ class LibratoConnection(object):
 
     def create_space(self, name, **query_props):
         payload = Space(self, name).get_payload()
+        del payload['charts']
         for k, v in query_props.items():
             payload[k] = v
         resp = self._mexe("spaces", method="POST", query_props=payload)
