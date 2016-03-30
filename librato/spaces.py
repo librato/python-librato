@@ -29,12 +29,8 @@ class Space(object):
 
     def charts(self):
         if self._charts is None:
-            charts = []
-            for c in self.chart_ids:
-                charts.append(
-                    self.connection.get_chart(c, self.id))
-            self._charts = charts
-
+            payload = self.connection.list_charts_in_space(self)
+            self._charts = [Chart.from_dict(self.connection, c) for c in payload]
         return self._charts[:]
 
     def new_chart(self, name, type='line'):
