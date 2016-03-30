@@ -8,8 +8,8 @@ class Space(object):
         self.name = name
         self.chart_ids = []
         self._charts = None
-        for c in (chart_dicts or []):
-            self.chart_ids.append(c['id'])
+        #for c in (chart_dicts or []):
+        #    self.chart_ids.append(c['id'])
         self.id = id
 
     @classmethod
@@ -25,27 +25,37 @@ class Space(object):
         return obj
 
     def get_payload(self):
-        return {'name': self.name,
-                'charts': self.chart_ids}
+        return {'name': self.name}
 
     def charts(self):
         if self._charts is None:
             charts = []
             for c in self.chart_ids:
-                charts.append(self.connection.get_chart_from_space_id(c, self.id))
+                charts.append(
+                    self.connection.get_chart(c, self.id))
             self._charts = charts
 
         return self._charts[:]
 
+    def new_chart(self, name, type='line'):
+        return Chart(self.connection, name, id=None, type=type, space_id=self.id)
+
+    # This currently only updates the name of the Space
     def save(self):
         self.connection.update_space(self)
 
+    def rename(self, new_name):
+        self.name = new_name
+        self.save()
+
 
 class Chart(object):
-    def __init__(self, connection, name, id=None, type='line', streams=[]):
+    def __init__(self, connection, name, id=None, type='line', space_id=None, streams=[]):
         self.connection = connection
         self.name = name
-        self.type = 'line'
+        self.type = type
+        self.space_id = space_id
+        self._space = None
         self.streams = []
         for i in streams:
             if isinstance(i, Stream):
@@ -66,8 +76,15 @@ class Chart(object):
                   data['name'],
                   id=data['id'],
                   type=data.get('type', 'line'),
+                  space_id=data.get('space_id'),
                   streams=data.get('streams'))
         return obj
+
+    def space(self):
+        if self._space is None and self.space_id is not None:
+            # Find the Space
+            self._space = self.connection.get_space(self.space_id)
+        return self._space
 
     def get_payload(self):
         return {'name': self.name,
@@ -81,3 +98,16 @@ class Chart(object):
         stream = Stream(metric, source, composite)
         self.streams.append(stream)
         return stream
+
+    def persisted(self):
+        return self.id is not None
+
+    def save(self):
+        if self.persisted():
+            self.connection.update_chart(self, self.space())
+        else:
+            self.connection.create_chart(self.name, self.space(), streams=self.streams)
+
+    def rename(self, new_name):
+        self.name = new_name
+        self.save()

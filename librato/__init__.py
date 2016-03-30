@@ -273,7 +273,7 @@ class LibratoConnection(object):
         return self._mexe(path, method="DELETE", query_props=payload)
 
     #
-    # Dashboards!
+    # Dashboards
     #
     def list_dashboards(self, **query_props):
         """List all dashboards"""
@@ -421,7 +421,7 @@ class LibratoConnection(object):
             return alerts
 
     #
-    # Spaces!
+    # Spaces
     #
     def list_spaces(self, **query_props):
         """List all spaces"""
@@ -434,16 +434,19 @@ class LibratoConnection(object):
                           method="GET", query_props=query_props)
         return Space.from_dict(self, resp)
 
-    def find_space(self, name, **query_props):
+    def find_space(self, name):
         """Find specific space by Name"""
-        spaces = self.list_spaces(query_props=query_props)
-        # Find the Space by name
-        space = [s for s in spaces if s.name == name][0]
-        # Now use the ID to hydrate the space attributes (charts)
-        return self.get_space(space.id, query_props=query_props)
+        spaces = self.list_spaces(name=name)
+        # Find the Space by name (case-insensitive)
+        space = next((s for s in spaces if s.name and s.name.lower() == name.lower()), None)
+        if space:
+            # Now use the ID to hydrate the space attributes (charts)
+            return self.get_space(space.id)
+        else:
+            return None
 
     def update_space(self, space, **query_props):
-        """Update an existing space"""
+        """Update an existing space (API currently only allows update of name"""
         payload = space.get_payload()
         for k, v in query_props.items():
             payload[k] = v
@@ -463,27 +466,39 @@ class LibratoConnection(object):
         resp = self._mexe("spaces/%s" % id, method="DELETE")
         return resp
 
+
     #
-    # Charts!
+    # Charts
     #
     def list_charts_in_space(self, space, **query_props):
         """List all charts from space"""
         resp = self._mexe("spaces/%s/charts" % space.id, query_props=query_props)
         return self._parse(resp, "charts", Chart)
 
-    def get_chart_from_space(self, chart_id, space, **query_props):
-        """Get specific chart by ID from space"""
-        # TODO: Add better handling around 404s
-        resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart_id), method="GET", query_props=query_props)
-        return Chart.from_dict(self, resp)
-
-    def get_chart_from_space_id(self, chart_id, space_id, **query_props):
-        """Get specific chart by ID from space ID"""
+    def get_chart(self, chart_id, space_or_space_id, **query_props):
+        """Get specific chart by ID from Space"""
+        space_id = None
+        if type(space_or_space_id) is int:
+            space_id = space_or_space_id
+        elif type(space_or_space_id) is Space:
+            space_id = space_or_space_id.id
+        else:
+            raise ValueError("Space parameter is invalid")
         # TODO: Add better handling around 404s
         resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="GET", query_props=query_props)
+        resp['space_id'] = space_id
         return Chart.from_dict(self, resp)
 
-    def update_chart_in_space(self, chart, space, **query_props):
+    def create_chart(self, name, space, **query_props):
+        """Create a new chart in space"""
+        payload = Chart(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces/%s/charts" % space.id, method="POST", query_props=payload)
+        resp['space_id'] = space.id
+        return Chart.from_dict(self, resp)
+
+    def update_chart(self, chart, space, **query_props):
         """Update an existing chart"""
         payload = chart.get_payload()
         for k, v in query_props.items():
@@ -491,18 +506,12 @@ class LibratoConnection(object):
         resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart.id), method="PUT", query_props=payload)
         return resp
 
-    def create_chart_in_space(self, name, space, **query_props):
-        """Create a new chart in space"""
-        payload = Chart(self, name).get_payload()
-        for k, v in query_props.items():
-            payload[k] = v
-        resp = self._mexe("spaces/%s/charts" % space.id, method="POST", query_props=payload)
-        return Chart.from_dict(self, resp)
-
-    def delete_chart_from_space(self,chart_id, space_id, **query_props):
+    def delete_chart(self,chart_id, space_id, **query_props):
         """delete a chart from a space"""
         resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="DELETE")
         return resp
+
+
     #
     # Queue
     #

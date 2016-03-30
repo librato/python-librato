@@ -136,16 +136,6 @@ class MockServer(object):
             dbs.append(c_dbs)
         return json.dumps(answer).encode('utf-8')
 
-    def list_of_spaces(self):
-        answer = {}
-        answer["query"] = {}
-        answer["spaces"] = []
-        spcs = answer["spaces"]
-        for _id, c_spcs in self.spaces.items():
-            c_spcs["id"] = _id
-            spcs.append(c_spcs)
-        return json.dumps(answer).encode('utf-8')
-
     def get_annotation_stream(self):
         name = 'My_Annotation'
         annotation_resp = {}
@@ -162,6 +152,26 @@ class MockServer(object):
         self.last_spc_id += 1
         return json.dumps(payload).encode('utf-8')
 
+    def list_of_spaces(self):
+        answer = {}
+        answer["query"] = {}
+        answer["spaces"] = []
+        spcs = answer["spaces"]
+        for _id, c_spcs in self.spaces.items():
+            c_spcs["id"] = _id
+            spcs.append(c_spcs)
+        print(answer)
+        return json.dumps(answer).encode('utf-8')
+
+    def find_space(self):
+        answer = {}
+        answer["query"] = {}
+        answer["spaces"] = []
+        spcs = answer["spaces"]
+        for _id, c_spcs in self.spaces.items():
+            c_spcs["id"] = _id
+            spcs.append(c_spcs)
+        return json.dumps(answer).encode('utf-8')
     def get_space(self, uri):
         _id = None
         m = re.search('\/(\d+)(\/charts)?$', uri)
@@ -442,7 +452,6 @@ class MockResponse(object):
             return server.update_instrument(r.body, r.uri)
         elif self._req_is_get_instrument():
             return server.get_instrument(r.uri)
-
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()
         elif self._req_is_get_alert():
@@ -461,9 +470,10 @@ class MockResponse(object):
             return server.get_dashboard(r.uri)
         elif self._req_is_update_dashboard():
             return server.update_dashboard(r.body, r.uri)
-
         elif self._req_is_list_of_spaces():
             return server.list_of_spaces()
+        elif self._req_is_find_space():
+            return server.find_space()
         elif self._req_is_get_space():
             return server.get_space(r.uri)
         elif self._req_is_list_of_charts_in_space():
@@ -560,6 +570,10 @@ class MockResponse(object):
     # spaces
     def _req_is_list_of_spaces(self):
         return self._method_is('GET') and self._path_is('/v1/spaces')
+
+    def _req_is_find_space(self):
+        return (self._method_is('GET') and
+                re.match('/v1/spaces\?name=.+$', self.request.uri))
 
     def _req_is_get_space(self):
         return (self._method_is('GET') and
