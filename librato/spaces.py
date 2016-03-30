@@ -8,8 +8,8 @@ class Space(object):
         self.name = name
         self.chart_ids = []
         self._charts = None
-        #for c in (chart_dicts or []):
-        #    self.chart_ids.append(c['id'])
+        for c in (chart_dicts or []):
+            self.chart_ids.append(c['id'])
         self.id = id
 
     @classmethod

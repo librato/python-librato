@@ -146,8 +146,10 @@ class MockServer(object):
         return json.dumps(annotation_resp).encode('utf-8')
 
     def create_space(self, payload):
+        # payload: {"name": "my space"}
+        # response: {"id":162623,"name":"my space"}
         payload["id"] = self.last_spc_id
-        payload.update({'charts': OrderedDict()})
+        payload["charts"] = []
         self.spaces[self.last_spc_id] = payload
         self.last_spc_id += 1
         return json.dumps(payload).encode('utf-8')
@@ -160,9 +162,10 @@ class MockServer(object):
         for _id, c_spcs in self.spaces.items():
             c_spcs["id"] = _id
             spcs.append(c_spcs)
-        print(answer)
         return json.dumps(answer).encode('utf-8')
 
+    # Filtering the spaces list like /spaces?name=foo
+    # so just return them all, it's fine
     def find_space(self):
         answer = {}
         answer["query"] = {}
@@ -172,6 +175,7 @@ class MockServer(object):
             c_spcs["id"] = _id
             spcs.append(c_spcs)
         return json.dumps(answer).encode('utf-8')
+
     def get_space(self, uri):
         _id = None
         m = re.search('\/(\d+)(\/charts)?$', uri)
@@ -197,7 +201,7 @@ class MockServer(object):
                             "exist %d", _spc_id)
 
         payload["id"] = self.last_chrt_id
-        self.spaces[int(_spc_id)]['charts'][self.last_chrt_id] = payload
+        self.spaces[int(_spc_id)]['charts'].append(payload)
         self.last_chrt_id += 1
         return json.dumps(payload).encode('utf-8')
 
@@ -219,12 +223,8 @@ class MockServer(object):
                             "exist %d", _spc_id)
 
         answer = {}
-        answer["query"] = {}
-        answer["charts"] = []
-        chrts = answer["charts"]
-        for _id, c_chrts in self.spaces[int(_spc_id)]['charts'].items():
-            c_chrts["id"] = _id
-            chrts.append(c_chrts)
+        answer['query'] = {}
+        answer['charts'] = self.spaces[int(_spc_id)]['charts']
         return json.dumps(answer).encode('utf-8')
 
     def update_chart_in_space(self, uri, payload):
@@ -241,11 +241,11 @@ class MockServer(object):
         if int(_spc_id) not in self.spaces:
             # TODO: return 400
             raise Exception("Trying to update space that doesn't " +
-                            "exists %d", _spc_id)
-        elif int(_chrt_id) not in self.spaces[int(_spc_id)]['charts']:
+                            "exist %d", _spc_id)
+        elif int(_chrt_id) not in self._chart_ids_for_space_id(_spc_id):
             # TODO: return 400
             raise Exception("Trying to update chart that doesn't " +
-                            "exists %d", _chrt_id)
+                            "exist %d", _chrt_id)
         else:
             payload['id'] = int(_chrt_id)
             self.spaces[int(_chrt_id)]['charts'][int(_chrt_id)] = payload
@@ -265,11 +265,11 @@ class MockServer(object):
         if int(_spc_id) not in self.spaces:
             # TODO: return 400
             raise Exception("Trying to get space that doesn't " +
-                            "exists %d", _spc_id)
-        elif int(_chrt_id) not in self.spaces[int(_spc_id)]['charts']:
+                            "exist %d", _spc_id)
+        elif int(_chrt_id) not in self._chart_ids_for_space_id(_spc_id):
             # TODO: return 400
             raise Exception("Trying to get chart that doesn't " +
-                            "exists %d", _chrt_id)
+                            "exist %d", _chrt_id)
         else:
             chart = self.spaces[int(_chrt_id)]['charts'][int(_chrt_id)]
             return json.dumps(chart).encode('utf-8')
@@ -318,7 +318,7 @@ class MockServer(object):
             # TODO: return 400
             raise Exception("Trying to update space that doesn't " +
                             "exists %d", _spc_id)
-        elif int(_chrt_id) not in self.spaces[int(_spc_id)]['charts']:
+        elif int(_chrt_id) not in self._chart_ids_for_space_id(_spc_id):
             # TODO: return 400
             raise Exception("Trying to update chart that doesn't " +
                             "exists %d", _chrt_id)
@@ -406,6 +406,9 @@ class MockServer(object):
     def delete_gauge(self, name):
         del self.gauges[name]
         return ''
+
+    def _chart_ids_for_space_id(self, space_id):
+        return [c['id'] for c in self.spaces[int(space_id)]['charts']]
 
 '''Start the server.'''
 server = MockServer()
