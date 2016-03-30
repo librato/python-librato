@@ -149,7 +149,6 @@ class MockServer(object):
         # payload: {"name": "my space"}
         # response: {"id":162623,"name":"my space"}
         payload["id"] = self.last_spc_id
-        payload["charts"] = []
         self.spaces[self.last_spc_id] = payload
         self.last_spc_id += 1
         return json.dumps(payload).encode('utf-8')
@@ -201,7 +200,11 @@ class MockServer(object):
                             "exist %d", _spc_id)
 
         payload["id"] = self.last_chrt_id
-        self.spaces[int(_spc_id)]['charts'].append(payload)
+        space = self.spaces[int(_spc_id)]
+        if 'charts' in space:
+            space['charts'].append(payload)
+        else:
+            space['charts'] = [payload]
         self.last_chrt_id += 1
         return json.dumps(payload).encode('utf-8')
 
