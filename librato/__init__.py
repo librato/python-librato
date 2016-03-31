@@ -435,6 +435,8 @@ class LibratoConnection(object):
         return Space.from_dict(self, resp)
 
     def find_space(self, name):
+        if type(name) is int:
+            raise ValueError("This method expects name as a parameter, %s given" % name)
         """Find specific space by Name"""
         spaces = self.list_spaces(name=name)
         # Find the Space by name (case-insensitive)
@@ -473,7 +475,13 @@ class LibratoConnection(object):
     def list_charts_in_space(self, space, **query_props):
         """List all charts from space"""
         resp = self._mexe("spaces/%s/charts" % space.id, query_props=query_props)
-        return self._parse(resp, "charts", Chart)
+        # "charts" is not in the response, but make this
+        # actually return Chart objects
+        charts = self._parse({"charts": resp}, "charts", Chart)
+        # Populate space ID
+        for chart in charts:
+            chart.space_id = space.id
+        return charts
 
     def get_chart(self, chart_id, space_or_space_id, **query_props):
         """Get specific chart by ID from Space"""
@@ -506,7 +514,7 @@ class LibratoConnection(object):
         resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart.id), method="PUT", query_props=payload)
         return resp
 
-    def delete_chart(self,chart_id, space_id, **query_props):
+    def delete_chart(self, chart_id, space_id, **query_props):
         """delete a chart from a space"""
         resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="DELETE")
         return resp

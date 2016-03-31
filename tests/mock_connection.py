@@ -225,9 +225,7 @@ class MockServer(object):
             raise Exception("Trying to get space that doesn't " +
                             "exist %d", _spc_id)
 
-        answer = {}
-        answer['query'] = {}
-        answer['charts'] = self.spaces[int(_spc_id)]['charts']
+        answer = self.spaces[int(_spc_id)].get('charts', [])
         return json.dumps(answer).encode('utf-8')
 
     def update_chart_in_space(self, uri, payload):

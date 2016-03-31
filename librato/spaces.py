@@ -28,9 +28,8 @@ class Space(object):
         return {'name': self.name}
 
     def charts(self):
-        if self._charts is None:
-            payload = self.connection.list_charts_in_space(self)
-            self._charts = [Chart.from_dict(self.connection, c) for c in payload]
+        if self._charts is None or self._charts == []:
+            self._charts = self.connection.list_charts_in_space(self)
         return self._charts[:]
 
     def new_chart(self, name, type='line'):
@@ -43,6 +42,9 @@ class Space(object):
     def rename(self, new_name):
         self.name = new_name
         self.save()
+
+    def delete(self):
+        return self.connection.delete_space(self.id)
 
 
 class Chart(object):
@@ -102,8 +104,12 @@ class Chart(object):
         if self.persisted():
             self.connection.update_chart(self, self.space())
         else:
-            self.connection.create_chart(self.name, self.space(), streams=self.streams)
+            dummy = self.connection.create_chart(self.name, self.space(), streams=self.streams)
+            self.id = dummy.id
 
     def rename(self, new_name):
         self.name = new_name
         self.save()
+
+    def delete(self):
+        return self.connection.delete_chart(self.id, self.space_id)
