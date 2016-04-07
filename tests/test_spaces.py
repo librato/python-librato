@@ -89,7 +89,7 @@ class TestSpacesConnection(SpacesTest):
 class TestSpaceModel(SpacesTest):
     def setUp(self):
         super(TestSpaceModel, self).setUp()
-        self.space = Space(self.conn, 'My Space')
+        self.space = Space(self.conn, 'My Space', id=123)
 
     def test_connection(self):
         self.assertEqual(Space(self.conn, 'My Space').connection, self.conn)
@@ -126,17 +126,144 @@ class TestSpaceModel(SpacesTest):
         self.assertEqual(space.chart_ids, [123, 456])
 
     def test_new_chart(self):
-       chart = self.space.new_chart('test')
-       self.assertIsInstance(chart, Chart)
-       self.assertEqual(chart.name, 'test')
-       self.assertEqual(chart.type, 'line')
-       self.assertEqual(chart.persisted(), False)
+        chart = self.space.new_chart('test')
+        self.assertIsInstance(chart, Chart)
+        self.assertEqual(chart.name, 'test')
+        self.assertEqual(chart.type, 'line')
+        # Doesn't save
+        self.assertFalse(chart.persisted())
 
-    def test_new_chart_with_type(self):
-       chart = self.space.new_chart('test', type='stacked')
-       self.assertEqual(chart.type, 'stacked')
-       chart = self.space.new_chart('test', type='bignumber')
-       self.assertEqual(chart.type, 'bignumber')
+    def test_new_chart_type(self):
+        chart = self.space.new_chart('test', type='stacked')
+        self.assertEqual(chart.type, 'stacked')
+        chart = self.space.new_chart('test', type='bignumber')
+        self.assertEqual(chart.type, 'bignumber')
+
+    def test_new_chart_bignumber(self):
+        chart = self.space.new_chart('test', type='bignumber', use_last_value=False)
+        self.assertEqual(chart.type, 'bignumber')
+        self.assertFalse(chart.use_last_value)
+
+    def test_add_chart_name(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_chart('bar')
+        self.assertIsInstance(chart, Chart)
+        self.assertEqual(chart.name, 'bar')
+
+    def test_add_chart_type(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_chart('baz', type='stacked')
+        self.assertEqual(chart.type, 'stacked')
+
+    def test_add_chart_persisted(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_chart('bar')
+        # Does save
+        self.assertTrue(chart.persisted())
+
+    def test_add_chart_streams(self):
+        space = self.conn.create_space('foo')
+        streams = [
+            {'metric': 'my.metric', 'source': 'foo'},
+            {'metric': 'my.metric2', 'source': 'bar'}
+        ]
+        chart = space.add_chart('cpu', streams=streams)
+        self.assertEqual(chart.streams[0].metric, 'my.metric')
+        self.assertEqual(chart.streams[0].source, 'foo')
+        self.assertEqual(chart.streams[1].metric, 'my.metric2')
+        self.assertEqual(chart.streams[1].source, 'bar')
+
+    def test_add_chart_bignumber_default(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_chart('baz', type='bignumber')
+        self.assertEqual(chart.type, 'bignumber')
+        # Leave this up to the Librato API to default
+        self.assertIsNone(chart.use_last_value)
+
+    def test_add_chart_bignumber_use_last_value(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_chart('baz', type='bignumber', use_last_value=False)
+        self.assertFalse(chart.use_last_value)
+        chart = space.add_chart('baz', type='bignumber', use_last_value=True)
+        self.assertTrue(chart.use_last_value)
+
+    def test_add_line_chart(self):
+        space = self.conn.create_space('foo')
+        streams = [{'metric': 'my.metric', 'source': 'my.source'}]
+        chart = space.add_line_chart('cpu', streams=streams)
+        self.assertEqual([chart.name, chart.type], ['cpu', 'line'])
+        self.assertEqual(len(chart.streams), 1)
+
+    def test_add_single_line_chart_default(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_single_line_chart('cpu', 'my.cpu.metric')
+        self.assertEqual(chart.type, 'line')
+        self.assertEqual(chart.name, 'cpu')
+        self.assertEqual(len(chart.streams), 1)
+        self.assertEqual(chart.streams[0].metric, 'my.cpu.metric')
+        self.assertEqual(chart.streams[0].source, '*')
+
+    def test_add_single_line_chart_source(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_single_line_chart('cpu', 'my.cpu.metric', 'prod*')
+        self.assertEqual(chart.streams[0].source, 'prod*')
+
+    def test_add_single_line_chart_group_functions(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_single_line_chart('cpu', 'my.cpu.metric', '*', 'min', 'max')
+        stream = chart.streams[0]
+        self.assertEqual(stream.group_function, 'min')
+        self.assertEqual(stream.summary_function, 'max')
+
+    def test_add_stacked_chart(self):
+        space = self.conn.create_space('foo')
+        streams = [{'metric': 'my.metric', 'source': 'my.source'}]
+        chart = space.add_stacked_chart('cpu', streams=streams)
+        self.assertEqual(chart.type, 'stacked')
+        self.assertEqual([chart.name, chart.type], ['cpu', 'stacked'])
+        self.assertEqual(len(chart.streams), 1)
+
+    def test_add_single_stacked_chart(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_single_stacked_chart('cpu', 'my.cpu.metric', '*')
+        self.assertEqual(chart.type, 'stacked')
+        self.assertEqual(chart.name, 'cpu')
+        self.assertEqual(len(chart.streams), 1)
+        self.assertEqual(chart.streams[0].metric, 'my.cpu.metric')
+        self.assertEqual(chart.streams[0].source, '*')
+
+    def test_add_bignumber_chart_default(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_bignumber_chart('cpu', 'my.metric')
+        self.assertEqual(chart.type, 'bignumber')
+        self.assertEqual(chart.name, 'cpu')
+        self.assertTrue(chart.use_last_value)
+        stream = chart.streams[0]
+        self.assertEqual(stream.metric, 'my.metric')
+        self.assertEqual(stream.source, '*')
+        self.assertEqual(stream.summary_function, 'average')
+
+    def test_add_bignumber_chart_source(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_bignumber_chart('cpu', 'my.metric', 'foo')
+        self.assertEqual(chart.streams[0].source, 'foo')
+
+    def test_add_bignumber_chart_summary_function(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_bignumber_chart('cpu', 'my.metric',
+            summary_function='min')
+        self.assertEqual(chart.streams[0].summary_function, 'min')
+
+    def test_add_bignumber_chart_use_last_value(self):
+        space = self.conn.create_space('foo')
+        # True shows the most recent value, False reduces over time
+        # Default to True
+        chart = space.add_bignumber_chart('cpu', 'my.metric')
+        self.assertTrue(chart.use_last_value)
+        chart = space.add_bignumber_chart('cpu', 'my.metric', use_last_value=True)
+        self.assertTrue(chart.use_last_value)
+        chart = space.add_bignumber_chart('cpu', 'my.metric', use_last_value=False)
+        self.assertFalse(chart.use_last_value)
 
     def test_delete_space(self):
         space = self.conn.create_space('Delete Me')

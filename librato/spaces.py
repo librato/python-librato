@@ -1,5 +1,6 @@
 from librato.streams import Stream
 
+
 class Space(object):
     """Librato Space Base class"""
 
@@ -32,8 +33,47 @@ class Space(object):
             self._charts = self.connection.list_charts_in_space(self)
         return self._charts[:]
 
-    def new_chart(self, name, type='line'):
-        return Chart(self.connection, name, id=None, type=type, space_id=self.id)
+    def new_chart(self, name, type='line', streams=[], use_last_value=None):
+        return Chart(self.connection, name, type=type,
+                     space_id=self.id, streams=streams,
+                     use_last_value=use_last_value)
+
+    def add_chart(self, name, type='line', streams=[], use_last_value=None):
+        chart = self.new_chart(name, type=type, streams=streams,
+                               use_last_value=use_last_value)
+        chart.save()
+        return chart
+
+    def add_line_chart(self, name, streams=[]):
+        return self.add_chart(name, streams=streams)
+
+    def add_single_line_chart(self, name, metric=None, source='*',
+                              group_function=None, summary_function=None):
+        stream = {'metric': metric, 'source': source}
+
+        if group_function:
+            stream['group_function'] = group_function
+        if summary_function:
+            stream['summary_function'] = summary_function
+        return self.add_line_chart(name, streams=[stream])
+
+    def add_stacked_chart(self, name, streams=[]):
+        return self.add_chart(name, type='stacked', streams=streams)
+
+    def add_single_stacked_chart(self, name, metric, source='*'):
+        stream = {'metric': metric, 'source': source}
+        return self.add_stacked_chart(name, streams=[stream])
+
+    def add_bignumber_chart(self, name, metric, source='*',
+                            summary_function='average', use_last_value=True):
+        stream = {
+            'metric': metric,
+            'source': source,
+            'summary_function': summary_function
+        }
+        chart = self.add_chart(name, type='bignumber',
+                               use_last_value=use_last_value, streams=[stream])
+        return chart
 
     # This currently only updates the name of the Space
     def save(self):
@@ -48,19 +88,52 @@ class Space(object):
 
 
 class Chart(object):
-    def __init__(self, connection, name, id=None, type='line', space_id=None, streams=[]):
+    # Payload example from /spaces/123/charts/456 API
+    # {
+    #   "id": 1723352,
+    #   "name": "Hottest City",
+    #   "type": "line",
+    #   "streams": [
+    #     {
+    #       "id": 19261984,
+    #       "metric": "apparent_temperature",
+    #       "type": "gauge",
+    #       "source": "*",
+    #       "group_function": "max",
+    #       "summary_function": "max"
+    #     }
+    #   ],
+    #   "max": 105,
+    #   "min": 0,
+    #   "related_space": 96893,
+    #   "label": "The y axis label",
+    #   "use_log_yaxis": true
+    # }
+    def __init__(self, connection, name=None, id=None, type='line',
+                 space_id=None, streams=[],
+                 min=None, max=None,
+                 label=None,
+                 use_log_yaxis=None,
+                 use_last_value=None):
         self.connection = connection
         self.name = name
         self.type = type
         self.space_id = space_id
         self._space = None
         self.streams = []
+        self.label = label
+        self.use_log_yaxis = use_log_yaxis
+        self.min = min
+        self.max = max
+        self.use_last_value = use_last_value
         for i in streams:
             if isinstance(i, Stream):
                 self.streams.append(i)
             elif isinstance(i, dict):  # Probably parsing JSON here
-                self.streams.append(Stream(i.get('metric'), i.get('source'), i.get('composite')))
+                # dict
+                self.streams.append(Stream(**i))
             else:
+                # list?
                 self.streams.append(Stream(*i))
         self.id = id
 
@@ -85,9 +158,14 @@ class Chart(object):
         return self._space
 
     def get_payload(self):
-        return {'name': self.name,
-                'type': self.type,
-                'streams': self.streams_payload()}
+        payload = {
+            'name': self.name,
+            'type': self.type,
+            'streams': self.streams_payload()
+        }
+        if self.use_last_value is not None:
+            payload['use_last_value'] = self.use_last_value
+        return payload
 
     def streams_payload(self):
         return [s.get_payload() for s in self.streams]
@@ -102,10 +180,18 @@ class Chart(object):
 
     def save(self):
         if self.persisted():
-            self.connection.update_chart(self, self.space())
+            return self.connection.update_chart(self, self.space())
         else:
-            dummy = self.connection.create_chart(self.name, self.space(), streams=self.streams)
-            self.id = dummy.id
+            args = {
+                'type': self.type,
+                'streams': self.streams_payload(),
+            }
+            if self.use_last_value:
+                args['use_last_value'] = self.use_last_value
+            resp = self.connection.create_chart(self.name, self.space(),
+                                                **args)
+            self.id = resp.id
+            return resp
 
     def rename(self, new_name):
         self.name = new_name

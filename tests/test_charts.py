@@ -20,31 +20,13 @@ class TestChartsConnection(ChartsTest):
         super(TestChartsConnection, self).setUp()
         self.space = self.conn.create_space("My Space")
 
-    def test_connection(self):
-        self.assertEqual(Chart(self.conn, 'cpu').connection, self.conn)
-
-    def test_chart_name(self):
-        self.assertEqual(Chart(self.conn, 'cpu').name, 'cpu')
-
-    def test_space_id(self):
-        self.assertEqual(Chart(self.conn, 'cpu', space_id=42).space_id, 42)
-
-    def test_space_attribute(self):
-        chart = Chart(self.conn, 'cpu')
-        chart._space = self.space
-        self.assertEqual(chart._space, self.space)
-
-    def test_chart_type(self):
-        # Debated `chart_type` vs `type`, going with `type`
-        self.assertEqual(Chart(self.conn, 'cpu', type='line').type, 'line')
-        self.assertEqual(Chart(self.conn, 'cpu', type='stacked').type, 'stacked')
-        self.assertEqual(Chart(self.conn, 'cpu', type='bignumber').type, 'bignumber')
-
     def test_create_chart_without_streams(self):
         chart_name = "Empty Chart"
         chart = self.conn.create_chart(chart_name, self.space)
         self.assertIsInstance(chart, Chart)
         self.assertEqual(chart.name, chart_name)
+        # Line by default
+        self.assertEqual(chart.type, 'line')
 
     def test_create_chart_with_streams(self):
         # Create the metric
@@ -103,51 +85,101 @@ class TestChartModel(ChartsTest):
         super(TestChartModel, self).setUp()
         self.space = self.conn.create_space('My Space')
 
-    def test_init_with_connection(self):
-        self.assertEqual(Chart(self.conn, 'cpu').connection, self.conn)
+    def test_init_connection(self):
+        self.assertEqual(Chart(self.conn).connection, self.conn)
 
-    def test_init_with_name(self):
+    def test_init_name(self):
+        self.assertIsNone(Chart(self.conn).name)
         self.assertEqual(Chart(self.conn, 'cpu').name, 'cpu')
 
-    def test_init_with_streams(self):
-      s = [Stream('my.metric'), Stream('other.metric')]
-      chart = Chart(self.conn, 'cpu', streams=s)
-      self.assertEqual(chart.streams, s)
+    def test_init_chart_type(self):
+        # Debated `chart_type` vs `type`, going with `type`
+        self.assertEqual(Chart(self.conn, type='line').type, 'line')
+        self.assertEqual(Chart(self.conn, type='stacked').type, 'stacked')
+        self.assertEqual(Chart(self.conn, type='bignumber').type, 'bignumber')
 
-    def test_init_with_streams_dict(self):
-      streams_dict = [
-        {'metric': 'my.metric', 'source': 'blah', 'composite': None},
-        {'metric': 'other.metric', 'source': '*', 'composite': None}
-      ]
-      chart = Chart(self.conn, 'cpu', streams=streams_dict)
-      self.assertEqual(chart.streams[0].metric, streams_dict[0]['metric'])
-      self.assertEqual(chart.streams[0].source, streams_dict[0]['source'])
-      self.assertEqual(chart.streams[0].composite, streams_dict[0]['composite'])
-      self.assertEqual(chart.streams[1].metric, streams_dict[1]['metric'])
-      self.assertEqual(chart.streams[1].source, streams_dict[1]['source'])
-      self.assertEqual(chart.streams[1].composite, streams_dict[1]['composite'])
+    def test_init_space_id(self):
+        self.assertEqual(Chart(self.conn, space_id=42).space_id, 42)
 
-    def test_init_with_streams_list(self):
-      streams_list = [['my.metric', '*', None]]
-      chart = Chart(self.conn, 'cpu', streams=streams_list)
-      self.assertEqual(chart.streams[0].metric, streams_list[0][0])
+    def test_space_attribute(self):
+        chart = Chart(self.conn)
+        chart._space = self.space
+        self.assertEqual(chart._space, self.space)
+
+    def test_init_streams(self):
+        self.assertEqual(Chart(self.conn).streams, [])
+
+        s = [Stream('my.metric'), Stream('other.metric')]
+        chart = Chart(self.conn, streams=s)
+        self.assertEqual(chart.streams, s)
+
+    def test_init_streams_dict(self):
+        streams_dict = [
+            {'metric': 'my.metric', 'source': 'blah', 'composite': None},
+            {'metric': 'other.metric', 'source': '*', 'composite': None}
+        ]
+        chart = Chart(self.conn, streams=streams_dict)
+        self.assertEqual(chart.streams[0].metric, streams_dict[0]['metric'])
+        self.assertEqual(chart.streams[0].source, streams_dict[0]['source'])
+        self.assertEqual(chart.streams[0].composite, streams_dict[0]['composite'])
+        self.assertEqual(chart.streams[1].metric, streams_dict[1]['metric'])
+        self.assertEqual(chart.streams[1].source, streams_dict[1]['source'])
+        self.assertEqual(chart.streams[1].composite, streams_dict[1]['composite'])
+
+    def test_init_streams_list(self):
+        streams_list = [['my.metric', '*', None]]
+        chart = Chart(self.conn, streams=streams_list)
+        self.assertEqual(chart.streams[0].metric, streams_list[0][0])
+
+    def test_init_streams_group_functions(self):
+        streams_dict = [
+            {'metric': 'my.metric', 'source': '*',
+            'group_function': 'sum', 'summary_function': 'max'}
+        ]
+        chart = Chart(self.conn, streams=streams_dict)
+        stream = chart.streams[0]
+        self.assertEqual(stream.group_function, 'sum')
+        self.assertEqual(stream.summary_function, 'max')
+
+    def test_init_min_max(self):
+        chart = Chart(self.conn, min=-42, max=100)
+        self.assertEqual(chart.min, -42)
+        self.assertEqual(chart.max, 100)
+
+    def test_init_label(self):
+        chart = Chart(self.conn, label='I heart charts')
+        self.assertEqual(chart.label, 'I heart charts')
+
+    def test_init_use_log_yaxis(self):
+        chart = Chart(self.conn, use_log_yaxis=True)
+        self.assertTrue(chart.use_log_yaxis)
 
     def test_save_chart(self):
         chart = Chart(self.conn, 'test', space_id=self.space.id)
         self.assertFalse(chart.persisted())
         self.assertIsNone(chart.id)
-        chart.save()
+        resp = chart.save()
+        self.assertIsInstance(resp, Chart)
         self.assertTrue(chart.persisted())
         self.assertIsNotNone(chart.id)
+        self.assertEqual(chart.type, 'line')
 
-    def test_chart_is_persisted(self):
+    def test_save_persists_type(self):
+        # Ensure that type gets passed in the payload
+        for t in ['stacked', 'bignumber']:
+            chart = Chart(self.conn, space_id=self.space.id, type=t)
+            chart.save()
+            found = self.conn.get_chart(chart.id, self.space.id)
+            self.assertEqual(found.type, t)
+
+    def test_chart_is_persisted_if_id_present(self):
         chart = Chart(self.conn, 'test', id=42)
         self.assertTrue(chart.persisted())
         chart = Chart(self.conn, 'test', id=None)
         self.assertFalse(chart.persisted())
 
     def test_get_space_from_chart(self):
-        chart = Chart(self.conn, 'CPU', space_id=self.space.id)
+        chart = Chart(self.conn, space_id=self.space.id)
         space = chart.space()
         self.assertIsInstance(space, Space)
         self.assertEqual(space.id, self.space.id)
@@ -179,42 +211,51 @@ class TestChartModel(ChartsTest):
         self.assertEqual(stream.composite, None)
 
     def test_new_stream_with_composite(self):
-        chart = Chart(self.conn, 'cpu')
+        chart = Chart(self.conn)
         stream = chart.new_stream('my.metric')
         self.assertEqual(stream.metric, 'my.metric')
         self.assertEqual(stream.source, '*')
         self.assertEqual(stream.composite, None)
 
     def test_get_payload(self):
-        chart = Chart(self.conn, 'cpu', type='bignumber', space_id=42)
+        chart = Chart(self.conn)
         payload = chart.get_payload()
         self.assertEqual(payload['name'], chart.name)
         self.assertEqual(payload['type'], chart.type)
         self.assertEqual(payload['streams'], chart.streams)
+
+    def test_get_payload_bignumber(self):
+        streams = [{'metric': 'my.metric', 'source': '*'}]
+        chart = Chart(self.conn, type='bignumber', streams=streams,
+            use_last_value=False)
+        payload = chart.get_payload()
+        self.assertEqual(payload['name'], chart.name)
+        self.assertEqual(payload['type'], chart.type)
+        self.assertEqual(payload['streams'], streams)
+        self.assertEqual(payload['use_last_value'], chart.use_last_value)
 
     def test_streams_payload(self):
         streams_payload = [
           {'metric': 'some.metric', 'source': None, 'composite': None},
           {'metric': None, 'source': None, 'composite': 's("other.metric", "sf", {function: "sum"})'}
         ]
-        chart = Chart(self.conn, 'cpu', streams=streams_payload)
-        self.assertEqual(chart.streams_payload(), streams_payload)
+        chart = Chart(self.conn, streams=streams_payload)
+        self.assertEqual(chart.streams_payload()[0]['metric'], streams_payload[0]['metric'])
 
     def test_get_payload_with_streams_dict(self):
         streams_payload = [
           {'metric': 'some.metric', 'source': None, 'composite': None},
           {'metric': 'another.metric', 'source': None, 'composite': None}
         ]
-        chart = Chart(self.conn, 'cpu', type='bignumber', space_id=42, streams=streams_payload)
+        chart = Chart(self.conn, type='bignumber', space_id=42, streams=streams_payload)
         chart_payload = chart.get_payload()
-        self.assertEqual(chart_payload['streams'], streams_payload)
+        self.assertEqual(chart_payload['streams'][0]['metric'], streams_payload[0]['metric'])
+        self.assertEqual(chart_payload['streams'][1]['metric'], streams_payload[1]['metric'])
 
     def test_delete_chart(self):
         chart = self.conn.create_chart('cpu', self.space)
         chart.delete()
         self.assertEqual(self.space.charts(), [])
-
-
 
 
 if __name__ == '__main__':

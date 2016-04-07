@@ -272,7 +272,7 @@ class MockServer(object):
             raise Exception("Trying to get chart that doesn't " +
                             "exist %d", _chrt_id)
         else:
-            chart = self.spaces[int(_chrt_id)]['charts'][int(_chrt_id)]
+            chart = self.spaces[int(_spc_id)]['charts'][int(_chrt_id)]
             return json.dumps(chart).encode('utf-8')
 
     def update_space(self, uri, payload):
