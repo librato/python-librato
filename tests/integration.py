@@ -337,6 +337,8 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         self.alerts_created_during_test.append(name)
         return name
 
+class TestSpaces(TestLibratoBase):
+
 
 if __name__ == '__main__':
     # TO run a specific test:

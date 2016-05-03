@@ -113,6 +113,14 @@ class TestSpaceModel(SpacesTest):
         space = Space(self.conn, 'My Space', chart_dicts=[{'id': 123}, {'id': 456}])
         self.assertEqual(space.chart_ids, [123, 456])
 
+    def test_space_is_not_persisted(self):
+        space = Space(self.conn, 'not saved')
+        self.assertFalse(space.persisted())
+
+    def test_space_is_persisted_if_id_present(self):
+        space = Space(self.conn, 'saved', id=42)
+        self.assertTrue(space.persisted())
+
     # This only returns the name because that's all we can send to the Spaces API
     def test_get_payload(self):
         self.assertEqual(self.space.get_payload(), {'name': self.space.name})
@@ -124,6 +132,20 @@ class TestSpaceModel(SpacesTest):
         self.assertEqual(space.id, 42)
         self.assertEqual(space.name, 'test')
         self.assertEqual(space.chart_ids, [123, 456])
+
+    def test_save_creates_space(self):
+        space = Space(self.conn, 'not saved')
+        self.assertFalse(space.persisted())
+        resp = space.save()
+        self.assertIsInstance(resp, Space)
+        self.assertTrue(space.persisted())
+
+    def save_updates_space(self):
+        space = Space(self.conn, 'some name').save()
+        self.assertEqual(space.name, 'some name')
+        space.name = 'new name'
+        space.save()
+        self.assertEqual(self.conn.find_space('new_name').name, 'new name')
 
     def test_new_chart(self):
         chart = self.space.new_chart('test')
@@ -253,6 +275,12 @@ class TestSpaceModel(SpacesTest):
         chart = space.add_bignumber_chart('cpu', 'my.metric',
             summary_function='min')
         self.assertEqual(chart.streams[0].summary_function, 'min')
+
+    def test_add_bignumber_chart_group_function(self):
+        space = self.conn.create_space('foo')
+        chart = space.add_bignumber_chart('cpu', 'my.metric',
+            group_function='max')
+        self.assertEqual(chart.streams[0].group_function, 'max')
 
     def test_add_bignumber_chart_use_last_value(self):
         space = self.conn.create_space('foo')

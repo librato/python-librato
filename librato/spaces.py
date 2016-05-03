@@ -28,6 +28,9 @@ class Space(object):
     def get_payload(self):
         return {'name': self.name}
 
+    def persisted(self):
+        return self.id is not None
+
     def charts(self):
         if self._charts is None or self._charts == []:
             self._charts = self.connection.list_charts_in_space(self)
@@ -65,19 +68,28 @@ class Space(object):
         return self.add_stacked_chart(name, streams=[stream])
 
     def add_bignumber_chart(self, name, metric, source='*',
+                            group_function='average',
                             summary_function='average', use_last_value=True):
         stream = {
             'metric': metric,
             'source': source,
+            'group_function': group_function,
             'summary_function': summary_function
         }
-        chart = self.add_chart(name, type='bignumber',
-                               use_last_value=use_last_value, streams=[stream])
+        chart = self.add_chart(name,
+            type='bignumber',
+            use_last_value=use_last_value,
+            streams=[stream])
         return chart
 
     # This currently only updates the name of the Space
     def save(self):
-        self.connection.update_space(self)
+        if self.persisted():
+            return self.connection.update_space(self)
+        else:
+            s = self.connection.create_space(self.name)
+            self.id = s.id
+            return s
 
     def rename(self, new_name):
         self.name = new_name
@@ -114,7 +126,8 @@ class Chart(object):
                  min=None, max=None,
                  label=None,
                  use_log_yaxis=None,
-                 use_last_value=None):
+                 use_last_value=None,
+                 related_space=None):
         self.connection = connection
         self.name = name
         self.type = type
@@ -122,10 +135,11 @@ class Chart(object):
         self._space = None
         self.streams = []
         self.label = label
-        self.use_log_yaxis = use_log_yaxis
         self.min = min
         self.max = max
+        self.use_log_yaxis = use_log_yaxis
         self.use_last_value = use_last_value
+        self.related_space = related_space
         for i in streams:
             if isinstance(i, Stream):
                 self.streams.append(i)
@@ -148,7 +162,13 @@ class Chart(object):
                   id=data['id'],
                   type=data.get('type', 'line'),
                   space_id=data.get('space_id'),
-                  streams=data.get('streams'))
+                  streams=data.get('streams'),
+                  min=data.get('min'),
+                  max=data.get('max'),
+                  label=data.get('label'),
+                  use_log_yaxis=data.get('use_log_yaxis'),
+                  use_last_value=data.get('use_last_value'),
+                  related_space=data.get('related_space'))
         return obj
 
     def space(self):
@@ -157,14 +177,20 @@ class Chart(object):
             self._space = self.connection.get_space(self.space_id)
         return self._space
 
+    def known_attributes(self):
+        return ['min', 'max', 'label', 'use_log_yaxis', 'use_last_value',
+            'related_space']
+
     def get_payload(self):
+        # Set up the things that we aren't considering just "attributes"
         payload = {
             'name': self.name,
             'type': self.type,
             'streams': self.streams_payload()
         }
-        if self.use_last_value is not None:
-            payload['use_last_value'] = self.use_last_value
+        for attr in self.known_attributes():
+            if getattr(self, attr) is not None:
+                payload[attr] = getattr(self, attr)
         return payload
 
     def streams_payload(self):
@@ -182,14 +208,11 @@ class Chart(object):
         if self.persisted():
             return self.connection.update_chart(self, self.space())
         else:
-            args = {
-                'type': self.type,
-                'streams': self.streams_payload(),
-            }
-            if self.use_last_value:
-                args['use_last_value'] = self.use_last_value
+            payload = self.get_payload()
+            # Don't include name twice
+            payload.pop('name')
             resp = self.connection.create_chart(self.name, self.space(),
-                                                **args)
+                                                **payload)
             self.id = resp.id
             return resp
 

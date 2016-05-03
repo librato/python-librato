@@ -20,6 +20,30 @@ class TestChartsConnection(ChartsTest):
         super(TestChartsConnection, self).setUp()
         self.space = self.conn.create_space("My Space")
 
+    def test_create_chart(self):
+        # Create a couple of metrics
+        self.conn.submit('my.metric', 42)
+        self.conn.submit('my.metric2', 43)
+        # Create charts in the space
+        chart_name = "Typical chart"
+        chart = self.conn.create_chart(
+            chart_name,
+            self.space,
+            streams=[
+                {'metric': 'my.metric', 'source': '*', 'summary_function': 'max'},
+                {'metric': 'my.metric2', 'source': 'foo'}
+            ]
+        )
+        self.assertIsInstance(chart, Chart)
+        self.assertIsNotNone(chart.id)
+        self.assertEqual(chart.space_id, self.space.id)
+        self.assertEqual(chart.name, chart_name)
+        self.assertEqual(chart.streams[0].metric, 'my.metric')
+        self.assertEqual(chart.streams[0].source, '*')
+        self.assertEqual(chart.streams[0].summary_function, 'max')
+        self.assertEqual(chart.streams[1].metric, 'my.metric2')
+        self.assertEqual(chart.streams[1].source, 'foo')
+
     def test_create_chart_without_streams(self):
         chart_name = "Empty Chart"
         chart = self.conn.create_chart(chart_name, self.space)
@@ -27,29 +51,13 @@ class TestChartsConnection(ChartsTest):
         self.assertEqual(chart.name, chart_name)
         # Line by default
         self.assertEqual(chart.type, 'line')
-
-    def test_create_chart_with_streams(self):
-        # Create the metric
-        metric_name = 'my.metric'
-        self.conn.submit(metric_name, 42, description='the desc for a metric')
-        chart_name = "Typical chart"
-        stream = Stream(metric=metric_name)
-        chart = self.conn.create_chart(chart_name, self.space, streams=[stream.get_payload()])
-        self.assertIsInstance(chart, Chart)
-
-        self.assertEqual(chart.name, chart_name)
-        self.assertEqual(len(chart.streams), 1)
-        self.assertEqual(chart.streams[0].metric, metric_name)
-        self.assertIsNone(chart.streams[0].composite)
-
-    def test_chart_is_not_persisted(self):
-        chart = Chart('not saved', self.space)
-        self.assertFalse(chart.persisted())
+        self.assertEqual(len(chart.streams), 0)
 
     def test_rename_chart(self):
         chart = self.conn.create_chart('CPU', self.space)
         chart.rename('CPU 2')
         self.assertEqual(chart.name, 'CPU 2')
+        self.assertEqual(self.conn.get_chart(chart.id, self.space).name, 'CPU 2')
 
     def test_delete_chart(self):
         chart = self.conn.create_chart('cpu', self.space)
@@ -78,6 +86,11 @@ class TestChartsConnection(ChartsTest):
         found = self.conn.get_chart(chart.id, self.space.id)
         self.assertEqual(found.id, chart.id)
         self.assertEqual(found.name, chart.name)
+
+    def test_find_chart_by_name(self):
+        chart = self.conn.create_chart('cpu', self.space)
+        found = self.conn.find_chart('cpu', self.space)
+        self.assertEqual(found.name, 'cpu')
 
 
 class TestChartModel(ChartsTest):
@@ -172,6 +185,53 @@ class TestChartModel(ChartsTest):
             found = self.conn.get_chart(chart.id, self.space.id)
             self.assertEqual(found.type, t)
 
+    def test_save_persists_min_max(self):
+        chart = Chart(self.conn, space_id=self.space.id)
+        self.assertIsNone(chart.min)
+        self.assertIsNone(chart.max)
+        chart.min = 5
+        chart.max = 30
+        chart.save()
+        found = self.conn.get_chart(chart.id, self.space.id)
+        self.assertEqual(found.min, 5)
+        self.assertEqual(found.max, 30)
+
+    def test_save_persists_label(self):
+        chart = Chart(self.conn, space_id=self.space.id)
+        self.assertIsNone(chart.label)
+        chart.label = 'my label'
+        chart.save()
+        found = self.conn.get_chart(chart.id, self.space.id)
+        self.assertEqual(found.label, 'my label')
+
+    def test_save_persists_log_y_axis(self):
+        chart = Chart(self.conn, space_id=self.space.id)
+        self.assertIsNone(chart.use_log_yaxis)
+        chart.use_log_yaxis = True
+        chart.save()
+        found = self.conn.get_chart(chart.id, self.space.id)
+        self.assertTrue(found.use_log_yaxis)
+
+    def test_save_persists_use_last_value(self):
+        chart = Chart(self.conn, space_id=self.space.id)
+        self.assertIsNone(chart.use_last_value)
+        chart.use_last_value = True
+        chart.save()
+        found = self.conn.get_chart(chart.id, self.space.id)
+        self.assertTrue(found.use_last_value)
+
+    def test_save_persists_related_space(self):
+        chart = Chart(self.conn, space_id=self.space.id)
+        self.assertIsNone(chart.related_space)
+        chart.related_space = 1234
+        chart.save()
+        found = self.conn.get_chart(chart.id, self.space.id)
+        self.assertTrue(found.related_space)
+
+    def test_chart_is_not_persisted(self):
+        chart = Chart('not saved', self.space)
+        self.assertFalse(chart.persisted())
+
     def test_chart_is_persisted_if_id_present(self):
         chart = Chart(self.conn, 'test', id=42)
         self.assertTrue(chart.persisted())
@@ -212,10 +272,11 @@ class TestChartModel(ChartsTest):
 
     def test_new_stream_with_composite(self):
         chart = Chart(self.conn)
-        stream = chart.new_stream('my.metric')
-        self.assertEqual(stream.metric, 'my.metric')
-        self.assertEqual(stream.source, '*')
-        self.assertEqual(stream.composite, None)
+        composite_formula = 's("my.metric", "*")'
+        stream = chart.new_stream(composite=composite_formula)
+        self.assertIsNone(stream.metric)
+        self.assertIsNone(stream.source)
+        self.assertEqual(stream.composite, composite_formula)
 
     def test_get_payload(self):
         chart = Chart(self.conn)

@@ -440,12 +440,13 @@ class LibratoConnection(object):
         """Find specific space by Name"""
         spaces = self.list_spaces(name=name)
         # Find the Space by name (case-insensitive)
-        space = next((s for s in spaces if s.name and s.name.lower() == name.lower()), None)
-        if space:
-            # Now use the ID to hydrate the space attributes (charts)
-            return self.get_space(space.id)
-        else:
-            return None
+        # This returns the first space found matching the name
+        for space in spaces:
+            if space.name and space.name.lower() == name.lower():
+                # Now use the ID to hydrate the space attributes (charts)
+                return self.get_space(space.id)
+
+        return None
 
     def update_space(self, space, **query_props):
         """Update an existing space (API currently only allows update of name"""
@@ -497,6 +498,16 @@ class LibratoConnection(object):
         resp['space_id'] = space_id
         return Chart.from_dict(self, resp)
 
+    # Find a chart by name in a space. Return the first match, so if multiple
+    # charts have the same name, you'll only get the first one
+    def find_chart(self, name, space):
+        charts = self.list_charts_in_space(space)
+        for chart in charts:
+            if chart.name and chart.name.lower() == name.lower():
+                # Now use the ID to hydrate the chart attributes (streams)
+                return self.get_chart(chart.id, space)
+        return None
+
     def create_chart(self, name, space, **query_props):
         """Create a new chart in space"""
         payload = Chart(self, name).get_payload()
@@ -511,7 +522,9 @@ class LibratoConnection(object):
         payload = chart.get_payload()
         for k, v in query_props.items():
             payload[k] = v
-        resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart.id), method="PUT", query_props=payload)
+        resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart.id),
+            method="PUT",
+            query_props=payload)
         return resp
 
     def delete_chart(self, chart_id, space_id, **query_props):
