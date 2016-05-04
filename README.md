@@ -19,7 +19,7 @@ From your application or script:
 
   ```import librato```
 
-## Authenticating
+## Authentication
 
   We first use our credentials to connect to the API. I am assuming you have
 [a librato account for Metrics](https://metrics.librato.com/). Go to your
@@ -171,7 +171,7 @@ api = librato.connect(user, token)
 q = api.new_queue(auto_submit_count=400)
 ```
 
-## Updating Metrics
+## Updating Metric Attributes
 
 You can update the information for a metric by using the `update` method,
 for example:
@@ -184,8 +184,6 @@ for metric in api.list_metrics():
   attrs['display_units_long'] = 'ms'
   api.update(metric.name, attributes=attrs)
 ```
-
-
 
 ## Annotations
 
@@ -234,6 +232,129 @@ Delete a named annotation stream:
 ```python
 api.delete_annotation_stream("testing")
 ```
+
+## Spaces API
+### List Spaces
+```python
+# List spaces
+spaces = api.list_spaces()
+```
+
+### Create a Space
+```python
+# Create a new Space directly via API
+space = api.create_space(space_name)
+print("Created '%s'" % space.name)
+
+# Create a new Space via the model, passing the connection
+space = Space(api, 'Production')
+space.save()
+```
+
+### Find a Space
+```python
+space = api.find_space('Production')
+```
+
+### Create a Chart
+```python
+# Create a Chart directly via API (defaults to line chart)
+space = api.find_space('Production')
+chart = api.create_chart(
+    'cpu',
+    space,
+    streams=[{'metric': 'cpu.idle', 'source': '*'}]
+)
+```
+
+```python
+# Create line chart using the Space model
+space = api.find_space('Production')
+
+# You can actually create an empty chart (default to line)
+chart = space.add_chart('cpu')
+
+# Create a chart with all attributes
+chart = space.add_chart(
+    'memory',
+    type='line',
+    streams=[
+      {'metric': 'memory.free', 'source': '*'},
+      {'metric': 'memory.used', 'source': '*',
+        'group_function': 'breakout', 'summary_function': 'average'}
+    ],
+    min=0,
+    max=50,
+    label='the y axis label',
+    use_log_yaxis=True,
+    related_space=1234
+)
+```
+
+```python
+# Shortcut to create a line chart with a single metric on it
+chart = space.add_single_line_chart('my chart', 'my.metric', '*')
+chart = space.add_single_line_chart('my chart', metric='my.metric', source='*')
+```
+
+```python
+# Shortcut to create a stacked chart with a single metric on it
+chart = space.add_single_stacked_chart('my chart', 'my.metric', '*')
+```
+
+```python
+# Create a big number chart
+bn = space.add_chart(
+    'memory',
+    type='bignumber',
+    streams=[{'metric': 'my.metric', 'source': '*'}]
+)
+# Shortcut to add big number chart
+bn = space.add_bignumber_chart('My Chart', 'my.metric', '*')
+bn = space.add_bignumber_chart('My Chart', 'my.metric',
+  source='*',
+  group_function='sum',
+  summary_function='sum',
+  use_last_value=True
+)
+```
+
+### Find a Chart
+```python
+# Takes either space_id or a space object
+chart = api.get_chart(chart_id, space_id)
+chart = api.get_chart(chart_id, space)
+```
+
+### Update a Chart
+```python
+chart = api.get_chart(chart_id, space_id)
+chart.min = 0
+chart.max = 50
+chart.save()
+```
+
+### Rename a Chart
+```python
+chart = api.get_chart(chart_id, space_id)
+# save() gets called automatically here
+chart.rename('new chart name')
+```
+
+### Add new metrics to a Chart
+```python
+chart = space.charts()[-1]
+chart.new_stream(metric='foo', source='*')
+chart.new_stream(composite='s("foo", "*")')
+chart.save()
+```
+
+### Delete a Chart
+```python
+chart = api.get_chart(chart_id, space_id)
+chart.delete()
+```
+
 
 ## Alerts
 

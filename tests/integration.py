@@ -338,6 +338,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         return name
 
 class TestSpaces(TestLibratoBase):
+    pass
 
 
 if __name__ == '__main__':
