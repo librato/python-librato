@@ -147,22 +147,42 @@ class TestSpaceModel(SpacesTest):
         space.save()
         self.assertEqual(self.conn.find_space('new_name').name, 'new name')
 
-    def test_new_chart(self):
+    def test_new_chart_name(self):
         chart = self.space.new_chart('test')
         self.assertIsInstance(chart, Chart)
         self.assertEqual(chart.name, 'test')
-        self.assertEqual(chart.type, 'line')
+
+    def test_new_chart_not_persisted(self):
         # Doesn't save
-        self.assertFalse(chart.persisted())
+        self.assertFalse(self.space.new_chart('test').persisted())
 
     def test_new_chart_type(self):
+        chart = self.space.new_chart('test')
+        self.assertEqual(chart.type, 'line')
         chart = self.space.new_chart('test', type='stacked')
         self.assertEqual(chart.type, 'stacked')
         chart = self.space.new_chart('test', type='bignumber')
         self.assertEqual(chart.type, 'bignumber')
 
+    def test_new_chart_attrs(self):
+        chart = self.space.new_chart('test',
+            label='hello',
+            min=-5,
+            max=30,
+            use_log_yaxis=True,
+            use_last_value=True,
+            related_space=1234
+        )
+        self.assertEqual(chart.label, 'hello')
+        self.assertEqual(chart.min, -5)
+        self.assertEqual(chart.max, 30)
+        self.assertTrue(chart.use_log_yaxis)
+        self.assertTrue(chart.use_last_value)
+        self.assertEqual(chart.related_space, 1234)
+
     def test_new_chart_bignumber(self):
-        chart = self.space.new_chart('test', type='bignumber', use_last_value=False)
+        chart = self.space.new_chart('test', type='bignumber',
+            use_last_value=False)
         self.assertEqual(chart.type, 'bignumber')
         self.assertFalse(chart.use_last_value)
 

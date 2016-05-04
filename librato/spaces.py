@@ -36,16 +36,14 @@ class Space(object):
             self._charts = self.connection.list_charts_in_space(self)
         return self._charts[:]
 
-    def new_chart(self, name, type='line', streams=[], use_last_value=None):
-        return Chart(self.connection, name, type=type,
-                     space_id=self.id, streams=streams,
-                     use_last_value=use_last_value)
+    # New up a chart
+    def new_chart(self, name, **kwargs):
+        return Chart(self.connection, name, space_id=self.id, **kwargs)
 
-    def add_chart(self, name, type='line', streams=[], use_last_value=None):
-        chart = self.new_chart(name, type=type, streams=streams,
-                               use_last_value=use_last_value)
-        chart.save()
-        return chart
+    # New up a chart and save it
+    def add_chart(self, name, **kwargs):
+        chart = self.new_chart(name, **kwargs)
+        return chart.save()
 
     def add_line_chart(self, name, streams=[]):
         return self.add_chart(name, streams=streams)
