@@ -39,6 +39,10 @@ class TestStreamModel(unittest.TestCase):
         self.assertIsNone(Stream('my.metric').summary_function)
         self.assertEqual(Stream(summary_function='min').summary_function, 'min')
 
+    def test_init_transform_function(self):
+        self.assertIsNone(Stream('my.metric').transform_function)
+        self.assertEqual(Stream(transform_function='x/p*60').transform_function, 'x/p*60')
+
     # For composites ONLY
     def test_init_downsample_function(self):
         self.assertIsNone(Stream('my.metric').downsample_function)

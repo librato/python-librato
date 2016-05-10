@@ -1,7 +1,8 @@
 class Stream(object):
     def __init__(self, metric=None, source='*', composite=None,
                  group_function=None, summary_function=None,
-                 downsample_function=None, period=None, id=None, type=None):
+                 transform_function=None, downsample_function=None,
+                 period=None, id=None, type=None):
         self.metric = metric
         self.composite = composite
         self.source = source
@@ -9,6 +10,7 @@ class Stream(object):
         self.group_function = group_function
         # average, sum, min, max, count (or derivative if counter)
         self.summary_function = summary_function
+        self.transform_function = transform_function
         self.downsample_function = downsample_function
         self.period = period
         self.type = type
