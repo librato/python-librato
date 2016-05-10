@@ -256,6 +256,14 @@ space.save()
 space = api.find_space('Production')
 ```
 
+### Delete a Space
+```python
+space = api.create_space('Test')
+api.delete_space(space.id)
+# or
+space.delete()
+```
+
 ### Create a Chart
 ```python
 # Create a Chart directly via API (defaults to line chart)
