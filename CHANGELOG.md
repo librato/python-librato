@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 1.0.0
+* Spaces API support
+
 ### Version 0.8.6
 * Allow http for local dev (thanks @vaidy4github)
 
