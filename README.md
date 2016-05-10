@@ -17,9 +17,9 @@ In your shell:
 
 From your application or script:
 
-  ```import  librato```
+  ```import librato```
 
-## Authenticating
+## Authentication
 
   We first use our credentials to connect to the API. I am assuming you have
 [a librato account for Metrics](https://metrics.librato.com/). Go to your
@@ -50,7 +50,7 @@ To iterate over your metrics:
     print m.name
 ```
 
-or use `list_all_metrics()` to iterate over all your metrics with
+or use `list_metrics()` to iterate over all your metrics with
 transparent pagination.
 
 Let's now create a Metric:
@@ -60,42 +60,37 @@ Let's now create a Metric:
 ```
 
 By default ```submit()``` will create a gauge metric. The metric will be
-created automatically by the server if it does not exist. We can remove it:
+created automatically by the server if it does not exist
+
+To create a counter metric:
 
 ```python
-  api.delete("temperature")
-```
-
-For creating a counter metric, we can:
-
-```python
-  api.submit("connections", 20, type='counter', description="server connections")
-```
-
-And again to remove:
-
-```python
-  api.delete("connections")
+  api.submit("connections", 20, type="counter", description="server connections")
 ```
 
 To iterate over your metrics:
 
 ```python
   for m in api.list_metrics():
-    print "%s: %s" % (m.name, m.description)
+      print "%s: %s" % (m.name, m.description)
 ```
 
 To retrieve a specific metric:
 
 ```python
   gauge   = api.get("temperature")
-  counter = api.get("connections")
+```
+
+Delete a metric:
+
+```python
+  api.delete("temperature")
 ```
 
 To retrieve a composite metric:
 
 ```python
-  # Get average temperature in all cities for last 8 hours
+  # Get average temperature across all cities for last 8 hours
   compose = 'mean(s("temperature", "*", {function: "mean", period: "3600"}))'
   start_time = int(time.time()) - 8 * 3600
   resp = api.get_composite(compose, start_time=start_time)
@@ -111,35 +106,29 @@ To retrieve a composite metric:
   # ]
 ```
 
-For sending more measurements:
+To create a saved composite metric:
 
 ```python
-  for temp in [20, 21, 22]:
-    api.submit('temperature', temp)
-  for num_con in [100, 200, 300]:
-    api.submit('connections', num_con, type='counter')
+  api.create_composite('humidity', 'sum(s("all.*", "*"))',
+      description='a test composite')
 ```
 
-To create a composite metric:
-
-```python
-  api.create_composite('humidity', 'sum(s("all.*", "*"))', description="a test composite")
-```
-
-Let's now iterate over the measurements of our Metrics:
+Iterate over measurements:
 
 ```python
   metric = api.get("temperature", count=100, resolution=1)
-  for m in metric.measurements['unassigned']:
+  source = 'unassigned'
+  for m in metric.measurements[source]:
     print "%s: %s" % (m['value'], m['measure_time'])
 ```
 
 Notice a couple of things here. First, we are using the key `unassigned` since
-we have not associated our measurements to any source. Read more about it in
-the [API documentation](http://dev.librato.com/v1). In addition, notice how
+we have not associated our measurements to any source. If we had specified a
+source such as `sf` we could use it in the same fashion. Read more the
+[API documentation](https://www.librato.com/docs/api/). In addition, notice how
 we are passing the count and resolution parameters to make sure the API
 returns measurements in its answer and not only the metric properties.
-Read more about them [here](http://dev.librato.com/v1/time-intervals).
+Read more about them [here](https://www.librato.com/docs/api/#retrieve-metric-by-name).
 
 ## Sending measurements in batch mode
 
@@ -180,6 +169,244 @@ that autosubmits based on metric volume.
 api = librato.connect(user, token)
 # Submit when the 400th metric is queued
 q = api.new_queue(auto_submit_count=400)
+```
+
+## Updating Metric Attributes
+
+You can update the information for a metric by using the `update` method,
+for example:
+
+```python
+api = librato.connect(user, token)
+for metric in api.list_metrics():
+  gauge = api.get(m.name)
+  attrs = gauge.attributes
+  attrs['display_units_long'] = 'ms'
+  api.update(metric.name, attributes=attrs)
+```
+
+## Annotations
+
+List Annotation all annotation streams:
+
+```python
+for stream in api.list_annotation_streams
+print("%s: %s" % (stream.name, stream.display_name))
+```
+
+View the metadata on a named annotation stream:
+
+```python
+stream = api.get_annotation_stream("api.pushes")
+print stream
+```
+
+Retrieve all of the events inside a named annotation stream, by adding a
+start_time parameter to the get_annotation_stream() call:
+
+```python
+stream=api.get_annotation_stream("api.pushes",start_time="1386050400")
+for source in stream.events:
+	print source
+	events=stream.events[source]
+	for event in events:
+		print event['id']
+		print event['title']
+		print event['description']
+```
+
+Submit a new annotation to a named annotation stream (creates the stream if it
+doesn't exist). Title is a required parameter, and all other parameters are optional
+
+```python
+api.post_annotation("testing",title="foobarbiz")
+
+api.post_annotation("TravisCI",title="build %s"%travisBuildID,
+                     source=SystemSource,
+                     description="Application %s, Travis build %s"%(appName,travisBuildID),
+                     links=[{'rel': 'travis', 'href': 'http://travisci.com/somebuild'}])
+```
+
+Delete a named annotation stream:
+
+```python
+api.delete_annotation_stream("testing")
+```
+
+## Spaces API
+### List Spaces
+```python
+# List spaces
+spaces = api.list_spaces()
+```
+
+### Create a Space
+```python
+# Create a new Space directly via API
+space = api.create_space(space_name)
+print("Created '%s'" % space.name)
+
+# Create a new Space via the model, passing the connection
+space = Space(api, 'Production')
+space.save()
+```
+
+### Find a Space
+```python
+space = api.find_space('Production')
+```
+
+### Create a Chart
+```python
+# Create a Chart directly via API (defaults to line chart)
+space = api.find_space('Production')
+chart = api.create_chart(
+    'cpu',
+    space,
+    streams=[{'metric': 'cpu.idle', 'source': '*'}]
+)
+```
+
+```python
+# Create line chart using the Space model
+space = api.find_space('Production')
+
+# You can actually create an empty chart (default to line)
+chart = space.add_chart('cpu')
+
+# Create a chart with all attributes
+chart = space.add_chart(
+    'memory',
+    type='line',
+    streams=[
+      {'metric': 'memory.free', 'source': '*'},
+      {'metric': 'memory.used', 'source': '*',
+        'group_function': 'breakout', 'summary_function': 'average'}
+    ],
+    min=0,
+    max=50,
+    label='the y axis label',
+    use_log_yaxis=True,
+    related_space=1234
+)
+```
+
+```python
+# Shortcut to create a line chart with a single metric on it
+chart = space.add_single_line_chart('my chart', 'my.metric', '*')
+chart = space.add_single_line_chart('my chart', metric='my.metric', source='*')
+```
+
+```python
+# Shortcut to create a stacked chart with a single metric on it
+chart = space.add_single_stacked_chart('my chart', 'my.metric', '*')
+```
+
+```python
+# Create a big number chart
+bn = space.add_chart(
+    'memory',
+    type='bignumber',
+    streams=[{'metric': 'my.metric', 'source': '*'}]
+)
+# Shortcut to add big number chart
+bn = space.add_bignumber_chart('My Chart', 'my.metric', '*')
+bn = space.add_bignumber_chart('My Chart', 'my.metric',
+  source='*',
+  group_function='sum',
+  summary_function='sum',
+  use_last_value=True
+)
+```
+
+### Find a Chart
+```python
+# Takes either space_id or a space object
+chart = api.get_chart(chart_id, space_id)
+chart = api.get_chart(chart_id, space)
+```
+
+### Update a Chart
+```python
+chart = api.get_chart(chart_id, space_id)
+chart.min = 0
+chart.max = 50
+chart.save()
+```
+
+### Rename a Chart
+```python
+chart = api.get_chart(chart_id, space_id)
+# save() gets called automatically here
+chart.rename('new chart name')
+```
+
+### Add new metrics to a Chart
+```python
+chart = space.charts()[-1]
+chart.new_stream(metric='foo', source='*')
+chart.new_stream(composite='s("foo", "*")')
+chart.save()
+```
+
+### Delete a Chart
+```python
+chart = api.get_chart(chart_id, space_id)
+chart.delete()
+```
+
+
+## Alerts
+
+List all alerts:
+
+```python
+for alert in api.list_alerts():
+    print(alert.name)
+```
+
+Create alerts with an _above_ condition:
+```python
+alert = api.create_alert(name)
+alert.add_condition_for('metric_name').above(1) # trigger immediately
+alert.add_condition_for('metric_name').above(1).duration(60) # trigger after a set duration
+alert.add_condition_for('metric_name').above(1, 'sum') # custom summary function
+alert.save()
+```
+
+Create alerts with a _below_ condition:
+```python
+api.create_alert(name)
+alert.add_condition_for('metric_name').below(1) # the same syntax as above conditions
+alert.save()
+```
+
+Create alerts with an _absent_ condition:
+```python
+api.create_alert(name)
+alert.add_condition_for('metric_name').stops_reporting_for(5) # duration in minutes of the threshold to trigger the alert
+alert.save()
+```
+
+Add a description to an alert (default description is empty):
+```python
+api.create_alert(name, description='An alert description')
+```
+
+Add a service to an alert:
+```python
+api.create_alert(name)
+alert.add_service(service ID)
+alert.save()
+```
+
+You can find the service ID by going to your service configuration and grabbing the ID from the URL.
+
+To restrict the alert to a specific source (default is `*`):
+```python
+api.create_alert(name)
+alert.add_condition_for('metric_name', source='source name')
+alert.save()
 ```
 
 ## Client-side Aggregation
@@ -225,121 +452,6 @@ a.submit()
 q = librato.queue.Queue(api)
 q.add_aggregator(a)
 q.submit()
-```
-
-## Updating Metrics
-
-You can update the information for a metric by using the `update` method,
-for example:
-
-```python
-api = librato.connect(user, token)
-for metric in api.list_metrics():
-  gauge = api.get(m.name)
-  attrs = gauge.attributes
-  attrs['display_units_long'] = 'ms'
-  api.update(metric.name, attributes=attrs)
-```
-
-## Annotations
-
-List Annotation all annotation streams:
-
-```python
-for stream in api.list_annotation_streams
-print "%s:%s" % (stream.name,stream.display_name)
-```
-
-View the metadata on a named annotation stream:
-
-```python
-stream=api.get_annotation_stream("api.pushes")
-print stream
-```
-
-Retrieve all of the events inside a named annotation stream, by adding a
-start_time parameter to the get_annotation_stream() call:
-
-```python
-stream=api.get_annotation_stream("api.pushes",start_time="1386050400")
-for source in stream.events:
-	print source
-	events=stream.events[source]
-	for event in events:
-		print event['id']
-		print event['title']
-		print event['description']
-```
-
-Submit a new annotation to a named annotation stream (creates the stream if it
-doesn't exist). Title is a required parameter, and all other parameters are optional
-
-```python
-api.post_annotation("testing",title="foobarbiz")
-
-api.post_annotation("TravisCI",title="build %s"%travisBuildID,
-                     source=SystemSource,
-                     description="Application %s, Travis build %s"%(appName,travisBuildID),
-                     links=[{'rel': 'travis', 'href': 'http://travisci.com/somebuild'}])
-```
-
-Delete a named annotation stream:
-
-```python
-api.delete_annotation_stream("testing")
-```
-
-## Alerts
-
-List all alerts:
-
-```python
-for alert in api.list_alerts():
-    print alert.name
-```
-
-Create alerts with an _above_ condition:
-```python
-alert = api.create_alert(name)
-alert.add_condition_for('metric_name').above(1) # immediately
-alert.add_condition_for('metric_name').above(1).duration(60) # duration of the threshold to trigger the alert
-alert.add_condition_for('metric_name').above(1, 'sum') # custom summary function
-alert.save()
-```
-
-Create alerts with a _below_ condition:
-```python
-api.create_alert(name)
-alert.add_condition_for('metric_name').below(1) # the same syntax from above conditions
-alert.save()
-```
-
-Create alerts with an _absent_ condition:
-```python
-api.create_alert(name)
-alert.add_condition_for('metric_name').stops_reporting_for(1) # duration of the threshold to trigger the alert
-alert.save()
-```
-
-Add a description to an alert (default description is empty):
-```python
-api.create_alert(name, description='An alert description')
-```
-
-Add a service to an alert:
-```python
-api.create_alert(name)
-alert.add_service(service ID)
-alert.save()
-```
-
-You can find the service ID by going to your service configuration and grabbing the ID from the URL.
-
-To restrict the alert to a specific source (default is `*`):
-```python
-api.create_alert(name)
-alert.add_condition_for('metric_name', source='source name')
-alert.save()
 ```
 
 ## Misc

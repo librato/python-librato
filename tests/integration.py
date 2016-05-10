@@ -32,13 +32,19 @@ logging.basicConfig(level=logging.INFO)
 
 class TestLibratoBase(unittest.TestCase):
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
         user = os.environ.get('LIBRATO_USER')
         token = os.environ.get('LIBRATO_TOKEN')
         """Initialize the Librato Connection"""
         assert user and token, "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
         cls.conn = librato.connect(user, token)
         cls.conn_sanitize = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
+
+    # Since these are live tests, I'm adding this to account for the slight
+    # delay in RDS replication lag at the API (if needed).
+    # Otherwise we get semi-random failures.
+    def wait_for_replication(self):
+        time.sleep(1)
 
 
 class TestLibratoBasic(TestLibratoBase):
@@ -50,6 +56,7 @@ class TestLibratoBasic(TestLibratoBase):
         if not connection:
             connection = self.conn
         connection.submit(name, value, type=type, description=desc)
+        self.wait_for_replication()
         metric = connection.get(name)
         assert metric and metric.name == connection.sanitize(name)
         assert metric.description == desc
@@ -151,6 +158,7 @@ class TestLibratoBasic(TestLibratoBase):
     def test_update_metrics_attributes(self):
         name, desc = 'Test', 'A great gauge.'
         self.conn.submit(name, 10, description=desc)
+        self.wait_for_replication()
         gauge = self.conn.get(name)
         assert gauge and gauge.name == name
         assert gauge.description == desc
@@ -336,6 +344,110 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         name = prefix + str(time.time())
         self.alerts_created_during_test.append(name)
         return name
+
+class TestSpacesApi(TestLibratoBase):
+    @classmethod
+    def setUpClass(cls):
+        super(TestSpacesApi, cls).setUpClass()
+        for space in cls.conn.list_spaces():
+            cls.conn.delete_space(space.id)
+
+    def test_create_space(self):
+        space = self.conn.create_space("my space")
+        self.assertIsNotNone(space.id)
+
+    def test_get_space_by_id(self):
+        space = self.conn.create_space("find me by id")
+        self.wait_for_replication()
+        found = self.conn.get_space(space.id)
+        self.assertEqual(space.id, found.id)
+
+    def test_find_space_by_name(self):
+        # This assumes you only have 1 space with this name (it's not unique)
+        space = self.conn.create_space("find me by name")
+        self.wait_for_replication()
+        found = self.conn.find_space(space.name)
+        self.assertEqual(space.id, found.id)
+        space.delete()
+
+    def test_list_spaces(self):
+        name = 'list me'
+        space = self.conn.create_space(name)
+        spaces = self.conn.list_spaces()
+        self.assertTrue(name in [s.name for s in spaces])
+
+    def test_delete_space(self):
+        space = self.conn.create_space("delete me")
+        self.wait_for_replication()
+        self.conn.delete_space(space.id)
+
+    def test_create_space_via_model(self):
+        space = librato.Space(self.conn, 'Production')
+        self.assertIsNone(space.id)
+        space.save()
+        self.assertIsNotNone(space.id)
+
+    def test_delete_space_via_model(self):
+        space = librato.Space(self.conn, 'delete me')
+        space.save()
+        self.wait_for_replication()
+        space.delete()
+        self.wait_for_replication()
+        self.assertRaises(librato.exceptions.NotFound, self.conn.get_space, space.id)
+
+    def test_create_chart(self):
+        # Ensure metrics exist
+        self.conn.submit('memory.free', 100)
+        self.conn.submit('memory.used', 200)
+        # Create space
+        space = librato.Space(self.conn, 'my space')
+        space.save()
+        # Add chart
+        chart = space.add_chart(
+            'memory',
+            type='line',
+            streams=[
+              {'metric': 'memory.free', 'source': '*'},
+              {'metric': 'memory.used', 'source': '*',
+                'group_function': 'breakout', 'summary_function': 'average'}
+            ],
+            min=0,
+            max=50,
+            label='the y axis label',
+            use_log_yaxis=True,
+            related_space=1234
+        )
+        self.wait_for_replication()
+        self.assertEqual(len(chart.streams), 2)
+
+    def test_create_big_number(self):
+        # Ensure metrics exist
+        self.conn.submit('memory.free', 100)
+        # Create space
+        space = librato.Space(self.conn, 'my space')
+        space.save()
+        self.wait_for_replication()
+        chart = space.add_chart(
+            'memory',
+            type='bignumber',
+            streams=[
+              {'metric': 'memory.free', 'source': '*'}
+            ],
+            use_last_value=False
+        )
+
+        # Shortcut
+        chart2 = space.add_bignumber_chart('memory 2', 'memory.free', 'foo*',
+            use_last_value=True)
+
+        self.wait_for_replication()
+
+        self.assertEqual(chart.type, 'bignumber')
+        self.assertEqual(len(chart.streams), 1)
+        self.assertFalse(chart.use_last_value)
+        self.assertEqual(chart2.type, 'bignumber')
+        self.assertEqual(len(chart2.streams), 1)
+        self.assertTrue(chart2.use_last_value)
 
 
 if __name__ == '__main__':

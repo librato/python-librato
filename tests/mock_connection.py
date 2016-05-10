@@ -12,9 +12,12 @@ class MockServer(object):
         self.instruments = OrderedDict()
         self.alerts = OrderedDict()
         self.dashboards = OrderedDict()
+        self.spaces = OrderedDict()
         self.last_i_id = 0
         self.last_a_id = 0
         self.last_db_id = 0
+        self.last_spc_id = 0
+        self.last_chrt_id = 0
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
@@ -142,12 +145,187 @@ class MockServer(object):
         annotation_resp['query'] = {'query': 'mocked query'}
         return json.dumps(annotation_resp).encode('utf-8')
 
+    def create_space(self, payload):
+        # payload: {"name": "my space"}
+        # response: {"id":162623,"name":"my space"}
+        payload["id"] = self.last_spc_id
+        self.spaces[self.last_spc_id] = payload
+        self.last_spc_id += 1
+        return json.dumps(payload).encode('utf-8')
+
+    def list_of_spaces(self):
+        answer = {}
+        answer["query"] = {}
+        answer["spaces"] = []
+        spcs = answer["spaces"]
+        for _id, c_spcs in self.spaces.items():
+            c_spcs["id"] = _id
+            spcs.append(c_spcs)
+        return json.dumps(answer).encode('utf-8')
+
+    # Filtering the spaces list like /spaces?name=foo
+    # so just return them all, it's fine
+    def find_space(self):
+        answer = {}
+        answer["query"] = {}
+        answer["spaces"] = []
+        spcs = answer["spaces"]
+        for _id, c_spcs in self.spaces.items():
+            c_spcs["id"] = _id
+            spcs.append(c_spcs)
+        return json.dumps(answer).encode('utf-8')
+
+    def get_space(self, uri):
+        _id = None
+        m = re.search('\/(\d+)(\/charts)?$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to get space that doesn't " +
+                            "exist %d", _id)
+        else:
+            return json.dumps(self.spaces[int(_id)]).encode('utf-8')
+
+    def create_chart(self, uri, payload):
+        _spc_id = None
+        m = re.search('\/(\d+)\/charts$', uri)
+        if m:
+            _spc_id = m.group(1)
+
+        if int(_spc_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to get space that doesn't " +
+                            "exist %d", _spc_id)
+
+        payload["id"] = self.last_chrt_id
+        space = self.spaces[int(_spc_id)]
+        if 'charts' in space:
+            space['charts'].append(payload)
+        else:
+            space['charts'] = [payload]
+        self.last_chrt_id += 1
+        return json.dumps(payload).encode('utf-8')
 
     def create_dashboard(self, payload):
         self.last_db_id += 1
         payload["id"] = self.last_i_id
         self.dashboards[self.last_i_id] = payload
         return json.dumps(payload).encode('utf-8')
+
+    def list_of_charts_in_space(self, uri):
+        _spc_id = None
+        m = re.search('\/(\d+)\/charts$', uri)
+        if m:
+            _spc_id = m.group(1)
+
+        if int(_spc_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to get space that doesn't " +
+                            "exist %d", _spc_id)
+
+        answer = self.spaces[int(_spc_id)].get('charts', [])
+        return json.dumps(answer).encode('utf-8')
+
+    def update_chart_in_space(self, uri, payload):
+        _spc_id = None
+        _chrt_id = None
+        m = re.search('\/spaces\/(\d+)\/charts\/(\d+)$', uri)
+        if m:
+            try:
+                _spc_id = m.group(1)
+                _chrt_id = m.group(2)
+            except:
+                raise Exception("Invalid URI %s" % uri)
+
+        if int(_spc_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to update space that doesn't " +
+                            "exist %d", _spc_id)
+        elif int(_chrt_id) not in self._chart_ids_for_space_id(_spc_id):
+            # TODO: return 400
+            raise Exception("Trying to update chart that doesn't " +
+                            "exist %d", _chrt_id)
+        else:
+            payload['id'] = int(_chrt_id)
+            self.spaces[int(_chrt_id)]['charts'][int(_chrt_id)] = payload
+        return ''
+
+    def get_chart_from_space(self, uri):
+        _spc_id = None
+        _chrt_id = None
+        m = re.search('\/spaces\/(\d+)\/charts\/(\d+)$', uri)
+        if m:
+            try:
+                _spc_id = m.group(1)
+                _chrt_id = m.group(2)
+            except:
+                raise Exception("Invalid URI %s" % uri)
+
+        if int(_spc_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to get space that doesn't " +
+                            "exist %d", _spc_id)
+        elif int(_chrt_id) not in self._chart_ids_for_space_id(_spc_id):
+            # TODO: return 400
+            raise Exception("Trying to get chart that doesn't " +
+                            "exist %d", _chrt_id)
+        else:
+            chart = self.spaces[int(_spc_id)]['charts'][int(_chrt_id)]
+            return json.dumps(chart).encode('utf-8')
+
+    def update_space(self, uri, payload):
+        _id = None
+        m = re.search('\/(\d+)(\/charts)?$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to get space that doesn't " +
+                            "exist %d", _id)
+        else:
+            self.spaces[int(_id)] = payload
+            self.spaces[int(_id)]["id"] = int(_id)
+        return ''
+
+    def delete_space(self, uri):
+        _id = None
+        m = re.search('\/(\d+)(\/charts)?$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to get space that doesn't " +
+                            "exist %d", _id)
+        else:
+            del self.spaces[int(_id)]
+        return ''
+
+    def delete_chart_from_space(self, uri):
+        _spc_id = None
+        _chrt_id = None
+        m = re.search('\/spaces\/(\d+)\/charts\/(\d+)$', uri)
+        if m:
+            try:
+                _spc_id = m.group(1)
+                _chrt_id = m.group(2)
+            except:
+                raise Exception("Invalid URI %s" % uri)
+
+        if int(_spc_id) not in self.spaces:
+            # TODO: return 400
+            raise Exception("Trying to update space that doesn't " +
+                            "exists %d", _spc_id)
+        elif int(_chrt_id) not in self._chart_ids_for_space_id(_spc_id):
+            # TODO: return 400
+            raise Exception("Trying to update chart that doesn't " +
+                            "exists %d", _chrt_id)
+        else:
+            del self.spaces[int(_spc_id)]['charts'][int(_spc_id)]
+        return ''
 
     def get_dashboard(self, uri):
         _id = None
@@ -230,6 +408,9 @@ class MockServer(object):
         del self.gauges[name]
         return ''
 
+    def _chart_ids_for_space_id(self, space_id):
+        return [c['id'] for c in self.spaces[int(space_id)]['charts']]
+
 '''Start the server.'''
 server = MockServer()
 
@@ -275,7 +456,6 @@ class MockResponse(object):
             return server.update_instrument(r.body, r.uri)
         elif self._req_is_get_instrument():
             return server.get_instrument(r.uri)
-
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()
         elif self._req_is_get_alert():
@@ -294,6 +474,28 @@ class MockResponse(object):
             return server.get_dashboard(r.uri)
         elif self._req_is_update_dashboard():
             return server.update_dashboard(r.body, r.uri)
+        elif self._req_is_list_of_spaces():
+            return server.list_of_spaces()
+        elif self._req_is_find_space():
+            return server.find_space()
+        elif self._req_is_get_space():
+            return server.get_space(r.uri)
+        elif self._req_is_list_of_charts_in_space():
+            return server.list_of_charts_in_space(r.uri)
+        elif self._req_is_get_chart_from_space():
+            return server.get_chart_from_space(r.uri)
+        elif self._req_is_create_space():
+            return server.create_space(r.body)
+        elif self._req_is_create_chart():
+            return server.create_chart(r.uri, r.body)
+        elif self._req_is_update_chart_in_space():
+            return server.update_chart_in_space(r.uri, r.body)
+        elif self._req_is_update_space():
+            return server.update_space(r.uri, r.body)
+        elif self._req_is_delete_space():
+            return server.delete_space(r.uri)
+        elif self._req_is_delete_chart_from_space():
+            return server.delete_chart_from_space(r.uri)
 
         else:
             msg = """
@@ -313,7 +515,8 @@ class MockResponse(object):
 
     def _req_is_delete(self):
         return (self._method_is('DELETE') and not
-                re.match('/v1/alerts/\d+', self.request.uri))
+                (re.match('/v1/alerts/\d+', self.request.uri) or
+                (re.match('/v1/spaces/(\d+)(\/charts/\d+)?$', self.request.uri))))
 
     def _req_is_get_metric(self):
         return (self._method_is('GET') and
@@ -366,6 +569,50 @@ class MockResponse(object):
     def _req_is_update_dashboard(self):
         return (self._method_is('PUT') and
                 re.match('/v1/dashboards/\d+', self.request.uri))
+
+    # TODO::
+    # spaces
+    def _req_is_list_of_spaces(self):
+        return self._method_is('GET') and self._path_is('/v1/spaces')
+
+    def _req_is_find_space(self):
+        return (self._method_is('GET') and
+                re.match('/v1/spaces\?name=.+$', self.request.uri))
+
+    def _req_is_get_space(self):
+        return (self._method_is('GET') and
+                re.match('/v1/spaces/\d+$', self.request.uri))
+
+    def _req_is_list_of_charts_in_space(self):
+        return (self._method_is('GET') and
+                re.match('/v1/spaces/\d+/charts$', self.request.uri))
+
+    def _req_is_get_chart_from_space(self):
+        return (self._method_is('GET') and
+                re.match('/v1/spaces/\d+/charts/\d+', self.request.uri))
+
+    def _req_is_create_space(self):
+        return self._method_is('POST') and self._path_is('/v1/spaces')
+
+    def _req_is_create_chart(self):
+        return (self._method_is('POST') and
+                re.match('/v1/spaces/\d+/charts$', self.request.uri))
+
+    def _req_is_update_space(self):
+        return (self._method_is('PUT') and
+                re.match('/v1/spaces/\d+$', self.request.uri))
+
+    def _req_is_update_chart_in_space(self):
+        return (self._method_is('PUT') and
+                re.match('/v1/spaces/\d+/charts/\d+', self.request.uri))
+
+    def _req_is_delete_space(self):
+        return (self._method_is('DELETE') and
+                re.match('/v1/spaces/\d+$', self.request.uri))
+
+    def _req_is_delete_chart_from_space(self):
+        return (self._method_is('DELETE') and
+                re.match('/v1/spaces/\d+/charts/\d+$', self.request.uri))
 
     def _method_is(self, m):
         return self.request.method == m

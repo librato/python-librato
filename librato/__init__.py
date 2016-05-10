@@ -3,7 +3,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright #       notice, this list of conditions and the following disclaimer.  #     * Redistributions in binary form must reproduce the above copyright
+#     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
 #     * Neither the name of Librato, Inc. nor the names of project contributors
@@ -47,6 +47,7 @@ from librato.instruments import Instrument
 from librato.alerts import Alert
 from librato.dashboards import Dashboard
 from librato.annotations import Annotation
+from librato.spaces import Space, Chart
 
 log = logging.getLogger("librato")
 
@@ -272,7 +273,7 @@ class LibratoConnection(object):
         return self._mexe(path, method="DELETE", query_props=payload)
 
     #
-    # Dashboards!
+    # Dashboards
     #
     def list_dashboards(self, **query_props):
         """List all dashboards"""
@@ -418,6 +419,119 @@ class LibratoConnection(object):
             return list(filter(lambda a: a.active, alerts))
         else:
             return alerts
+
+    #
+    # Spaces
+    #
+    def list_spaces(self, **query_props):
+        """List all spaces"""
+        resp = self._mexe("spaces", query_props=query_props)
+        return self._parse(resp, "spaces", Space)
+
+    def get_space(self, id, **query_props):
+        """Get specific space by ID"""
+        resp = self._mexe("spaces/%s" % id,
+                          method="GET", query_props=query_props)
+        return Space.from_dict(self, resp)
+
+    def find_space(self, name):
+        if type(name) is int:
+            raise ValueError("This method expects name as a parameter, %s given" % name)
+        """Find specific space by Name"""
+        spaces = self.list_spaces(name=name)
+        # Find the Space by name (case-insensitive)
+        # This returns the first space found matching the name
+        for space in spaces:
+            if space.name and space.name.lower() == name.lower():
+                # Now use the ID to hydrate the space attributes (charts)
+                return self.get_space(space.id)
+
+        return None
+
+    def update_space(self, space, **query_props):
+        """Update an existing space (API currently only allows update of name"""
+        payload = space.get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces/%s" % space.id,
+                          method="PUT", query_props=payload)
+        return resp
+
+    def create_space(self, name, **query_props):
+        payload = Space(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces", method="POST", query_props=payload)
+        return Space.from_dict(self, resp)
+
+    def delete_space(self, id):
+        """delete a space"""
+        resp = self._mexe("spaces/%s" % id, method="DELETE")
+        return resp
+
+
+    #
+    # Charts
+    #
+    def list_charts_in_space(self, space, **query_props):
+        """List all charts from space"""
+        resp = self._mexe("spaces/%s/charts" % space.id, query_props=query_props)
+        # "charts" is not in the response, but make this
+        # actually return Chart objects
+        charts = self._parse({"charts": resp}, "charts", Chart)
+        # Populate space ID
+        for chart in charts:
+            chart.space_id = space.id
+        return charts
+
+    def get_chart(self, chart_id, space_or_space_id, **query_props):
+        """Get specific chart by ID from Space"""
+        space_id = None
+        if type(space_or_space_id) is int:
+            space_id = space_or_space_id
+        elif type(space_or_space_id) is Space:
+            space_id = space_or_space_id.id
+        else:
+            raise ValueError("Space parameter is invalid")
+        # TODO: Add better handling around 404s
+        resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="GET", query_props=query_props)
+        resp['space_id'] = space_id
+        return Chart.from_dict(self, resp)
+
+    # Find a chart by name in a space. Return the first match, so if multiple
+    # charts have the same name, you'll only get the first one
+    def find_chart(self, name, space):
+        charts = self.list_charts_in_space(space)
+        for chart in charts:
+            if chart.name and chart.name.lower() == name.lower():
+                # Now use the ID to hydrate the chart attributes (streams)
+                return self.get_chart(chart.id, space)
+        return None
+
+    def create_chart(self, name, space, **query_props):
+        """Create a new chart in space"""
+        payload = Chart(self, name).get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces/%s/charts" % space.id, method="POST", query_props=payload)
+        resp['space_id'] = space.id
+        return Chart.from_dict(self, resp)
+
+    def update_chart(self, chart, space, **query_props):
+        """Update an existing chart"""
+        payload = chart.get_payload()
+        for k, v in query_props.items():
+            payload[k] = v
+        resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart.id),
+            method="PUT",
+            query_props=payload)
+        return resp
+
+    def delete_chart(self, chart_id, space_id, **query_props):
+        """delete a chart from a space"""
+        resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="DELETE")
+        return resp
+
 
     #
     # Queue
