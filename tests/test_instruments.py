@@ -33,7 +33,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert ins.id == 1
 
         self.conn.submit('a_gauge', 12, description='the desc for a gauge')
-        ins.new_stream('a_gauge')
+        ins.new_stream(metric='a_gauge')
         self.conn.update_instrument(ins)
         #list_ins = self.conn.list_instruments()
         assert ins.name == name
@@ -47,7 +47,7 @@ class TestLibratoInstruments(unittest.TestCase):
         ins = self.conn.create_instrument(name)
 
         self.conn.submit('a_gauge', 12, description='the desc for a gauge')
-        ins.new_stream('a_gauge')
+        ins.new_stream(metric='a_gauge')
         self.conn.update_instrument(ins)
 
         si = self.conn.get_instrument(ins.id)  # si ; same instrument

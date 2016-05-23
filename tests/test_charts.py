@@ -68,7 +68,7 @@ class TestChartsConnection(ChartsTest):
         chart = self.conn.create_chart("Chart with no streams", self.space)
         metric_name = 'my.metric'
         self.conn.submit(metric_name, 42, description='metric description')
-        chart.new_stream(metric_name)
+        chart.new_stream(metric=metric_name)
         chart.save()
         self.assertEqual(len(chart.streams), 1)
         stream = chart.streams[0]
@@ -247,7 +247,7 @@ class TestChartModel(ChartsTest):
     def test_new_stream_defaults(self):
         chart = Chart(self.conn, 'test')
         self.assertEqual(len(chart.streams), 0)
-        stream = chart.new_stream('my.metric')
+        stream = chart.new_stream(metric='my.metric')
         self.assertIsInstance(stream, Stream)
         self.assertEqual(stream.metric, 'my.metric')
         self.assertEqual(stream.source, '*')
@@ -261,7 +261,7 @@ class TestChartModel(ChartsTest):
 
     def test_new_stream_with_source(self):
         chart = Chart(self.conn, 'test')
-        stream = chart.new_stream('my.metric', 'prod*')
+        stream = chart.new_stream(metric='my.metric', source='prod*')
         self.assertEqual(stream.metric, 'my.metric')
         self.assertEqual(stream.source, 'prod*')
         self.assertEqual(stream.composite, None)

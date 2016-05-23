@@ -7,13 +7,13 @@ class Instrument(object):
         self.connection = connection
         self.name = name
         self.streams = []
-        for i in streams:
-            if isinstance(i, Stream):
-                self.streams.append(i)
-            elif isinstance(i, dict):  # Probably parsing JSON here
-                self.streams.append(Stream(i.get('metric'), i.get('source'), i.get('composite')))
+        for s in streams:
+            if isinstance(s, Stream):
+                self.streams.append(s)
+            elif isinstance(s, dict):
+                self.streams.append(Stream(**s))
             else:
-                self.streams.append(Stream(*i))
+                self.streams.append(Stream(*s))
         self.attributes = attributes
         self.id = id
 
@@ -33,8 +33,8 @@ class Instrument(object):
                 'attributes': self.attributes,
                 'streams': self.streams_payload()}
 
-    def new_stream(self, metric=None, source='*', composite=None):
-        stream = Stream(metric, source, composite)
+    def new_stream(self, **kwargs):
+        stream = Stream(**kwargs)
         self.streams.append(stream)
         return stream
 
