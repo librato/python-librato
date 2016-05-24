@@ -352,6 +352,7 @@ chart.rename('new chart name')
 ### Add new metrics to a Chart
 ```python
 chart = space.charts()[-1]
+chart.new_stream('foo', '*')
 chart.new_stream(metric='foo', source='*')
 chart.new_stream(composite='s("foo", "*")')
 chart.save()
