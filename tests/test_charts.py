@@ -68,7 +68,7 @@ class TestChartsConnection(ChartsTest):
         chart = self.conn.create_chart("Chart with no streams", self.space)
         metric_name = 'my.metric'
         self.conn.submit(metric_name, 42, description='metric description')
-        chart.new_stream(metric_name)
+        chart.new_stream(metric=metric_name)
         chart.save()
         self.assertEqual(len(chart.streams), 1)
         stream = chart.streams[0]

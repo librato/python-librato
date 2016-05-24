@@ -57,9 +57,55 @@ class TestStreamModel(unittest.TestCase):
         self.assertIsNone(Stream().type)
         self.assertEqual(Stream(type='gauge').type, 'gauge')
 
+    def test_init_split_axis(self):
+        self.assertIsNone(Stream().split_axis)
+        self.assertTrue(Stream(split_axis=True).split_axis)
+        self.assertFalse(Stream(split_axis=False).split_axis)
+
+    def test_init_min_max(self):
+        self.assertIsNone(Stream().min)
+        self.assertIsNone(Stream().max)
+        self.assertEqual(Stream(min=-2).min, -2)
+        self.assertEqual(Stream(max=42).max, 42)
+
+    def test_init_units(self):
+        self.assertIsNone(Stream().units_short)
+        self.assertIsNone(Stream().units_long)
+        self.assertEqual(Stream(units_short='req/s').units_short, 'req/s')
+        self.assertEqual(Stream(units_long='requests per second').units_long, 'requests per second')
+
     def test_get_payload(self):
-        self.assertEqual(Stream('my.metric').get_payload(),
+        self.assertEqual(Stream(metric='my.metric').get_payload(),
             {'metric': 'my.metric', 'source': '*'})
+
+    def test_payload_all_attributes(self):
+        s = Stream(metric='my.metric', source='*', name='my display name',
+            type='gauge', id=1234,
+            group_function='min', summary_function='max',
+            transform_function='x/p', downsample_function='min',
+            period=60, split_axis=False,
+            min=0, max=42,
+            units_short='req/s', units_long='requests per second')
+        payload = {
+            'metric': 'my.metric',
+            'source': '*',
+            'name': 'my display name',
+            'type': 'gauge',
+            'id': 1234,
+            'group_function': 'min',
+            'summary_function': 'max',
+            'transform_function': 'x/p',
+            'downsample_function': 'min',
+            'period': 60,
+            'split_axis': False,
+            'min': 0,
+            'max': 42,
+            'units_short': 'req/s',
+            'units_long': 'requests per second'
+        }
+        self.assertEqual(s.get_payload(), payload)
+
+
 
 if __name__ == '__main__':
     unittest.main()

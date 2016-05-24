@@ -194,8 +194,8 @@ class Chart(object):
     def streams_payload(self):
         return [s.get_payload() for s in self.streams]
 
-    def new_stream(self, metric=None, source='*', composite=None):
-        stream = Stream(metric, source, composite)
+    def new_stream(self, metric=None, source='*', **kwargs):
+        stream = Stream(metric, source, **kwargs)
         self.streams.append(stream)
         return stream
 
