@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 1.0.1
+* Stream model supports all stream properties
+
 ### Version 1.0.0
 * Spaces API support
 
