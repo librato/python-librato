@@ -33,8 +33,8 @@ class Instrument(object):
                 'attributes': self.attributes,
                 'streams': self.streams_payload()}
 
-    def new_stream(self, **kwargs):
-        stream = Stream(**kwargs)
+    def new_stream(self, metric=None, source='*', **kwargs):
+        stream = Stream(metric, source, **kwargs)
         self.streams.append(stream)
         return stream
 
