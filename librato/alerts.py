@@ -1,7 +1,8 @@
 class Alert(object):
     """Librato Alert Base class"""
 
-    def __init__(self, connection, name, _id=None, description=None, version=2, conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
+    def __init__(self, connection, name, _id=None, description=None, version=2,
+            conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
         self.connection = connection
         self.name = name
         self.description = description
@@ -10,7 +11,7 @@ class Alert(object):
         for c in conditions:
             if isinstance(c, Condition):
                 self.conditions.append(c)
-            elif isinstance(c, dict):  # Probably parsing JSON here
+            elif isinstance(c, dict):
                 self.conditions.append(Condition.from_dict(c))
             else:
                 self.conditions.append(Condition(*c))
@@ -18,8 +19,8 @@ class Alert(object):
         for s in services:
             if isinstance(s, Service):
                 self.services.append(s)
-            elif isinstance(s, dict):  # Probably parsing JSON here
-                self.services.append(Service.from_dict(s))
+            elif isinstance(s, dict):
+                self.services.append(Service.from_dict(connection, s))
             elif isinstance(s, int):
                 self.services.append(Service(s))
             else:
@@ -140,13 +141,21 @@ class Condition(object):
         return obj
 
 class Service(object):
-    def __init__(self, _id):
+    def __init__(self, _id, title=None, type=None, settings=None):
         self._id = _id
+        self.title = title
+        self.type = type
+        self.settings = settings
+
     @classmethod
-    def from_dict(cls, data):
-        obj = cls(_id=data['id'])
+    def from_dict(cls, connection, data):
+        obj = cls(data['id'], data['title'], data['type'], data['settings'])
         return obj
 
-
     def get_payload(self):
-        return {'id': self._id}
+        return {
+            'id': self._id,
+            'title': self.title,
+            'type': self.type,
+            'settings': self.settings
+        }

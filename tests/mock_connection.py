@@ -11,10 +11,12 @@ class MockServer(object):
         self.metrics = {'gauges': OrderedDict(), 'counters': OrderedDict()}
         self.instruments = OrderedDict()
         self.alerts = OrderedDict()
+        self.services = OrderedDict()
         self.dashboards = OrderedDict()
         self.spaces = OrderedDict()
         self.last_i_id = 0
         self.last_a_id = 0
+        self.last_service_id = 0
         self.last_db_id = 0
         self.last_spc_id = 0
         self.last_chrt_id = 0
@@ -106,6 +108,12 @@ class MockServer(object):
         self.alerts[self.last_a_id] = payload
         return json.dumps(payload).encode('utf-8')
 
+    def create_service(self, payload):
+        self.last_service_id += 1
+        payload["id"] = self.last_service_id
+        self.services[self.last_service_id] = payload
+        return json.dumps(payload).encode('utf-8')
+
     def get_alert(self, name, payload):
         return self.list_of_alerts(name)
 
@@ -124,6 +132,21 @@ class MockServer(object):
                 alert.append(c_alert)
             elif name==c_alert["name"]:
                 alert.append(c_alert)
+        return json.dumps(answer).encode('utf-8')
+
+    def list_of_services(self):
+        #{
+        #    'services': [
+        #        {'id': 1, 'title': 'A Service', 'type': 'mail',
+        #            'settings': {'addresses': 'someone@example.com'}}
+        #    ]
+        #}
+        answer = {}
+        answer['query'] = {}
+        answer['services'] = []
+        for _id, c_service in self.services.items():
+            c_service['id'] = _id
+            answer['services'].append(c_service)
         return json.dumps(answer).encode('utf-8')
 
     def list_of_dashboards(self):
@@ -458,6 +481,8 @@ class MockResponse(object):
             return server.get_instrument(r.uri)
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()
+        elif self._req_is_list_of_services():
+            return server.list_of_services()
         elif self._req_is_get_alert():
             return server.get_alert(self._extract_name_from_url_parameters(), r.body)
         elif self._req_is_create_alert():
@@ -551,6 +576,10 @@ class MockResponse(object):
     def _req_is_delete_alert(self):
         return (self._method_is('DELETE') and
                 re.match('/v1/alerts/\d+', self.request.uri))
+
+    # Services
+    def _req_is_list_of_services(self):
+        return self._method_is('GET') and self._path_is('/v1/services')
 
     # dashboards
     def _req_is_create_dashboard(self):
