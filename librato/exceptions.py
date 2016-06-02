@@ -68,7 +68,12 @@ class ClientError(Exception):
             # Payload is just a string
             return self.error_payload
         elif isinstance(self.error_payload, dict):
-            payload = self.error_payload['errors']
+            payload = None
+            try:
+                payload = self.error_payload['errors']
+            except:
+                print("Problems processing request error payload: %s" % self.error_payload)
+
             messages = []
             for key in payload:
                 error_list = payload[key]
