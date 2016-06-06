@@ -480,8 +480,6 @@ Do you want to contribute? Do you need a new feature? Please open a
 The original version of `python-librato` was conceived/authored/released by Chris Moyer (AKA [@kopertop](https://github.com/kopertop)). He's
 graciously handed over maintainership of the project to us and we're super-appreciative of his efforts.
 
-Thanks also to [@Bachmann1234](https://github.com/Bachmann1234) for continually improving this library.
-
 ## Copyright
 
 Copyright (c) 2011-2016 [Librato Inc.](http://librato.com) See LICENSE for details.
