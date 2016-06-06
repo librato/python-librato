@@ -44,7 +44,7 @@ from librato import exceptions
 from librato.queue import Queue
 from librato.metrics import Gauge, Counter
 from librato.instruments import Instrument
-from librato.alerts import Alert
+from librato.alerts import Alert, Service
 from librato.dashboards import Dashboard
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
@@ -398,15 +398,16 @@ class LibratoConnection(object):
         resp = self._mexe("alerts/%s" % alert._id, method="DELETE")
         return resp
 
-    def get_alert(self, name ,**query_props):
+    def get_alert(self, name, **query_props):
         """Get specific alert"""
-        resp = self._mexe("alerts", query_props={'version':2,'name':name})
+        resp = self._mexe("alerts", query_props={'version': 2, 'name': name})
         alerts = self._parse(resp, "alerts", Alert)
         if len(alerts) > 0:
             return alerts[0]
         return None
 
     # List alerts (defaults to v2 only)
+    # TODO: support for pagination
     def list_alerts(self, active_only=True, **query_props):
         """List all alerts (default to active only)"""
         # Only v2 is supported
@@ -416,9 +417,13 @@ class LibratoConnection(object):
         resp = self._mexe("alerts", query_props=query_props)
         alerts = self._parse(resp, "alerts", Alert)
         if active_only:
-            return list(filter(lambda a: a.active, alerts))
+            return [a for a in alerts if a.active]
         else:
             return alerts
+
+    def list_services(self, **query_props):
+        resp = self._mexe("services", query_props=query_props)
+        return self._parse(resp, "services", Service)
 
     #
     # Spaces

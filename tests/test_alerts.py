@@ -100,6 +100,49 @@ class TestLibratoAlerts(unittest.TestCase):
         cond._duration = 60
         assert cond.immediate() == False
 
+class TestService(unittest.TestCase):
+    def setUp(self):
+        self.conn = librato.connect('user_test', 'key_test')
+        self.sample_payload = {
+            'title': 'Email Ops',
+            'type': 'mail',
+            'settings': {'addresses': 'someone@example.com'}
+        }
+        server.clean()
+
+    def test_list_services(self):
+        services = self.conn.list_services()
+        self.assertEqual(len(services), 0)
+        # Hack this into the server until we have a :create_service
+        # method on the actual connection
+        server.create_service(self.sample_payload)
+        # id is 1
+        self.assertEqual(server.services[1], self.sample_payload)
+        services = self.conn.list_services()
+        self.assertEqual(len(services), 1)
+        s = services[0]
+        self.assertIsInstance(s, librato.alerts.Service)
+        self.assertEqual(s.title, self.sample_payload['title'])
+        self.assertEqual(s.type, self.sample_payload['type'])
+        self.assertEqual(s.settings, self.sample_payload['settings'])
+
+    def test_init_service(self):
+        s = librato.alerts.Service(123, title='the title', type='mail',
+                settings={'addresses': 'someone@example.com'})
+        self.assertEqual(s._id, 123)
+        self.assertEqual(s.title, 'the title')
+        self.assertEqual(s.type, 'mail')
+        self.assertEqual(s.settings['addresses'], 'someone@example.com')
+
+    def test_service_from_dict(self):
+        payload = {'id': 123, 'title': 'the title', 'type': 'slack',
+            'settings': {'room': 'a room'}}
+        s = librato.alerts.Service.from_dict(self.conn, payload)
+        self.assertEqual(s._id, 123)
+        self.assertEqual(s.title, payload['title'])
+        self.assertEqual(s.type, payload['type'])
+        self.assertEqual(s.settings['room'], payload['settings']['room'])
+
 
 if __name__ == '__main__':
     unittest.main()
