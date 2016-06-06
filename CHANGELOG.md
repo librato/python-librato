@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 1.0.2
+* Added support for for Service attributes
+
 ### Version 1.0.1
 * Stream model supports all stream properties
 
