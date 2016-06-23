@@ -31,7 +31,7 @@ class TestChartsConnection(ChartsTest):
             self.space,
             streams=[
                 {'metric': 'my.metric', 'source': '*', 'summary_function': 'max'},
-                {'metric': 'my.metric2', 'source': 'foo'}
+                {'metric': 'my.metric2', 'source': 'foo', 'color': '#FFFFFF'}
             ]
         )
         self.assertIsInstance(chart, Chart)
@@ -43,6 +43,7 @@ class TestChartsConnection(ChartsTest):
         self.assertEqual(chart.streams[0].summary_function, 'max')
         self.assertEqual(chart.streams[1].metric, 'my.metric2')
         self.assertEqual(chart.streams[1].source, 'foo')
+        self.assertEqual(chart.streams[1].color, '#FFFFFF')
 
     def test_create_chart_without_streams(self):
         chart_name = "Empty Chart"

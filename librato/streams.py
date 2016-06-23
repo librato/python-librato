@@ -5,7 +5,7 @@ class Stream(object):
                  transform_function=None, downsample_function=None,
                  period=None, split_axis=None,
                  min=None, max=None,
-                 units_short=None, units_long=None,
+                 units_short=None, units_long=None, color=None,
                  # deprecated
                  composite_function=None
                  ):
@@ -29,6 +29,7 @@ class Stream(object):
         self.max = max
         self.units_short = units_short
         self.units_long = units_long
+        self.color = color
 
         # Can't have a composite and source/metric
         if self.composite:
