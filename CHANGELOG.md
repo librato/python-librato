@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 1.0.3
+* Adds missing property in streams
+
 ### Version 1.0.2
 * Added support for for Service attributes
 
