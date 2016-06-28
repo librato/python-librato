@@ -68,7 +68,7 @@ To create a counter metric:
   api.submit("connections", 20, type="counter", description="server connections")
 ```
 
-To iterate over your metrics:
+To iterate over your metric names:
 
 ```python
   for m in api.list_metrics():
@@ -78,7 +78,7 @@ To iterate over your metrics:
 To retrieve a specific metric:
 
 ```python
-  gauge   = api.get("temperature")
+  gauge = api.get("temperature")
 ```
 
 Delete a metric:
