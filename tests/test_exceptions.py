@@ -96,6 +96,15 @@ class TestClientError(unittest.TestCase):
         ex = exceptions.ClientError(400, {"errors": {"request": ["Not found"]}})
         self.assertEqual("[400] request: Not found", ex.error_message())
 
+    def test_error_vs_errors(self):
+        msg = "You have hit the rate limit, etc"
+        # The API actually returns 'errors' in most cases, but for rate
+        # limiting we get 'error' (singular)
+        error_resp = {'request_time': 1467306906, 'error': msg}
+        ex = exceptions.ClientError(403, error_resp)
+        parsed_msg = ex._parse_error_message()
+        self.assertEqual(msg, parsed_msg)
+
 
 if __name__ == '__main__':
     unittest.main()
