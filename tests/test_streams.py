@@ -74,6 +74,24 @@ class TestStreamModel(unittest.TestCase):
         self.assertEqual(Stream(units_short='req/s').units_short, 'req/s')
         self.assertEqual(Stream(units_long='requests per second').units_long, 'requests per second')
 
+    def test_init_color(self):
+        self.assertIsNone(Stream().color)
+        self.assertEqual(Stream(color='#f00').color, '#f00')
+
+    def test_init_gap_detection(self):
+        self.assertIsNone(Stream().gap_detection)
+        self.assertTrue(Stream(gap_detection=True).gap_detection)
+        self.assertFalse(Stream(gap_detection=False).gap_detection)
+
+    # Adding this to avoid exceptions raised due to unknown Stream attributes
+    def test_init_with_extra_attributes(self):
+        attrs = {"color": "#f00", "something": "foo"}
+        s = Stream(**attrs)
+        # color is a known attribute
+        self.assertEqual(s.color, '#f00')
+        self.assertEqual(s.something, 'foo')
+
+
     def test_get_payload(self):
         self.assertEqual(Stream(metric='my.metric').get_payload(),
             {'metric': 'my.metric', 'source': '*'})

@@ -3,11 +3,11 @@ class Stream(object):
                  name=None, type=None, id=None,
                  group_function=None, summary_function=None,
                  transform_function=None, downsample_function=None,
-                 period=None, split_axis=None,
+                 period=None, split_axis=None, gap_detection=None,
                  min=None, max=None,
                  units_short=None, units_long=None, color=None,
                  # deprecated
-                 composite_function=None
+                 composite_function=None, **kwargs
                  ):
         self.metric = metric
         self.source = source
@@ -30,6 +30,11 @@ class Stream(object):
         self.units_short = units_short
         self.units_long = units_long
         self.color = color
+        self.gap_detection = gap_detection
+
+        # Pick up any attributes that are not explicitly defined
+        for attr in kwargs:
+            setattr(self, attr, kwargs[attr])
 
         # Can't have a composite and source/metric
         if self.composite:
