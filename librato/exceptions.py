@@ -63,30 +63,41 @@ class ClientError(Exception):
     #   }
     # }
     #
+    #
+    # Rate limiting example:
+    # {
+    #     u'request_time': 1467306906,
+    #     u'error': u'You have hit the API limit for measurements
+    #     [measure:raw_rate]. Contact: support@librato.com to adjust this limit.'
+    # }
     def _parse_error_message(self):
         if isinstance(self.error_payload, str):
             # Payload is just a string
             return self.error_payload
         elif isinstance(self.error_payload, dict):
-            payload = self.error_payload['errors']
-            messages = []
-            for key in payload:
-                error_list = payload[key]
-                if isinstance(error_list, str):
-                    # The error message is a scalar string, just tack it on
-                    msg = "%s: %s" % (key, error_list)
-                    messages.append(msg)
-                elif isinstance(error_list, list):
-                    for error_message in error_list:
-                        msg = "%s: %s" % (key, error_message)
+            # The API could return 'errors' or just 'error' with a flat message
+            if 'error' in self.error_payload:
+                return self.error_payload['error']
+            else:
+                payload = self.error_payload['errors']
+                messages = []
+                for key in payload:
+                    error_list = payload[key]
+                    if isinstance(error_list, str):
+                        # The error message is a scalar string, just tack it on
+                        msg = "%s: %s" % (key, error_list)
                         messages.append(msg)
-                elif isinstance(error_list, dict):
-                    for k in error_list:
-                        # e.g. "params: measure_time: "
-                        msg = "%s: %s: " % (key, k)
-                        msg += self._flatten_error_message(error_list[k])
-                        messages.append(msg)
-            return ", ".join(messages)
+                    elif isinstance(error_list, list):
+                        for error_message in error_list:
+                            msg = "%s: %s" % (key, error_message)
+                            messages.append(msg)
+                    elif isinstance(error_list, dict):
+                        for k in error_list:
+                            # e.g. "params: measure_time: "
+                            msg = "%s: %s: " % (key, k)
+                            msg += self._flatten_error_message(error_list[k])
+                            messages.append(msg)
+                return ", ".join(messages)
 
     def _flatten_error_message(self, error_msg):
         if isinstance(error_msg, str):
