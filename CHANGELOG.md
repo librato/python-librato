@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 1.0.4
+* Fix issue loading streams with gap_detection set; fix 403 error parsing
+
 ### Version 1.0.3
 * Adds missing property in streams
 

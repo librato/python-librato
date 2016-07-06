@@ -23,7 +23,7 @@
 import re
 import six
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 # Defaults
 HOSTNAME = "metrics-api.librato.com"
