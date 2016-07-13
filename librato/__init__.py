@@ -437,16 +437,16 @@ class LibratoConnection(object):
         while True:
             # Get all alerts from list_alerts, and filter them below so that
             # we can determine when to terminate in the presence of pagination.
-            metric_list = self.list_alerts(**query_props)
-            for m in metric_list:
+            alert_list = self.list_alerts(active_only=active_only,  **query_props)
+            for a in alert_list:
                 if active_only:
-                    if not m.active:
+                    if not a.active:
                         continue
-                    yield m
+                    yield a
                 else:
-                    yield m
+                    yield a
             query_props['offset'] += page_size
-            if len(metric_list) < page_size:
+            if len(alert_list) < page_size:
                 break
 
 
@@ -461,7 +461,7 @@ class LibratoConnection(object):
             query_props['offset'] = 0
         page_size = query_props['length']
         while True:
-            # Get all alerts from list_alerts, and filter them below so that
+            # Get all services from list_services, and filter them below so that
             # we can determine when to terminate in the presence of pagination.
             svc_list = self.list_services(**query_props)
             for m in svc_list:
