@@ -425,6 +425,15 @@ class LibratoConnection(object):
         resp = self._mexe("services", query_props=query_props)
         return self._parse(resp, "services", Service)
 
+    def create_service(self, **query_props):
+        resp = self._mexe("services", method="POST", query_props=query_props)
+        return Service.from_dict(self, resp)
+
+    def get_service(self, id):
+        """Get specific service by ID"""
+        resp = self._mexe("services/%s" % id, method="GET")
+        return Service.from_dict(self, resp)
+
     #
     # Spaces
     #

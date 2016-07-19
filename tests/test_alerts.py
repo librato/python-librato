@@ -143,6 +143,32 @@ class TestService(unittest.TestCase):
         self.assertEqual(s.type, payload['type'])
         self.assertEqual(s.settings['room'], payload['settings']['room'])
 
+    def test_create_service(self):
+        payload = {'title': 'the title', 'type': 'slack',
+            'settings': {'room': 'a room'}}
+        s = self.conn.create_service(**payload)
+        self.assertIsInstance(s, librato.alerts.Service)
+        self.assertEqual(s.title, payload['title'])
+        self.assertEqual(s.type, payload['type'])
+        self.assertEqual(s.settings['room'], payload['settings']['room'])
+
+    """ Find a service by ID """
+    def test_find_service(self):
+        # First create the service
+        title = 'the title'
+        service_type = 'slack'
+        settings = {'room' : 'a room'}
+        s = self.conn.create_service(
+            title=title,
+            type=service_type,
+            settings=settings
+        )
+        # Now find it
+        found = self.conn.get_service(s._id)
+        self.assertIsInstance(s, librato.alerts.Service)
+        self.assertEqual(found._id, s._id)
+
+
 
 if __name__ == '__main__':
     unittest.main()

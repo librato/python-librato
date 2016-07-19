@@ -149,6 +149,19 @@ class MockServer(object):
             answer['services'].append(c_service)
         return json.dumps(answer).encode('utf-8')
 
+    def get_service(self, uri):
+        _id = None
+        m = re.search('\/services\/(\d+)$', uri)
+        if m:
+            _id = m.group(1)
+
+        if int(_id) not in self.services:
+            # TODO: return 400
+            raise Exception("Trying to get servicethat doesn't " +
+                            "exist %d", _id)
+        else:
+            return json.dumps(self.services[int(_id)]).encode('utf-8')
+
     def list_of_dashboards(self):
         answer = {}
         answer["query"] = {}
@@ -483,10 +496,14 @@ class MockResponse(object):
             return server.list_of_alerts()
         elif self._req_is_list_of_services():
             return server.list_of_services()
+        elif self._req_is_get_service():
+            return server.get_service(r.uri)
         elif self._req_is_get_alert():
             return server.get_alert(self._extract_name_from_url_parameters(), r.body)
         elif self._req_is_create_alert():
             return server.create_alert(r.body)
+        elif self._req_is_create_service():
+            return server.create_service(r.body)
         elif self._req_is_delete_alert():
             return server.delete_alert(self._extract_id_from_url(), r.body)
         elif self._req_is_list_of_dashboards():
@@ -580,6 +597,11 @@ class MockResponse(object):
     # Services
     def _req_is_list_of_services(self):
         return self._method_is('GET') and self._path_is('/v1/services')
+    def _req_is_create_service(self):
+        return self._method_is('POST') and self._path_is('/v1/services')
+    def _req_is_get_service(self):
+        return (self._method_is('GET') and
+            re.match('/v1/services/\d+', self.request.uri))
 
     # dashboards
     def _req_is_create_dashboard(self):
