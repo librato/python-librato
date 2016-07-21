@@ -406,7 +406,7 @@ api.create_alert("name", description='An alert description')
 Add a service to an alert:
 ```python
 api.create_alert("name")
-alert.add_service(service ID)
+alert.add_service("service ID")
 alert.save()
 ```
 
