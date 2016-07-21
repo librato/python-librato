@@ -92,6 +92,7 @@ To retrieve a composite metric:
 ```python
   # Get average temperature across all cities for last 8 hours
   compose = 'mean(s("temperature", "*", {function: "mean", period: "3600"}))'
+  import time
   start_time = int(time.time()) - 8 * 3600
   resp = api.get_composite(compose, start_time=start_time)
   resp['measurements'][0]['series']
@@ -178,8 +179,8 @@ for example:
 
 ```python
 api = librato.connect(user, token)
-for metric in api.list_metrics():
-  gauge = api.get(m.name)
+for metric in api.list_metrics(name=" "):
+  gauge = api.get(metric.name)
   attrs = gauge.attributes
   attrs['display_units_long'] = 'ms'
   api.update(metric.name, attributes=attrs)
@@ -190,7 +191,7 @@ for metric in api.list_metrics():
 List Annotation all annotation streams:
 
 ```python
-for stream in api.list_annotation_streams
+for stream in api.list_annotation_streams():
 print("%s: %s" % (stream.name, stream.display_name))
 ```
 
@@ -222,7 +223,7 @@ doesn't exist). Title is a required parameter, and all other parameters are opti
 api.post_annotation("testing",title="foobarbiz")
 
 api.post_annotation("TravisCI",title="build %s"%travisBuildID,
-                     source=SystemSource,
+                     source="SystemSource",
                      description="Application %s, Travis build %s"%(appName,travisBuildID),
                      links=[{'rel': 'travis', 'href': 'http://travisci.com/somebuild'}])
 ```
@@ -243,7 +244,7 @@ spaces = api.list_spaces()
 ### Create a Space
 ```python
 # Create a new Space directly via API
-space = api.create_space(space_name)
+space = api.create_space("space_name")
 print("Created '%s'" % space.name)
 
 # Create a new Space via the model, passing the connection
@@ -376,7 +377,7 @@ for alert in api.list_alerts():
 
 Create alerts with an _above_ condition:
 ```python
-alert = api.create_alert(name)
+alert = api.create_alert("name")
 alert.add_condition_for('metric_name').above(1) # trigger immediately
 alert.add_condition_for('metric_name').above(1).duration(60) # trigger after a set duration
 alert.add_condition_for('metric_name').above(1, 'sum') # custom summary function
@@ -385,27 +386,27 @@ alert.save()
 
 Create alerts with a _below_ condition:
 ```python
-api.create_alert(name)
+api.create_alert("name")
 alert.add_condition_for('metric_name').below(1) # the same syntax as above conditions
 alert.save()
 ```
 
 Create alerts with an _absent_ condition:
 ```python
-api.create_alert(name)
+api.create_alert("name")
 alert.add_condition_for('metric_name').stops_reporting_for(5) # duration in minutes of the threshold to trigger the alert
 alert.save()
 ```
 
 Add a description to an alert (default description is empty):
 ```python
-api.create_alert(name, description='An alert description')
+api.create_alert("name", description='An alert description')
 ```
 
 Add a service to an alert:
 ```python
-api.create_alert(name)
-alert.add_service(service ID)
+api.create_alert("name")
+alert.add_service("service ID")
 alert.save()
 ```
 
@@ -413,7 +414,7 @@ You can find the service ID by going to your service configuration and grabbing 
 
 To restrict the alert to a specific source (default is `*`):
 ```python
-api.create_alert(name)
+api.create_alert("name")
 alert.add_condition_for('metric_name', source='source name')
 alert.save()
 ```
