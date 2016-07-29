@@ -403,6 +403,12 @@ Add a description to an alert (default description is empty):
 api.create_alert("name", description='An alert description')
 ```
 
+View all services created by the user. The service ID is included in the response.
+```python
+for service in api.list_services():
+    print(service._id, service.title, service.settings)
+```
+
 Add a service to an alert:
 ```python
 api.create_alert("name")
