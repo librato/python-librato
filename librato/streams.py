@@ -6,6 +6,7 @@ class Stream(object):
                  period=None, split_axis=None, gap_detection=None,
                  min=None, max=None,
                  units_short=None, units_long=None, color=None,
+                 position=None,
                  # deprecated
                  composite_function=None, **kwargs
                  ):
@@ -31,6 +32,7 @@ class Stream(object):
         self.units_long = units_long
         self.color = color
         self.gap_detection = gap_detection
+        self.position = position
 
         # Pick up any attributes that are not explicitly defined
         for attr in kwargs:
