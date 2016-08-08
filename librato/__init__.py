@@ -83,7 +83,8 @@ class LibratoConnection(object):
     [...]
     """
 
-    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https"):
+    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https",
+                 tags={}):
         """Create a new connection to Librato Metrics.
         Doesn't actually connect yet or validate until you make a request.
 
@@ -110,6 +111,7 @@ class LibratoConnection(object):
         self.backoff_logic = lambda backoff: backoff*2
         self.sanitize = sanitizer
         self.timeout = DEFAULT_TIMEOUT
+        self.tags = dict(tags)
 
     def _set_headers(self, headers):
         """ set headers for request """
@@ -210,6 +212,18 @@ class LibratoConnection(object):
         else:
             return resp
 
+    # Get a shallow copy of the top-level tag set
+    def get_tags(self):
+        return dict(self.tags)
+
+    # Define the top-level tag set for posting measurements
+    def set_tags(self, d):
+        self.tags = dict(d)    # Create a copy
+
+    # Add to the top-level tag set
+    def add_tags(self, d):
+        self.tags.update(d)
+
     #
     # Metrics
     #
@@ -241,6 +255,17 @@ class LibratoConnection(object):
             metric[k] = v
         payload[type + 's'].append(metric)
         self._mexe("metrics", method="POST", query_props=payload)
+ 
+    def submit_tagged(self, name, value, **query_props):
+        payload = {'measurements': []}
+        if self.tags:
+            payload['tags'] = self.tags
+        metric = {'name': self.sanitize(name), 'sum': value, 'count': 1}
+
+        for k, v in query_props.items():
+            metric[k] = v
+        payload['measurements'].append(metric)
+        self._mexe("measurements", method="POST", query_props=payload)
 
     def get(self, name, **query_props):
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
@@ -250,6 +275,17 @@ class LibratoConnection(object):
             return Counter.from_dict(self, resp)
         else:
             raise Exception('The server sent me something that is not a Gauge nor a Counter.')
+
+    def get_tagged(self, name, **query_props):
+        """Fetches multi-dimensional metrics"""
+        if 'resolution' not in query_props:
+            # Default to raw resolution
+            query_props['resolution'] = 1
+        if 'start_time' not in query_props and 'duration' not in query_props:
+            raise Exception("You must provide 'start_time' or 'duration'")
+        if 'start_time' in query_props and 'end_time' in query_props and 'duration' in query_props:
+            raise Exception("It is an error to set 'start_time', 'end_time' and 'duration'")
+        return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
 
     def get_composite(self, compose, **query_props):
         if 'resolution' not in query_props:
@@ -550,7 +586,13 @@ class LibratoConnection(object):
     # Queue
     #
     def new_queue(self, **kwargs):
-        return Queue(self, **kwargs)
+        tags = self.tags
+        if 'tags' in kwargs:
+            # Supplied tag set takes precedence
+            tags.update(kwargs.pop('tags'))
+
+        q = Queue(self, tags=tags, **kwargs)
+        return q
 
     #
     # misc
@@ -558,11 +600,11 @@ class LibratoConnection(object):
     def set_timeout(self, timeout):
         self.timeout = timeout
 
-def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https"):
+def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https", tags={}):
     """
     Connect to Librato Metrics
     """
-    return LibratoConnection(username, api_key, hostname, base_path, sanitizer=sanitizer, protocol=protocol)
+    return LibratoConnection(username, api_key, hostname, base_path, sanitizer=sanitizer, protocol=protocol, tags=tags)
 
 
 def _decode_body(resp):

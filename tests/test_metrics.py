@@ -5,6 +5,7 @@ try:
 except ImportError:
     from mock import patch
 import librato
+import time
 from mock_connection import MockConnect, server
 
 #logging.basicConfig(level=logging.DEBUG)
@@ -178,6 +179,41 @@ class TestLibrato(unittest.TestCase):
         assert len(gauge.measurements[src]) == 2
         assert gauge.measurements[src][-1]['value'] == 1
 
+    def test_md_submit(self):
+        mt1 = int(time.time()) - 5
+
+        tags={'hostname': 'web-1'}
+        self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags)
+
+        resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="hostname=web-1")
+
+        assert len(resp['series']) == 1
+        assert resp['series'][0].get('tags', {}) == tags
+
+        measurements = resp['series'][0]['measurements']
+        assert len(measurements) == 1
+
+        assert measurements[0]['time'] == mt1
+        assert measurements[0]['value'] == 20.2
+
+    def test_merge_tags(self):
+        mt1 = int(time.time()) - 5
+
+        self.conn.set_tags({'company': 'Librato'})
+        tags={'hostname': 'web-1'}
+        self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags)
+
+        # Ensure 'company' and 'hostname' tags made it through
+        for tags_search in ["hostname=web-1", "company=Librato"]:
+            resp = self.conn.get_tagged('user_cpu', duration=60, tags_search=tags_search)
+
+            assert len(resp['series']) == 1
+
+            measurements = resp['series'][0]['measurements']
+            assert len(measurements) == 1
+
+            assert measurements[0]['time'] == mt1
+            assert measurements[0]['value'] == 20.2
 
 
 if __name__ == '__main__':
