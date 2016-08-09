@@ -403,14 +403,18 @@ Add a description to an alert (default description is empty):
 api.create_alert("name", description='An alert description')
 ```
 
-Add a service to an alert:
+View all outbound services created by the user. The service ID is included in the response.
+```python
+for service in api.list_services():
+    print(service._id, service.title, service.settings)
+```
+
+Add an outbound service to an alert:
 ```python
 api.create_alert("name")
 alert.add_service("service ID")
 alert.save()
 ```
-
-You can find the service ID by going to your service configuration and grabbing the ID from the URL.
 
 To restrict the alert to a specific source (default is `*`):
 ```python
