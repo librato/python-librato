@@ -128,12 +128,14 @@ class LibratoConnection(object):
         return headers
 
     def _url_encode_params(self, params={}):
-        if not isinstance(params, dict): 
+        if not isinstance(params, dict):
             raise Exception("You must pass in a dictionary!")
         params_list = []
         for k,v in params.items():
-            if isinstance(v, list): params_list.extend([(k+'[]', x) for x in v])
-            else: params_list.append((k, v))
+            if isinstance(v, list):
+                params_list.extend([(k+'[]', x) for x in v])
+            else:
+                params_list.append((k, v))
         return urlencode(params_list)
 
     def _make_request(self, conn, path, headers, query_props, method):
