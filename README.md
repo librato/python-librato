@@ -411,7 +411,7 @@ for service in api.list_services():
 
 Add an outbound service to an alert:
 ```python
-api.create_alert("name")
+alert = api.create_alert("name")
 alert.add_service("service ID")
 alert.save()
 ```
