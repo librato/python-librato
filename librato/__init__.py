@@ -162,10 +162,7 @@ class LibratoConnection(object):
         not_a_server_error = resp.status < 500
 
         if not_a_server_error:
-            body = resp.read()
-            if body:
-                resp_data = json.loads(body.decode(_getcharset(resp)))
-            log.info("body(<-): %s" % body)
+            resp_data = _decode_body(resp)
             a_client_error = resp.status >= 400
             if a_client_error:
                 raise exceptions.get(resp.status, resp_data)
@@ -568,6 +565,25 @@ def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer
     return LibratoConnection(username, api_key, hostname, base_path, sanitizer=sanitizer, protocol=protocol)
 
 
+def _decode_body(resp):
+    """
+    Read and decode HTTPResponse body based on charset and content-type
+    """
+    body = resp.read()
+    log.info("body(<-): %s" % body)
+    if not body:
+        return None
+
+    decoded_body = body.decode(_getcharset(resp))
+    content_type = _get_content_type(resp)
+
+    if content_type == "application/json":
+        resp_data = json.loads(decoded_body)
+    else:
+        resp_data = decoded_body
+
+    return resp_data
+
 def _getcharset(resp, default='utf-8'):
     """
     Extract the charset from an HTTPResponse.
@@ -581,3 +597,10 @@ def _getcharset(resp, default='utf-8'):
         m = email.message.Message()
         m['content-type'] = resp.getheader('content-type')
         return m.get_content_charset(default)
+
+def _get_content_type(resp):
+    """
+    Get Content-Type header ignoring parameters
+    """
+    parts = resp.getheader('content-type', "application/json").split(";")
+    return parts[0]

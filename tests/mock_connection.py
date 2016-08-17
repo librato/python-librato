@@ -446,11 +446,15 @@ class MockResponse(object):
     def __init__(self, request, fake_failure=False):
         self.request = request
         self.status = 500 if fake_failure else 200
+        self._headers = {'content-type': "application/json;charset=utf-8"}
 
     class headers(object):
         @staticmethod
         def get_content_charset(default):
             return 'utf-8'
+
+    def getheader(self, name, default=None):
+        return self._headers.get(name.lower(), default)
 
     def read(self):
         return self._json_body_based_on_request()
