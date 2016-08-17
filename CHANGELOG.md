@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 1.0.7
+* Better response handling (Thanks @jhaegg).
+
 ### Version 1.0.6
 * Better param encoding
 
