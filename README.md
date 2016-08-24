@@ -228,7 +228,7 @@ The following example shows how to attach a `hostname` top-level tag to a Connec
 up with both `hostname` and a `company` tags.
 
 ```
-  api = librato.connect(user, token, tags={'hostname': 'web-host-1')
+  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
   api.submit_tagged("connections", 30, tags={'company': 'Librato'})
 ```
 
@@ -237,7 +237,7 @@ the Queue instance will inherit `hostname` as a top-level tag from the Connecton
 will also end up with 'hostname' and 'company' tags.
 
 ```
-  api = librato.connect(user, token, tags={'hostname': 'web-host-1')
+  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
   q = api.new_queue()
   q.add_tagged("connections", 30, tags={'company': 'Librato'})
 ```
@@ -246,18 +246,18 @@ Top-level tag sets can be updated using `add_tags()` and replaced entirely using
 example below. The Queue class follows an identical pattern.
 
 ```
-  api = librato.connect(user, token, tags={'hostname': 'web-host-1')
+  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
   api.add_tags({'company': 'Librato'})        # Top-level tag set now has 'company' and 'hostname'
   api.set_tags({'hostname': 'web-host-2'})    # Top-level tag set only has 'hostname'
 ```
 
 ### Querying tagged measurements
 Tagged measurements can be queried using the Connection `get_tagged()`. This method is much like `get()` but accepts a
-`tag_search` parameter, that specifies a tag query string. Refer to the main developer documentation for additional details
+`tags_search` parameter, that specifies a tag query string. Refer to the main developer documentation for additional details
 on the search syntax. The following example shows a sample query that queries based hostname and company values.
 
 ```
-  resp = api.get_tagged('connections', duration=60, tag_search="hostname=web-1 and company=Librato")
+  resp = api.get_tagged('connections', duration=60, tags_search="hostname=web-1 and company=Librato")
 ```
 
 ## Annotations
