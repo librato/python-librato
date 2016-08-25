@@ -2,7 +2,7 @@ class Alert(object):
     """Librato Alert Base class"""
 
     def __init__(self, connection, name, _id=None, description=None, version=2,
-            conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
+                 conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
         self.connection = connection
         self.name = name
         self.description = description
@@ -67,6 +67,7 @@ class Alert(object):
     def save(self):
         self.connection.update_alert(self)
 
+
 class Condition(object):
     ABOVE = 'above'
     BELOW = 'below'
@@ -129,8 +130,8 @@ class Condition(object):
 
     def get_payload(self):
         obj = {'condition_type': self.condition_type,
-                'metric_name': self.metric_name,
-                'source': self.source}
+               'metric_name': self.metric_name,
+               'source': self.source}
         if self.condition_type in [self.ABOVE, self.BELOW]:
             obj['threshold'] = self.threshold
             obj['summary_function'] = self.summary_function
@@ -139,6 +140,7 @@ class Condition(object):
             obj['summary_function'] = self.summary_function
             obj['duration'] = self._duration
         return obj
+
 
 class Service(object):
     def __init__(self, _id, title=None, type=None, settings=None):

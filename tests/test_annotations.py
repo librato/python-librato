@@ -3,7 +3,7 @@ import unittest
 import librato
 from mock_connection import MockConnect, server
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
@@ -26,7 +26,7 @@ class TestLibratoAnnotations(unittest.TestCase):
         assert payload['display_name'] == 'My_Annotation_Display'
 
     def test_from_dict(self):
-        data = {'name': 'My_Annotation', 'display_name': 'My_Annotation_Display', 'query': {}, 'events': {} }
+        data = {'name': 'My_Annotation', 'display_name': 'My_Annotation_Display', 'query': {}, 'events': {}}
         resp = librato.Annotation.from_dict(self.cls, data)
         assert resp.display_name == 'My_Annotation_Display'
         assert resp.name == 'My_Annotation'

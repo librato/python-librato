@@ -3,9 +3,9 @@ import unittest
 import librato
 from librato.aggregator import Aggregator
 from mock_connection import MockConnect, server
-#from random import randint
+# from random import randint
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 librato.HTTPSConnection = MockConnect
 
 
@@ -99,10 +99,9 @@ class TestAggregator(unittest.TestCase):
 
         meas = self.agg.measurements[m2]
         assert meas['count'] == 3
-        assert meas['sum'] == 42+43+44
+        assert meas['sum'] == 42 + 43 + 44
         assert meas['min'] == 42
         assert meas['max'] == 44
-
 
     # Only gauges are supported (not counters)
     def test_to_payload(self):
@@ -112,7 +111,7 @@ class TestAggregator(unittest.TestCase):
         assert self.agg.to_payload() == {
             'gauges': [
                 {'name': 'test.metric', 'count': 2, 'sum': 85, 'min': 42, 'max': 43}
-             ],
+            ],
             'source': 'mysource'
         }
         assert 'gauges' in self.agg.to_payload()
@@ -131,7 +130,7 @@ class TestAggregator(unittest.TestCase):
                     'min': 42,
                     'max': 42
                 }
-             ]
+            ]
         }
 
     # If 'value' is specified in the payload, the API will throw an error

@@ -75,9 +75,9 @@ class Space(object):
             'summary_function': summary_function
         }
         chart = self.add_chart(name,
-            type='bignumber',
-            use_last_value=use_last_value,
-            streams=[stream])
+                               type='bignumber',
+                               use_last_value=use_last_value,
+                               streams=[stream])
         return chart
 
     # This currently only updates the name of the Space
@@ -177,7 +177,7 @@ class Chart(object):
 
     def known_attributes(self):
         return ['min', 'max', 'label', 'use_log_yaxis', 'use_last_value',
-            'related_space']
+                'related_space']
 
     def get_payload(self):
         # Set up the things that we aren't considering just "attributes"

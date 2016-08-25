@@ -3,7 +3,7 @@ import unittest
 import librato
 import mock_connection
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = mock_connection.MockConnect
 

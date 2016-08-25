@@ -30,6 +30,7 @@ from random import randint
 import time
 logging.basicConfig(level=logging.INFO)
 
+
 class TestLibratoBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -75,7 +76,7 @@ class TestLibratoBasic(TestLibratoBase):
         assert(metric is None)
 
     def test_long_sanitized_metric(self):
-        name, desc = 'a'*256, 'Too long, will error'
+        name, desc = 'a' * 256, 'Too long, will error'
         with self.assertRaises(BadRequest):
             self._add_and_verify_metric(name, 10, desc, self.conn)
         self._add_and_verify_metric(name, 10, desc, self.conn_sanitize)
@@ -118,20 +119,20 @@ class TestLibratoBasic(TestLibratoBase):
         q.submit()
 
         for t in range(1, 10):
-            q.add('temperature', randint(20, 40), measure_time=time.time()+t)
+            q.add('temperature', randint(20, 40), measure_time=time.time() + t)
         q.submit()
 
         for t in range(1, 10):
-            q.add('temperature', randint(20, 40), source='upstairs', measure_time=time.time()+t)
+            q.add('temperature', randint(20, 40), source='upstairs', measure_time=time.time() + t)
         q.submit()
 
         for t in range(1, 50):
-            q.add('temperature', randint(20, 30), source='downstairs', measure_time=time.time()+t)
+            q.add('temperature', randint(20, 30), source='downstairs', measure_time=time.time() + t)
         q.submit()
         self.conn.delete('temperature')
 
     def test_batch_sanitation(self):
-        name_one, name_two = 'a'*500, r'DSJAK#32102391S,m][][[{{]\\'
+        name_one, name_two = 'a' * 500, r'DSJAK#32102391S,m][][[{{]\\'
 
         def run_batch(connection):
             q = connection.new_queue()
@@ -151,8 +152,8 @@ class TestLibratoBasic(TestLibratoBase):
     def test_send_batch_counter_measurements(self):
         q = self.conn.new_queue()
         for nr in range(1, 2):
-            q.add('num_req', nr, type='counter', source='server1', measure_time=time.time()-1)
-            q.add('num_req', nr, type='counter', source='server2', measure_time=time.time()-1)
+            q.add('num_req', nr, type='counter', source='server1', measure_time=time.time() - 1)
+            q.add('num_req', nr, type='counter', source='server2', measure_time=time.time() - 1)
         q.submit()
 
     def test_update_metrics_attributes(self):
@@ -174,7 +175,7 @@ class TestLibratoBasic(TestLibratoBase):
         self.conn.delete(name)
 
     def test_sanitized_update(self):
-        name, desc = 'a'*1000, 'too long, really'
+        name, desc = 'a' * 1000, 'too long, really'
         new_desc = 'different'
         self.conn_sanitize.submit(name, 10, description=desc)
         gauge = self.conn_sanitize.get(name)
@@ -192,12 +193,11 @@ class TestLibratoBasic(TestLibratoBase):
         _c.submit("environmental_temp", value="18", source="rack1")
 
         _c.create_instrument("Server Temperature",
-            streams = [
-                        { "metric": "server_temp", "source":"app1" },
-                        { "metric": "environmental_temp", "source":"rack1" }
-                      ],
-            attributes = { "display_integral": True} )
-
+                             streams=[
+                                 {"metric": "server_temp", "source": "app1"},
+                                 {"metric": "environmental_temp", "source": "rack1"}
+                             ],
+                             attributes={"display_integral": True})
 
         """
         dbs = _c.list_dashboards()
@@ -234,9 +234,10 @@ class TestLibratoBasic(TestLibratoBase):
         i = self.conn.get_instrument(i.id)
         assert i.name == 'NEW instrument name'
 
+
 class TestLibratoAlertsIntegration(TestLibratoBase):
 
-    alerts_created_during_test=[]
+    alerts_created_during_test = []
     gauges_used_during_test = ['metric_test', 'cpu']
 
     def setUp(self):
@@ -265,7 +266,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         alert_id = alert._id
         alert = self.conn.get_alert(name)
         assert alert.rearm_seconds == 1200
-        assert alert.active == False
+        assert alert.active is False
 
     def test_add_alert_with_a_condition(self):
         name = self.unique_name("test_add_alert_with_a_condition")
@@ -333,7 +334,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
 
     def test_add_alert_with_multiple_conditions(self):
         name = self.unique_name("test_add_alert_with_multiple_conditions")
-        alert=self.conn.create_alert(name)
+        alert = self.conn.create_alert(name)
         alert.add_condition_for('cpu').above(0, 'sum')
         alert.add_condition_for('cpu').stops_reporting_for(3600)
         alert.add_condition_for('cpu').stops_reporting_for(3600)
@@ -344,6 +345,7 @@ class TestLibratoAlertsIntegration(TestLibratoBase):
         name = prefix + str(time.time())
         self.alerts_created_during_test.append(name)
         return name
+
 
 class TestSpacesApi(TestLibratoBase):
     @classmethod
@@ -407,9 +409,9 @@ class TestSpacesApi(TestLibratoBase):
             'memory',
             type='line',
             streams=[
-              {'metric': 'memory.free', 'source': '*'},
-              {'metric': 'memory.used', 'source': '*',
-                'group_function': 'breakout', 'summary_function': 'average'}
+                {'metric': 'memory.free', 'source': '*'},
+                {'metric': 'memory.used', 'source': '*',
+                 'group_function': 'breakout', 'summary_function': 'average'}
             ],
             min=0,
             max=50,
@@ -431,14 +433,14 @@ class TestSpacesApi(TestLibratoBase):
             'memory',
             type='bignumber',
             streams=[
-              {'metric': 'memory.free', 'source': '*'}
+                {'metric': 'memory.free', 'source': '*'}
             ],
             use_last_value=False
         )
 
         # Shortcut
         chart2 = space.add_bignumber_chart('memory 2', 'memory.free', 'foo*',
-            use_last_value=True)
+                                           use_last_value=True)
 
         self.wait_for_replication()
 

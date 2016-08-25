@@ -3,7 +3,7 @@ import unittest
 import librato
 from mock_connection import MockConnect, server
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
@@ -35,12 +35,12 @@ class TestLibratoInstruments(unittest.TestCase):
         self.conn.submit('a_gauge', 12, description='the desc for a gauge')
         ins.new_stream(metric='a_gauge')
         self.conn.update_instrument(ins)
-        #list_ins = self.conn.list_instruments()
+        # list_ins = self.conn.list_instruments()
         assert ins.name == name
         assert len(ins.streams) == 1
         assert ins.id == 1
         assert ins.streams[0].metric == "a_gauge"
-        assert ins.streams[0].composite == None
+        assert ins.streams[0].composite is None
 
     def test_get_instrument(self):
         name = "my_INST_with_STREAMS"
@@ -56,7 +56,7 @@ class TestLibratoInstruments(unittest.TestCase):
         assert len(si.streams) == 1
         assert si.id == 1
         assert si.streams[0].metric == "a_gauge"
-        assert si.streams[0].composite == None
+        assert si.streams[0].composite is None
 
     def test_adding_a_new_instrument_with_composite_metric_stream(self):
         name = "my_INST_with_STREAMS"
@@ -76,9 +76,9 @@ class TestLibratoInstruments(unittest.TestCase):
 
     def test_is_persisted(self):
         i = librato.Instrument(self.conn, 'test inst')
-        assert i.is_persisted() == False
+        assert i.is_persisted() is False
         i = librato.Instrument(self.conn, 'test inst', id=1234)
-        assert i.is_persisted() == True
+        assert i.is_persisted() is True
 
 if __name__ == '__main__':
     unittest.main()

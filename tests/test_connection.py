@@ -7,9 +7,10 @@ except ImportError:
 import librato
 from mock_connection import MockConnect, server
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
+
 
 class TestConnection(unittest.TestCase):
     def setUp(self):

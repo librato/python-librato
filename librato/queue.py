@@ -154,7 +154,8 @@ class Queue(object):
         self.chunks[-1][type + 's'].append(nm)
 
     def _add_tagged_measurement(self, nm):
-        if not self.tagged_chunks or self._num_measurements_in_current_chunk(tagged=True) == self.MAX_MEASUREMENTS_PER_CHUNK:
+        if (not self.tagged_chunks or
+           self._num_measurements_in_current_chunk(tagged=True) == self.MAX_MEASUREMENTS_PER_CHUNK):
             self.tagged_chunks.append({'measurements': []})
         self.tagged_chunks[-1]['measurements'].append(nm)
 
@@ -183,5 +184,5 @@ class Queue(object):
             num += self._num_measurements_in_current_chunk() + self.MAX_MEASUREMENTS_PER_CHUNK * (len(self.chunks) - 1)
         if self.tagged_chunks:
             num += (self._num_measurements_in_current_chunk(tagged=True) +
-                   self.MAX_MEASUREMENTS_PER_CHUNK * (len(self.tagged_chunks) - 1))
+                    self.MAX_MEASUREMENTS_PER_CHUNK * (len(self.tagged_chunks) - 1))
         return num

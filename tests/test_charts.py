@@ -9,10 +9,12 @@ from mock_connection import MockConnect, server
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
+
 class ChartsTest(unittest.TestCase):
     def setUp(self):
         self.conn = librato.connect('user_test', 'key_test')
         server.clean()
+
 
 # Charts
 class TestChartsConnection(ChartsTest):
@@ -148,7 +150,7 @@ class TestChartModel(ChartsTest):
     def test_init_streams_group_functions(self):
         streams_dict = [
             {'metric': 'my.metric', 'source': '*',
-            'group_function': 'sum', 'summary_function': 'max'}
+             'group_function': 'sum', 'summary_function': 'max'}
         ]
         chart = Chart(self.conn, streams=streams_dict)
         stream = chart.streams[0]
@@ -289,7 +291,7 @@ class TestChartModel(ChartsTest):
     def test_get_payload_bignumber(self):
         streams = [{'metric': 'my.metric', 'source': '*'}]
         chart = Chart(self.conn, type='bignumber', streams=streams,
-            use_last_value=False)
+                      use_last_value=False)
         payload = chart.get_payload()
         self.assertEqual(payload['name'], chart.name)
         self.assertEqual(payload['type'], chart.type)
@@ -298,16 +300,16 @@ class TestChartModel(ChartsTest):
 
     def test_streams_payload(self):
         streams_payload = [
-          {'metric': 'some.metric', 'source': None, 'composite': None},
-          {'metric': None, 'source': None, 'composite': 's("other.metric", "sf", {function: "sum"})'}
+            {'metric': 'some.metric', 'source': None, 'composite': None},
+            {'metric': None, 'source': None, 'composite': 's("other.metric", "sf", {function: "sum"})'}
         ]
         chart = Chart(self.conn, streams=streams_payload)
         self.assertEqual(chart.streams_payload()[0]['metric'], streams_payload[0]['metric'])
 
     def test_get_payload_with_streams_dict(self):
         streams_payload = [
-          {'metric': 'some.metric', 'source': None, 'composite': None},
-          {'metric': 'another.metric', 'source': None, 'composite': None}
+            {'metric': 'some.metric', 'source': None, 'composite': None},
+            {'metric': 'another.metric', 'source': None, 'composite': None}
         ]
         chart = Chart(self.conn, type='bignumber', space_id=42, streams=streams_payload)
         chart_payload = chart.get_payload()

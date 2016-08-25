@@ -8,6 +8,7 @@ from mock_connection import MockConnect, server
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
+
 class TestStreamModel(unittest.TestCase):
     def setUp(self):
         self.conn = librato.connect('user_test', 'key_test')
@@ -91,19 +92,18 @@ class TestStreamModel(unittest.TestCase):
         self.assertEqual(s.color, '#f00')
         self.assertEqual(s.something, 'foo')
 
-
     def test_get_payload(self):
         self.assertEqual(Stream(metric='my.metric').get_payload(),
-            {'metric': 'my.metric', 'source': '*'})
+                         {'metric': 'my.metric', 'source': '*'})
 
     def test_payload_all_attributes(self):
         s = Stream(metric='my.metric', source='*', name='my display name',
-            type='gauge', id=1234,
-            group_function='min', summary_function='max',
-            transform_function='x/p', downsample_function='min',
-            period=60, split_axis=False,
-            min=0, max=42,
-            units_short='req/s', units_long='requests per second')
+                   type='gauge', id=1234,
+                   group_function='min', summary_function='max',
+                   transform_function='x/p', downsample_function='min',
+                   period=60, split_axis=False,
+                   min=0, max=42,
+                   units_short='req/s', units_long='requests per second')
         payload = {
             'metric': 'my.metric',
             'source': '*',
@@ -122,7 +122,6 @@ class TestStreamModel(unittest.TestCase):
             'units_long': 'requests per second'
         }
         self.assertEqual(s.get_payload(), payload)
-
 
 
 if __name__ == '__main__':
