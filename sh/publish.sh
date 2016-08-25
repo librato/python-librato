@@ -49,3 +49,5 @@ echo -ne "Hit <enter> to send new package to pypi; <ctrl+c> to cancel..."
 read
 
 python setup.py sdist upload
+git tag -a v$_NEW -m "new version $_NEW"
+git push origin --tags
