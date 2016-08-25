@@ -1,6 +1,9 @@
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 import json
+import time
 import re
+import six
+from six.moves.urllib.parse import urlparse, parse_qs
 
 class MockServer(object):
     """Mock the data storing in the backend"""
@@ -21,6 +24,9 @@ class MockServer(object):
         self.last_spc_id = 0
         self.last_chrt_id = 0
 
+        # metric_name, tag_name, tag_value -> (time1, value1), (time2, value2), ...
+        self.md_measurements = defaultdict(lambda : defaultdict(lambda: defaultdict(list)))
+
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
         for gn, g in self.metrics['gauges'].items():
@@ -37,20 +43,50 @@ class MockServer(object):
 
                 # The metric comes also with a value, we have to add it
                 # to the measurements (for a particular source if available)
+                value = None
                 if 'value' in metric:
+                    value = metric.pop('value')
+                elif 'sum' in metric and 'count' in metric:
+                    value = metric.pop('sum')/metric.pop('count')
+
+                if value is not None:
                     if 'source' not in metric:
                         source = 'unassigned'
                     else:
                         source = metric['source']
                         del metric['source']
-                    value = metric['value']
-                    del metric['value']
 
                     # Create a new source for the measurements if necessary
                     p_to_metric = self.metrics[metric_type + 's'][name]
                     if source not in p_to_metric['measurements']:
                         p_to_metric['measurements'][source] = []
                     p_to_metric['measurements'][source].append({"value": value})
+
+        return ''
+
+    def create_md_measurements(self, payload):
+        tags = payload.get('tags', {})
+        def_time = payload.get('time', int(time.time()))
+        for metric in payload['measurements']:
+            name = metric['name']
+
+            mt = metric.get('time', def_time)
+
+            if 'value' in metric:
+                value = metric['value']
+            elif 'sum' in metric:
+                if 'count' not in metric or metric['count'] != 1:
+                    raise Exception('mock_connection only supports a count value of one')
+                value = metric['sum']
+            else:
+                raise Exception('md submit payload must provide value or sum/count attributes')
+
+            m_tags = tags
+            if 'tags' in metric:
+                m_tags.update(metric['tags'])
+
+            for tag in m_tags:
+                self.md_measurements[name][tag][m_tags[tag]].append((mt, value))
 
         return ''
 
@@ -387,6 +423,35 @@ class MockServer(object):
             metric = counters[name]
         return json.dumps(metric).encode('utf-8')
 
+    def get_md_measurements(self, name, payload):
+        if 'tags_search' not in payload:
+            raise Exception('mock_connection md_get requires tags_search to be specified')
+
+        query = payload.get('tags_search')
+        end = payload.get('end_time', int(time.time()))
+
+        if 'start_time' in payload:
+            start = int(payload['start_time'])
+        elif 'duration' in payload:
+            start = end - int(payload['duration'])
+        else:
+            raise Exception('md get requires a start or duration parameter')
+
+        # Only support a 'tag=value' query syntax
+        tag, value = query.split('=')
+
+        measurements = [t for t in self.md_measurements[name][tag][value] if (t[0] >= start and t[0] <= end)]
+        measurements.sort(key=lambda x: x[1])
+        m_dicts = [{'time': t[0], 'value': t[1]} for t in measurements if len(t) > 0]
+
+        response = {}
+        if len(m_dicts):
+            response['series'] = [{'tags': {tag: value}, 'measurements': m_dicts}]
+        else:
+            response['series'] = []
+
+        return json.dumps(response).encode('utf-8')
+
     def delete_metric(self, name, payload):
         gauges = self.metrics['gauges']
         counters = self.metrics['counters']
@@ -465,6 +530,8 @@ class MockResponse(object):
             return server.list_of_metrics()
         elif self._req_is_create_metric():
             return server.create_metric(r.body)
+        elif self._req_is_create_md_measurements():
+            return server.create_md_measurements(r.body)
         elif self._req_is_delete():
             #check for single delete. Batches don't include name in the url
             try:
@@ -474,7 +541,12 @@ class MockResponse(object):
             return server.delete_metric(name, r.body)
         elif self._req_is_get_metric():
             return server.get_metric(self._extract_from_url(), r.body)
-
+        elif self._req_is_get_md_measurements():
+            query = urlparse(self.request.uri).query
+            d = parse_qs(query)
+            # Flatten since parse_qs likes to build lists of values
+            payload = {k:v[0] for k,v in six.iteritems(d)}
+            return server.get_md_measurements(self._extract_from_url(tagged=True), payload)
         elif self._req_is_list_of_instruments():
             return server.list_of_instruments()
         elif self._req_is_create_instrument():
@@ -542,6 +614,9 @@ class MockResponse(object):
     def _req_is_create_metric(self):
         return self._method_is('POST') and self._path_is('/v1/metrics')
 
+    def _req_is_create_md_measurements(self):
+        return self._method_is('POST') and self._path_is('/v1/measurements')
+
     def _req_is_delete(self):
         return (self._method_is('DELETE') and not
                 (re.match('/v1/alerts/\d+', self.request.uri) or
@@ -550,6 +625,10 @@ class MockResponse(object):
     def _req_is_get_metric(self):
         return (self._method_is('GET') and
                 re.match('/v1/metrics/([\w_]+)', self.request.uri))
+
+    def _req_is_get_md_measurements(self):
+        return (self._method_is('GET') and
+                re.match('/v1/measurements/([\w_]+)', self.request.uri))
 
     def _req_is_send_value(self, what):
         return (self._method_is('POST') and
@@ -653,8 +732,11 @@ class MockResponse(object):
     def _path_is(self, p):
         return self.request.uri == p
 
-    def _extract_from_url(self):
-        m = re.match('/v1/metrics/([\w_]+)', self.request.uri)
+    def _extract_from_url(self, tagged=False):
+        if tagged:
+            m = re.match('/v1/measurements/([\w_.]+)', self.request.uri)
+        else:
+            m = re.match('/v1/metrics/([\w_.]+)', self.request.uri)
         try:
             name = m.group(1)
         except:

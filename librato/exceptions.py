@@ -78,9 +78,13 @@ class ClientError(Exception):
             # The API could return 'errors' or just 'error' with a flat message
             if 'error' in self.error_payload:
                 return self.error_payload['error']
+            elif 'message' in self.error_payload:
+                return self.error_payload['message']
             else:
                 payload = self.error_payload['errors']
                 messages = []
+                if isinstance(payload, list):
+                    return payload
                 for key in payload:
                     error_list = payload[key]
                     if isinstance(error_list, str):

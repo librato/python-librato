@@ -4,6 +4,7 @@ import librato
 from librato.aggregator import Aggregator
 from mock_connection import MockConnect, server
 from random import randint
+import time
 
 #logging.basicConfig(level=logging.DEBUG)
 librato.HTTPSConnection = MockConnect
@@ -17,8 +18,63 @@ class TestLibratoQueue(unittest.TestCase):
 
     def test_empty_queue(self):
         q = self.q
-        assert len(q.chunks) == 1
+        assert len(q.chunks) == 0
         assert q._num_measurements_in_current_chunk() == 0
+
+    def test_no_tags(self):
+        q = self.q
+        assert len(q.get_tags()) == 0
+
+    def test_inherited_tags(self):
+        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        assert conn.get_tags() == {'sky': 'blue'}
+
+        q = conn.new_queue()
+        q.add_tagged('user_cpu', 10)
+        q.submit()
+
+        # Measurement must inherit 'sky' tag from connection
+        resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="sky=blue")
+
+        assert len(resp['series']) == 1
+        assert resp['series'][0].get('tags', {}) == conn.get_tags()
+
+        measurements = resp['series'][0]['measurements']
+        assert len(measurements) == 1
+        assert measurements[0]['value'] == 10
+
+    def test_constructor_tags(self):
+        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+        q = conn.new_queue(tags={'sky': 'red', 'coal': 'black'})
+        tags = q.get_tags()
+
+        assert len(tags) == 2
+        assert 'sky' in tags
+        assert tags['sky'] == 'red'
+        assert 'coal' in tags
+        assert tags['coal'] == 'black'
+
+    def test_add_tags(self):
+        q = self.q
+        q.add_tags({'mercury': 'silver'})
+        tags = q.get_tags()
+
+        assert len(tags) == 1
+        assert 'mercury' in tags
+        assert tags['mercury'] == 'silver'
+
+    def test_set_tags(self):
+        q = self.q
+        q.add_tags({'mercury': 'silver'})
+
+        q.set_tags({'sky': 'blue', 'mercury': 'silver'})
+        tags = q.get_tags()
+
+        assert len(tags) == 2
+        assert 'sky' in tags
+        assert tags['sky'] == 'blue'
+        assert 'mercury' in tags
+        assert tags['mercury'] == 'silver'
 
     def test_single_measurement_gauge(self):
         q = self.q
@@ -161,6 +217,103 @@ class TestLibratoQueue(unittest.TestCase):
 
         # Test that time was snapped to 10s
         assert gauges[0]['measure_time'] % 10 == 0
+
+    def test_md_submit(self):
+        q = self.q
+        q.set_tags({'hostname': 'web-1'})
+
+        mt1 = int(time.time()) - 5
+        q.add_tagged('system_cpu', 3.2, time=mt1)
+        assert q._num_measurements_in_queue() == 1
+        q.submit()
+
+        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
+
+        assert len(resp['series']) == 1
+        assert resp['series'][0].get('tags', {}) == {'hostname': 'web-1'}
+
+        measurements = resp['series'][0]['measurements']
+        assert len(measurements) == 1
+
+        assert measurements[0]['time'] == mt1
+        assert measurements[0]['value'] == 3.2
+
+    def test_md_measurement_level_tag(self):
+        q = self.q
+        q.set_tags({'hostname': 'web-1'})
+
+        mt1 = int(time.time()) - 5
+        q.add_tagged('system_cpu', 33.22, time=mt1, tags={"user": "james"})
+        q.submit()
+
+        # Ensure both tags get submitted
+        for tag_search in ["hostname=web-1", "user=james"]:
+            resp = self.conn.get_tagged('system_cpu', duration=60, tags_search=tag_search)
+
+            assert len(resp['series']) == 1
+
+            measurements = resp['series'][0]['measurements']
+            assert len(measurements) == 1
+
+            assert measurements[0]['time'] == mt1
+            assert measurements[0]['value'] == 33.22
+
+    def test_md_measurement_level_tag_supersedes(self):
+        q = self.q
+        q.set_tags({'hostname': 'web-1'})
+
+        mt1 = int(time.time()) - 5
+        q.add_tagged('system_cpu', 33.22, time=mt1, tags={"hostname": "web-2"})
+        q.submit()
+
+        # Ensure measurement-level tag takes precedence
+        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
+        assert len(resp['series']) == 0
+
+        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-2")
+        assert len(resp['series']) == 1
+
+        measurements = resp['series'][0]['measurements']
+        assert len(measurements) == 1
+
+        assert measurements[0]['time'] == mt1
+        assert measurements[0]['value'] == 33.22
+
+    def test_side_by_side(self):
+        # Ensure tagged and untagged measurements are handled independently
+        q = self.conn.new_queue(tags={'hostname': 'web-1'})
+
+        q.add('system_cpu', 10)
+        q.add_tagged('system_cpu', 20)
+        q.submit()
+
+        resp = self.conn.get('system_cpu', duration=60)
+
+        gauge = self.conn.get('system_cpu', duration=60)
+        assert gauge.name == 'system_cpu'
+        assert len(gauge.measurements['unassigned']) == 1
+        assert gauge.measurements['unassigned'][0]['value'] == 10
+
+        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
+        assert len(resp['series']) == 1
+
+        measurements = resp['series'][0]['measurements']
+        assert len(measurements) == 1
+        assert measurements[0]['value'] == 20
+
+    def test_md_auto_submit_on_metric_count(self):
+        q = self.conn.new_queue(auto_submit_count=2)
+
+        q.add('untagged_cpu', 10)
+        q.add_tagged('tagged_cpu', 20, tags={'hostname': 'web-2'})
+
+        assert q._num_measurements_in_queue() == 0
+
+        gauge = self.conn.get('untagged_cpu', duration=60)
+        assert len(gauge.measurements['unassigned']) == 1
+
+        resp = self.conn.get_tagged('tagged_cpu', duration=60, tags_search="hostname=web-2")
+        assert len(resp['series']) == 1
 
 
 if __name__ == '__main__':

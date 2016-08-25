@@ -88,3 +88,4 @@ class Counter(Metric):
 
     def what_am_i(self):
         return 'counters'
+

@@ -186,6 +186,80 @@ for metric in api.list_metrics(name=" "):
   api.update(metric.name, attributes=attrs)
 ```
 
+## Multidimensional metric data streams
+
+With multidimensional streams, it is possible to attach one or more user-defined properties (aka tags) to measurements
+submitted to Librato. The user can then create advanced visualizations and alerts which rely on values of tags.
+Tags are a generalization of the single-dimensional 'source' value which Librato has historically supported.
+
+### Measurement-level tags
+
+Multidimensional measurements can be submitted to Librato using the `submit_tagged()` method, which accepts an optional
+ `tags` argument, which must be a dictionary with string keys and values. The following example shows how to submit
+a measurement with `hostname` and `company` tags.
+
+```
+  api = librato.connect(user, token)
+  api.submit_tagged("connections", 20, tags={'hostname': 'web-host-1', 'company': 'Librato'})
+```
+
+Multidimensional measurements can be submitted in batch mode using Queue's `add_tagged()` method, which also accepts an
+optional `tags` dictionary argument.
+
+```
+  api = librato.connect(user, token)
+  q   = api.new_queue()
+  q.add_tagged("connections", 30, tags={'hostname': 'web-host-1', 'company': 'Librato'})
+```
+
+Note that multidimensional measurements must be submitted using `submit_tagged()` or `add_tagged()`, regardless
+of whether or not a tag set has been specified. Any measurements submitted using `submit()` or `add()` will
+be directed to the traditional (untagged) Librato backend. Also, it is possible to add tagged and untagged
+measurements to a Queue instance, using `add_tagged()` and `add()`, respectively. Calling `submit()` will push
+the measurements to the respective backends (multidimensional or traditional).
+
+### Top-level tags
+
+The above examples showed how to attach tags to individual measurements. It is also possible to attach top-level tags
+to Connections and Queue instances, which effectively applies those tags to every measurement sent using the corresponding
+instance. The top-level tags will be combined with, and superceded, by any measurement-specific tags.
+
+The following example shows how to attach a `hostname` top-level tag to a Connection. The `connections` measurement will end
+up with both `hostname` and a `company` tags.
+
+```
+  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
+  api.submit_tagged("connections", 30, tags={'company': 'Librato'})
+```
+
+A Queue instance will inherit the top-level tags from the corresponding Connection object. In the following example,
+the Queue instance will inherit `hostname` as a top-level tag from the Connecton instance. The `connections` measurement
+will also end up with 'hostname' and 'company' tags.
+
+```
+  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
+  q = api.new_queue()
+  q.add_tagged("connections", 30, tags={'company': 'Librato'})
+```
+
+Top-level tag sets can be updated using `add_tags()` and replaced entirely using `set_tags()`, as shown below in the Connection
+example below. The Queue class follows an identical pattern.
+
+```
+  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
+  api.add_tags({'company': 'Librato'})        # Top-level tag set now has 'company' and 'hostname'
+  api.set_tags({'hostname': 'web-host-2'})    # Top-level tag set only has 'hostname'
+```
+
+### Querying tagged measurements
+Tagged measurements can be queried using the Connection `get_tagged()`. This method is much like `get()` but accepts a
+`tags_search` parameter, that specifies a tag query string. Refer to the main developer documentation for additional details
+on the search syntax. The following example shows a sample query that queries based hostname and company values.
+
+```
+  resp = api.get_tagged('connections', duration=60, tags_search="hostname=web-1 and company=Librato")
+```
+
 ## Annotations
 
 List Annotation all annotation streams:
@@ -466,6 +540,25 @@ a.submit()
 q = librato.queue.Queue(api)
 q.add_aggregator(a)
 q.submit()
+```
+
+### Multidimensional Aggregator measurements
+
+Tags can be associated with an Aggregator instance, much like Connection and Queue (see Multidimensional metric data streams
+above), and aggregated using `add_tagged()`.
+
+```
+a = Aggregator(api, measure_time=1419302671, tags={'hostname': 'web-host-1'})
+a.add_tagged('foo', 5)
+```
+
+Note that tagged measurements and untagged ones (aggregated using `add()`) are tracked separately by Aggregator, and submitted
+to the respective metric backends.
+
+```
+a = Aggregator(api, measure_time=1419302671, tags={'hostname': 'web-host-1'})
+a.add('foo', 5)           # Adds untagged measurement 'foo' to the aggregator
+a.add_tagged('foo', 5)    # Adds a different tagged measurement called 'foo'
 ```
 
 ## Misc
