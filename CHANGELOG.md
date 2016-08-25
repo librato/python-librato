@@ -1,5 +1,10 @@
 ## Changelog
 
+### Version 2.0.0
+* Multi Dimension support
+* pep8 compliant
+* All that thanks to @vaidy4github great work
+
 ### Version 1.0.7
 * Better response handling (Thanks @jhaegg).
 
