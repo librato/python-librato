@@ -34,7 +34,7 @@ CHL_MSG=<<EOF
 * $MSG
 EOF
 
-cat setup.py            | ruby -ne 'puts $_.gsub(/version = \"[\d\.]+\"/, "version = \"" + ENV["_NEW"] + "\"" )'	> _tmp
+cat setup.py            | ruby -ne 'puts $_.gsub(/version=\"[\d\.]+\"/, "version=\"" + ENV["_NEW"] + "\"" )'	> _tmp
 mv _tmp setup.py
 cat librato/__init__.py | ruby -ne 'puts $_.gsub(/__version__ = \"[\d\.]+\"/,  "__version__ = \"" + ENV["_NEW"] + "\"")'  > _tmp
 mv _tmp librato/__init__.py
