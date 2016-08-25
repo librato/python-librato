@@ -25,7 +25,7 @@ class TestLibratoAlerts(unittest.TestCase):
         assert len(alert.services) == 0
         assert len(alert.conditions) == 0
         assert len(self.conn.list_alerts()) == 1
-    
+
     def test_adding_an_alert_with_description(self):
         alert = self.conn.create_alert(self.name, description="test_description")
         assert alert.description == "test_description"
@@ -37,20 +37,20 @@ class TestLibratoAlerts(unittest.TestCase):
         assert len(alert.conditions) == 1
         assert alert.conditions[0].condition_type == 'above'
         assert alert.conditions[0].metric_name == 'cpu'
-        assert alert.conditions[0].threshold == 200 
+        assert alert.conditions[0].threshold == 200
 
     def test_deleting_an_alert(self):
         alert = self.conn.create_alert(self.name)
-        #TODO: use requests directly instead of the client methods?
+        # TODO: use requests directly instead of the client methods?
         assert len(self.conn.list_alerts()) == 1
         self.conn.delete_alert(self.name)
         assert len(self.conn.list_alerts()) == 0
-    
+
     def test_deleting_an_inexistent_alert(self):
         self.conn.create_alert('say_my_name')
         self.conn.delete_alert('say_my_wrong_name')
         assert self.conn.get_alert('say_my_name') is not None
-    
+
     def test_adding_a_new_alert_with_a_service(self):
         alert = self.conn.create_alert(self.name)
         alert.add_service(1)
@@ -91,14 +91,15 @@ class TestLibratoAlerts(unittest.TestCase):
         cond = librato.alerts.Condition('foo')
 
         cond._duration = None
-        assert cond.immediate() == True
+        assert cond.immediate() is True
 
         # Not even sure this is a valid case, but testing anyway
         cond._duration = 0
-        assert cond.immediate() == True
+        assert cond.immediate() is True
 
         cond._duration = 60
-        assert cond.immediate() == False
+        assert cond.immediate() is False
+
 
 class TestService(unittest.TestCase):
     def setUp(self):
@@ -128,7 +129,7 @@ class TestService(unittest.TestCase):
 
     def test_init_service(self):
         s = librato.alerts.Service(123, title='the title', type='mail',
-                settings={'addresses': 'someone@example.com'})
+                                   settings={'addresses': 'someone@example.com'})
         self.assertEqual(s._id, 123)
         self.assertEqual(s.title, 'the title')
         self.assertEqual(s.type, 'mail')
@@ -136,7 +137,7 @@ class TestService(unittest.TestCase):
 
     def test_service_from_dict(self):
         payload = {'id': 123, 'title': 'the title', 'type': 'slack',
-            'settings': {'room': 'a room'}}
+                   'settings': {'room': 'a room'}}
         s = librato.alerts.Service.from_dict(self.conn, payload)
         self.assertEqual(s._id, 123)
         self.assertEqual(s.title, payload['title'])

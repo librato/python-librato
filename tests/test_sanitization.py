@@ -13,7 +13,7 @@ class TestSanitization(unittest.TestCase):
         for name, expected in [
             (valid_chars, valid_chars),
             (valid_chars.upper(), valid_chars.upper()),
-            ('a'*500, 'a'*255),
+            ('a' * 500, 'a' * 255),
             ('   \t\nbat$$$*[]()m#@%^&=`~an', '-bat-m-an'),  # throw in a unicode char
             ('Just*toBeSafe', 'Just-toBeSafe')
         ]:

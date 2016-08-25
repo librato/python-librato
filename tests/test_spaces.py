@@ -9,6 +9,7 @@ from mock_connection import MockConnect, server
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
+
 class SpacesTest(unittest.TestCase):
     def setUp(self):
         self.conn = librato.connect('user_test', 'key_test')
@@ -166,13 +167,12 @@ class TestSpaceModel(SpacesTest):
 
     def test_new_chart_attrs(self):
         chart = self.space.new_chart('test',
-            label='hello',
-            min=-5,
-            max=30,
-            use_log_yaxis=True,
-            use_last_value=True,
-            related_space=1234
-        )
+                                     label='hello',
+                                     min=-5,
+                                     max=30,
+                                     use_log_yaxis=True,
+                                     use_last_value=True,
+                                     related_space=1234)
         self.assertEqual(chart.label, 'hello')
         self.assertEqual(chart.min, -5)
         self.assertEqual(chart.max, 30)
@@ -182,7 +182,7 @@ class TestSpaceModel(SpacesTest):
 
     def test_new_chart_bignumber(self):
         chart = self.space.new_chart('test', type='bignumber',
-            use_last_value=False)
+                                     use_last_value=False)
         self.assertEqual(chart.type, 'bignumber')
         self.assertFalse(chart.use_last_value)
 
@@ -293,13 +293,13 @@ class TestSpaceModel(SpacesTest):
     def test_add_bignumber_chart_summary_function(self):
         space = self.conn.create_space('foo')
         chart = space.add_bignumber_chart('cpu', 'my.metric',
-            summary_function='min')
+                                          summary_function='min')
         self.assertEqual(chart.streams[0].summary_function, 'min')
 
     def test_add_bignumber_chart_group_function(self):
         space = self.conn.create_space('foo')
         chart = space.add_bignumber_chart('cpu', 'my.metric',
-            group_function='max')
+                                          group_function='max')
         self.assertEqual(chart.streams[0].group_function, 'max')
 
     def test_add_bignumber_chart_use_last_value(self):

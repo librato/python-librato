@@ -8,9 +8,10 @@ import librato
 from mock_connection import MockConnect, server
 from six.moves.http_client import HTTPResponse
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
+
 
 class TestLibrato(unittest.TestCase):
     def setUp(self):

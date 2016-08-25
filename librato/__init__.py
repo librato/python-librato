@@ -20,16 +20,9 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import re
 import six
-
-__version__ = "1.0.7"
-
-# Defaults
-HOSTNAME = "metrics-api.librato.com"
-BASE_PATH = "/v1/"
-DEFAULT_TIMEOUT = 10
-
 import platform
 import time
 import logging
@@ -48,6 +41,13 @@ from librato.alerts import Alert, Service
 from librato.dashboards import Dashboard
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
+
+__version__ = "1.0.7"
+
+# Defaults
+HOSTNAME = "metrics-api.librato.com"
+BASE_PATH = "/v1/"
+DEFAULT_TIMEOUT = 10
 
 log = logging.getLogger("librato")
 
@@ -83,8 +83,8 @@ class LibratoConnection(object):
     [...]
     """
 
-    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https",
-                 tags={}):
+    def __init__(self, username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
+                 protocol="https", tags={}):
         """Create a new connection to Librato Metrics.
         Doesn't actually connect yet or validate until you make a request.
 
@@ -108,7 +108,7 @@ class LibratoConnection(object):
         # these two attributes ared used to control fake server errors when doing
         # unit testing.
         self.fake_n_errors = 0
-        self.backoff_logic = lambda backoff: backoff*2
+        self.backoff_logic = lambda backoff: backoff * 2
         self.sanitize = sanitizer
         self.timeout = DEFAULT_TIMEOUT
         self.tags = dict(tags)
@@ -133,9 +133,9 @@ class LibratoConnection(object):
         if not isinstance(params, dict):
             raise Exception("You must pass in a dictionary!")
         params_list = []
-        for k,v in params.items():
+        for k, v in params.items():
             if isinstance(v, list):
-                params_list.extend([(k+'[]', x) for x in v])
+                params_list.extend([(k + '[]', x) for x in v])
             else:
                 params_list.append((k, v))
         return urlencode(params_list)
@@ -179,7 +179,7 @@ class LibratoConnection(object):
         """Internal method for executing a command.
            If we get server errors we exponentially wait before retrying
         """
-        conn    = self._setup_connection()
+        conn = self._setup_connection()
         headers = self._set_headers(p_headers)
         success = False
         backoff = 1
@@ -255,7 +255,7 @@ class LibratoConnection(object):
             metric[k] = v
         payload[type + 's'].append(metric)
         self._mexe("metrics", method="POST", query_props=payload)
- 
+
     def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
         if self.tags:
@@ -391,7 +391,7 @@ class LibratoConnection(object):
 
     def get_annotation(self, name, id, **query_props):
         """Get a specific annotation event by ID"""
-        resp = self._mexe("annotations/%s/%s" % (name,id), method="GET", query_props=query_props)
+        resp = self._mexe("annotations/%s/%s" % (name, id), method="GET", query_props=query_props)
         return Annotation.from_dict(self, resp)
 
     def update_annotation_stream(self, name, **query_props):
@@ -403,8 +403,8 @@ class LibratoConnection(object):
         return Annotation.from_dict(self, resp)
 
     def post_annotation(self, name, **query_props):
-        """Create an annotation event on :name.
-		  If the annotation stream does not exist, it will be created automatically."""
+        """ Create an annotation event on :name. """
+        """ If the annotation stream does not exist, it will be created automatically. """
         resp = self._mexe("annotations/%s" % name, method="POST", query_props=query_props)
         return resp
 
@@ -518,7 +518,6 @@ class LibratoConnection(object):
         resp = self._mexe("spaces/%s" % id, method="DELETE")
         return resp
 
-
     #
     # Charts
     #
@@ -572,15 +571,14 @@ class LibratoConnection(object):
         for k, v in query_props.items():
             payload[k] = v
         resp = self._mexe("spaces/%s/charts/%s" % (space.id, chart.id),
-            method="PUT",
-            query_props=payload)
+                          method="PUT",
+                          query_props=payload)
         return resp
 
     def delete_chart(self, chart_id, space_id, **query_props):
         """delete a chart from a space"""
         resp = self._mexe("spaces/%s/charts/%s" % (space_id, chart_id), method="DELETE")
         return resp
-
 
     #
     # Queue
@@ -600,7 +598,9 @@ class LibratoConnection(object):
     def set_timeout(self, timeout):
         self.timeout = timeout
 
-def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op, protocol="https", tags={}):
+
+def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
+            protocol="https", tags={}):
     """
     Connect to Librato Metrics
     """
@@ -626,6 +626,7 @@ def _decode_body(resp):
 
     return resp_data
 
+
 def _getcharset(resp, default='utf-8'):
     """
     Extract the charset from an HTTPResponse.
@@ -639,6 +640,7 @@ def _getcharset(resp, default='utf-8'):
         m = email.message.Message()
         m['content-type'] = resp.getheader('content-type')
         return m.get_content_charset(default)
+
 
 def _get_content_type(resp):
     """

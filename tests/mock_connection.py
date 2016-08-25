@@ -5,6 +5,7 @@ import re
 import six
 from six.moves.urllib.parse import urlparse, parse_qs
 
+
 class MockServer(object):
     """Mock the data storing in the backend"""
     def __init__(self):
@@ -25,7 +26,7 @@ class MockServer(object):
         self.last_chrt_id = 0
 
         # metric_name, tag_name, tag_value -> (time1, value1), (time2, value2), ...
-        self.md_measurements = defaultdict(lambda : defaultdict(lambda: defaultdict(list)))
+        self.md_measurements = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
@@ -47,7 +48,7 @@ class MockServer(object):
                 if 'value' in metric:
                     value = metric.pop('value')
                 elif 'sum' in metric and 'count' in metric:
-                    value = metric.pop('sum')/metric.pop('count')
+                    value = metric.pop('sum') / metric.pop('count')
 
                 if value is not None:
                     if 'source' not in metric:
@@ -166,17 +167,17 @@ class MockServer(object):
             c_alert["id"] = _id
             if name is None:
                 alert.append(c_alert)
-            elif name==c_alert["name"]:
+            elif name == c_alert["name"]:
                 alert.append(c_alert)
         return json.dumps(answer).encode('utf-8')
 
     def list_of_services(self):
-        #{
-        #    'services': [
-        #        {'id': 1, 'title': 'A Service', 'type': 'mail',
-        #            'settings': {'addresses': 'someone@example.com'}}
-        #    ]
-        #}
+        # {
+        #     'services': [
+        #         {'id': 1, 'title': 'A Service', 'type': 'mail',
+        #             'settings': {'addresses': 'someone@example.com'}}
+        #     ]
+        # }
         answer = {}
         answer['query'] = {}
         answer['services'] = []
@@ -200,7 +201,7 @@ class MockServer(object):
         annotation_resp = {}
         annotation_resp['name'] = name
         annotation_resp['display_name'] = name
-        annotation_resp['events'] = {'event':'mocked event'}
+        annotation_resp['events'] = {'event': 'mocked event'}
         annotation_resp['query'] = {'query': 'mocked query'}
         return json.dumps(annotation_resp).encode('utf-8')
 
@@ -533,7 +534,7 @@ class MockResponse(object):
         elif self._req_is_create_md_measurements():
             return server.create_md_measurements(r.body)
         elif self._req_is_delete():
-            #check for single delete. Batches don't include name in the url
+            # check for single delete. Batches don't include name in the url
             try:
                 name = self._extract_from_url()
             except AttributeError:
@@ -545,7 +546,7 @@ class MockResponse(object):
             query = urlparse(self.request.uri).query
             d = parse_qs(query)
             # Flatten since parse_qs likes to build lists of values
-            payload = {k:v[0] for k,v in six.iteritems(d)}
+            payload = {k: v[0] for k, v in six.iteritems(d)}
             return server.get_md_measurements(self._extract_from_url(tagged=True), payload)
         elif self._req_is_list_of_instruments():
             return server.list_of_instruments()
@@ -652,10 +653,14 @@ class MockResponse(object):
     # Alerts
     def _req_is_create_alert(self):
         return self._method_is('POST') and self._path_is('/v1/alerts')
+
     def _req_is_list_of_alerts(self):
         return self._method_is('GET') and self._path_is('/v1/alerts?version=2') and not self._req_is_get_alert()
+
     def _req_is_get_alert(self):
-        return self._method_is('GET') and re.match('/v1/alerts\?(version=2|name=.+)\&(name=.+|version=2)', self.request.uri)
+        return self._method_is('GET') and re.match('/v1/alerts\?(version=2|name=.+)\&(name=.+|version=2)',
+                                                   self.request.uri)
+
     def _req_is_delete_alert(self):
         return (self._method_is('DELETE') and
                 re.match('/v1/alerts/\d+', self.request.uri))

@@ -44,21 +44,17 @@ class Aggregator(object):
         self.period = args.get('period')
         self.measure_time = args.get('measure_time')
 
-
     # Get a shallow copy of the top-level tag set
     def get_tags(self):
         return dict(self.tags)
-
 
     # Define the top-level tag set for posting measurements
     def set_tags(self, d):
         self.tags = dict(d)    # Create a copy
 
-
     # Add one or more top-level tags for posting measurements
     def add_tags(self, d):
         self.tags.update(d)
-
 
     def add(self, name, value):
         if name not in self.measurements:
@@ -67,7 +63,7 @@ class Aggregator(object):
                 'sum': value,
                 'min': value,
                 'max': value
-                }
+            }
         else:
             m = self.measurements[name]
             m['sum'] += value
@@ -79,7 +75,6 @@ class Aggregator(object):
 
         return self.measurements
 
-
     def add_tagged(self, name, value):
         if name not in self.tagged_measurements:
             self.tagged_measurements[name] = {
@@ -87,7 +82,7 @@ class Aggregator(object):
                 'sum': value,
                 'min': value,
                 'max': value
-                }
+            }
         else:
             m = self.tagged_measurements[name]
             m['sum'] += value
@@ -98,7 +93,6 @@ class Aggregator(object):
                 m['max'] = value
 
         return self.tagged_measurements
-
 
     def to_payload(self):
         # Map measurements into Librato POST (array) format
@@ -130,7 +124,6 @@ class Aggregator(object):
 
         return result
 
-
     def to_md_payload(self):
         # Map measurements into Librato MD POST format
         # {
@@ -158,7 +151,6 @@ class Aggregator(object):
 
         return result
 
-
     # Get/set the measure time if it is ever queried, that way you'll know the measure_time
     # that was submitted, and we'll guarantee the same measure_time for all measurements
     # extracted into a queue
@@ -167,7 +159,6 @@ class Aggregator(object):
         if mt:
             self.measure_time = mt
         return self.measure_time
-
 
     # Return floored measure time if period is set
     # otherwise return user specified value if set
@@ -186,12 +177,10 @@ class Aggregator(object):
             # Use the user-specified value with no flooring
             return self.measure_time
 
-
     def clear(self):
         self.measurements = {}
         self.tagged_measurements = {}
         self.measure_time = None
-
 
     def submit(self):
         # Submit any legacy or tagged measurements to API

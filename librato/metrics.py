@@ -27,7 +27,7 @@
 class Metric(object):
     """Librato Metric Base class"""
 
-    def __init__(self, connection, name, attributes=None, period=None, description=None ):
+    def __init__(self, connection, name, attributes=None, period=None, description=None):
         self.connection = connection
         self.name = name
         self.attributes = attributes or {}
@@ -88,4 +88,3 @@ class Counter(Metric):
 
     def what_am_i(self):
         return 'counters'
-

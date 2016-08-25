@@ -27,7 +27,7 @@
 class Annotation(object):
     """Librato Annotation Stream Base class"""
 
-    def __init__(self, connection, name, display_name=None ):
+    def __init__(self, connection, name, display_name=None):
         self.connection = connection
         self.name = name
         self.display_name = display_name
@@ -44,5 +44,5 @@ class Annotation(object):
         obj.query = data['query'] if 'query' in data else {}
         return obj
 
-    def get_payload(self):                                                                  
-        return {'name': self.name,'display_name': self.display_name}
+    def get_payload(self):
+        return {'name': self.name, 'display_name': self.display_name}

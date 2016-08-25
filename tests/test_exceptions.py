@@ -2,6 +2,7 @@ import logging
 import unittest
 from librato import exceptions
 
+
 class TestClientError(unittest.TestCase):
     def setUp(self):
         pass
@@ -19,57 +20,57 @@ class TestClientError(unittest.TestCase):
 
     def test_parse_error_message_request_scalar(self):
         error_resp = {
-          "errors": {
-            "request": "test error message"
-          }
+            "errors": {
+                "request": "test error message"
+            }
         }
         ex = exceptions.ClientError(400, error_resp)
         self.assertEqual("request: test error message", ex._parse_error_message())
 
     def test_parse_error_message_request(self):
         error_resp = {
-          "errors": {
-            "request": ["Not found"]
-          }
+            "errors": {
+                "request": ["Not found"]
+            }
         }
         ex = exceptions.ClientError(400, error_resp)
         self.assertEqual("request: Not found", ex._parse_error_message())
 
     def test_parse_error_message_request_multiple(self):
         error_resp = {
-          "errors": {
-            "request": ["Not found", "Another error"]
-          }
+            "errors": {
+                "request": ["Not found", "Another error"]
+            }
         }
         ex = exceptions.ClientError(400, error_resp)
         self.assertEqual("request: Not found, request: Another error", ex._parse_error_message())
 
     def test_parse_error_message_params(self):
         error_resp = {
-          "errors": {
-            "params": {"measure_time": ["too far in past"]}
-          }
+            "errors": {
+                "params": {"measure_time": ["too far in past"]}
+            }
         }
         ex = exceptions.ClientError(400, error_resp)
         self.assertEqual("params: measure_time: too far in past", ex._parse_error_message())
 
     def test_parse_error_message_params_multi_message(self):
         error_resp = {
-          "errors": {
-            "params": {"name": ["duplicate etc", "bad character etc"]}
-          }
+            "errors": {
+                "params": {"name": ["duplicate etc", "bad character etc"]}
+            }
         }
         ex = exceptions.ClientError(400, error_resp)
         self.assertEqual("params: name: duplicate etc, bad character etc", ex._parse_error_message())
 
     def test_parse_error_message_params_multiple(self):
         error_resp = {
-          "errors": {
-            "params": {
-              "measure_time": ["too far in past"],
-              "name": "mymetricname"
+            "errors": {
+                "params": {
+                    "measure_time": ["too far in past"],
+                    "name": "mymetricname"
+                }
             }
-          }
         }
         ex = exceptions.ClientError(400, error_resp)
         msg = ex._parse_error_message()
@@ -78,13 +79,13 @@ class TestClientError(unittest.TestCase):
 
     def test_parse_error_message_params_multiple_2nd_level(self):
         error_resp = {
-          "errors": {
-            "params": {
-              "conditions": {
-                "duration": ["must be set"]
-              }
+            "errors": {
+                "params": {
+                    "conditions": {
+                        "duration": ["must be set"]
+                    }
+                }
             }
-          }
         }
         ex = exceptions.ClientError(400, error_resp)
         msg = ex._parse_error_message()

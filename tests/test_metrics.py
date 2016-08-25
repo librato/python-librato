@@ -8,9 +8,10 @@ import librato
 import time
 from mock_connection import MockConnect, server
 
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 # Mock the server
 librato.HTTPSConnection = MockConnect
+
 
 class TestLibrato(unittest.TestCase):
     def setUp(self):
@@ -28,7 +29,7 @@ class TestLibrato(unittest.TestCase):
             # I don't care what the metrics are
             # this is about testing the logic and the calls
             result = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
-            return result[offset:length+offset]
+            return result[offset:length + offset]
 
         expected_call_list = [({'length': 5, 'offset': 0},),
                               ({'length': 5, 'offset': 5},),
@@ -182,7 +183,7 @@ class TestLibrato(unittest.TestCase):
     def test_md_submit(self):
         mt1 = int(time.time()) - 5
 
-        tags={'hostname': 'web-1'}
+        tags = {'hostname': 'web-1'}
         self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags)
 
         resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="hostname=web-1")
@@ -200,7 +201,7 @@ class TestLibrato(unittest.TestCase):
         mt1 = int(time.time()) - 5
 
         self.conn.set_tags({'company': 'Librato'})
-        tags={'hostname': 'web-1'}
+        tags = {'hostname': 'web-1'}
         self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags)
 
         # Ensure 'company' and 'hostname' tags made it through

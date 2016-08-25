@@ -1,5 +1,6 @@
 from librato.streams import Stream
 
+
 class Instrument(object):
     """Librato Instrument Base class"""
 
@@ -47,9 +48,9 @@ class Instrument(object):
     def save(self):
         if not self.is_persisted():
             dummy_inst = self.connection.create_instrument(
-                    self.name,
-                    attributes=self.attributes,
-                    streams=self.streams_payload())
+                self.name,
+                attributes=self.attributes,
+                streams=self.streams_payload())
             self.id = dummy_inst.id
         else:
             self.connection.update_instrument(self)

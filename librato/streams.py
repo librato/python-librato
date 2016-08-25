@@ -45,9 +45,8 @@ class Stream(object):
 
     def _attrs(self):
         return ['metric', 'source', 'composite', 'name',
-            'type', 'id', 'group_function', 'summary_function', 'transform_function', 'downsample_function',
-            'period', 'split_axis', 'min', 'max', 'units_short', 'units_long']
-
+                'type', 'id', 'group_function', 'summary_function', 'transform_function', 'downsample_function',
+                'period', 'split_axis', 'min', 'max', 'units_short', 'units_long']
 
     def get_payload(self):
         payload = {}
