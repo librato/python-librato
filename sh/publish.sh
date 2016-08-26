@@ -34,7 +34,7 @@ CHL_MSG=<<EOF
 * $MSG
 EOF
 
-cat setup.py            | ruby -ne 'puts $_.gsub(/version = \"[\d\.]+\"/, "version = \"" + ENV["_NEW"] + "\"" )'	> _tmp
+cat setup.py            | ruby -ne 'puts $_.gsub(/version=\"[\d\.]+\"/, "version=\"" + ENV["_NEW"] + "\"" )'	> _tmp
 mv _tmp setup.py
 cat librato/__init__.py | ruby -ne 'puts $_.gsub(/__version__ = \"[\d\.]+\"/,  "__version__ = \"" + ENV["_NEW"] + "\"")'  > _tmp
 mv _tmp librato/__init__.py
@@ -49,3 +49,5 @@ echo -ne "Hit <enter> to send new package to pypi; <ctrl+c> to cancel..."
 read
 
 python setup.py sdist upload
+git tag -a v$_NEW -m "new version $_NEW"
+git push origin --tags
