@@ -27,7 +27,7 @@ From your application or script:
 username (email address) and token (long hexadecimal string).
 
 ```python
-  api = librato.connect(user, token)
+  api = librato.connect('email', 'token')
 ```
 
 When creating your connection you may choose to provide a sanitization function.
@@ -36,7 +36,7 @@ sanitization function that will ensure your metrics are legal librato names.
 This can be set as such
 
 ```python
-  api = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
+  api = librato.connect('email', 'token', sanitizer=librato.sanitize_metric_name)
 ```
 
 By default no sanitization is done.
@@ -140,7 +140,7 @@ in batch mode. We push measurements that are stored and when we are
 ready, they will be submitted in an efficient manner. Here is an example:
 
 ```python
-api = librato.connect(user, token)
+api = librato.connect('email', 'token')
 q   = api.new_queue()
 q.add('temperature', 22.1, source='upstairs')
 q.add('temperature', 23.1, source='dowstairs')
@@ -156,7 +156,7 @@ submit the first measurement as it was the only one successfully added.
 If the operation succeeds both measurements will be submitted.
 
 ```python
-api = librato.connect(user, token)
+api = librato.connect('email', 'token')
 with api.new_queue() as q:
     q.add('temperature', 22.1, source='upstairs')
     potentially_dangerous_operation()
@@ -167,7 +167,7 @@ Queues by default will collect metrics until they are told to submit. You may cr
 that autosubmits based on metric volume.
 
 ```python
-api = librato.connect(user, token)
+api = librato.connect('email', 'token')
 # Submit when the 400th metric is queued
 q = api.new_queue(auto_submit_count=400)
 ```
@@ -178,7 +178,7 @@ You can update the information for a metric by using the `update` method,
 for example:
 
 ```python
-api = librato.connect(user, token)
+api = librato.connect('email', 'token')
 for metric in api.list_metrics(name=" "):
   gauge = api.get(metric.name)
   attrs = gauge.attributes
@@ -199,7 +199,7 @@ Multidimensional measurements can be submitted to Librato using the `submit_tagg
 a measurement with `hostname` and `company` tags.
 
 ```
-  api = librato.connect(user, token)
+  api = librato.connect('email', 'token')
   api.submit_tagged("connections", 20, tags={'hostname': 'web-host-1', 'company': 'Librato'})
 ```
 
@@ -207,7 +207,7 @@ Multidimensional measurements can be submitted in batch mode using Queue's `add_
 optional `tags` dictionary argument.
 
 ```
-  api = librato.connect(user, token)
+  api = librato.connect('email', 'token')
   q   = api.new_queue()
   q.add_tagged("connections", 30, tags={'hostname': 'web-host-1', 'company': 'Librato'})
 ```
@@ -228,7 +228,7 @@ The following example shows how to attach a `hostname` top-level tag to a Connec
 up with both `hostname` and a `company` tags.
 
 ```
-  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
+  api = librato.connect('email', 'token', tags={'hostname': 'web-host-1'})
   api.submit_tagged("connections", 30, tags={'company': 'Librato'})
 ```
 
@@ -237,7 +237,7 @@ the Queue instance will inherit `hostname` as a top-level tag from the Connecton
 will also end up with 'hostname' and 'company' tags.
 
 ```
-  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
+  api = librato.connect('email', 'token', tags={'hostname': 'web-host-1'})
   q = api.new_queue()
   q.add_tagged("connections", 30, tags={'company': 'Librato'})
 ```
@@ -246,7 +246,7 @@ Top-level tag sets can be updated using `add_tags()` and replaced entirely using
 example below. The Queue class follows an identical pattern.
 
 ```
-  api = librato.connect(user, token, tags={'hostname': 'web-host-1'})
+  api = librato.connect('email', 'token', tags={'hostname': 'web-host-1'})
   api.add_tags({'company': 'Librato'})        # Top-level tag set now has 'company' and 'hostname'
   api.set_tags({'hostname': 'web-host-2'})    # Top-level tag set only has 'hostname'
 ```
@@ -506,7 +506,7 @@ Aggregator instances can be sent immediately by calling `submit()` or added to a
 ```python
 from librato.aggregator import Aggregator
 
-api = librato.connect(email, token)
+api = librato.connect('email', 'token')
 
 a = Aggregator(api)
 a.add("foo", 42)
