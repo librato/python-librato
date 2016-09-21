@@ -468,25 +468,6 @@ q.add_aggregator(a)
 q.submit()
 ```
 
-### Multidimensional Aggregator measurements
-
-Tags can be associated with an Aggregator instance, much like Connection and Queue (see Multidimensional metric data streams
-above), and aggregated using `add_tagged()`.
-
-```
-a = Aggregator(api, measure_time=1419302671, tags={'hostname': 'web-host-1'})
-a.add_tagged('foo', 5)
-```
-
-Note that tagged measurements and untagged ones (aggregated using `add()`) are tracked separately by Aggregator, and submitted
-to the respective metric backends.
-
-```
-a = Aggregator(api, measure_time=1419302671, tags={'hostname': 'web-host-1'})
-a.add('foo', 5)           # Adds untagged measurement 'foo' to the aggregator
-a.add_tagged('foo', 5)    # Adds a different tagged measurement called 'foo'
-```
-
 ## Misc
 
 ### Timeouts
