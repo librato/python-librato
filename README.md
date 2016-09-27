@@ -62,7 +62,7 @@ Let's now create a Metric:
 By default ```submit()``` will create a gauge metric. The metric will be
 created automatically by the server if it does not exist
 
-To create a counter metric:
+To create a counter metric (note: counters are expected to be *absolute* counters and take a monotonically increasing value such as network throughput):
 
 ```python
   api.submit("connections", 20, type="counter", description="server connections")
@@ -78,14 +78,33 @@ To iterate over your metric names:
 To retrieve a specific metric:
 
 ```python
+  # Retrieve metric metadata ONLY
   gauge = api.get("temperature")
+  gauge.name # "temperature"
+  gauge.description # "temperature at home"
+  gauge.measurements # {}
+  # Retrive metric with the last measurement seen
+  gauge = api.get("temperature", count=1, resolution=1)
+  gauge.measurements
+  # {u'unassigned': [{u'count': 1, u'sum_squares': 100.0, u'min': 10.0, u'measure_time': 1474988647, u'max': 10.0, u'sum': 10.0, u'value': 10.0}]}
 ```
 
-Delete a metric:
+Iterate over measurements:
 
 ```python
-  api.delete("temperature")
+  metric = api.get("temperature", count=100, resolution=1)
+  source = 'unassigned'
+  for m in metric.measurements[source]:
+    print "%s: %s" % (m['value'], m['measure_time'])
 ```
+
+Notice a couple of things here. First, we are using the key `unassigned` since
+we have not associated our measurements to any source. If we had specified a
+source such as `sf` we could use it in the same fashion. Read more the
+[API documentation](https://www.librato.com/docs/api/). In addition, notice how
+we are passing the count and resolution parameters to make sure the API
+returns measurements in its answer and not only the metric properties.
+Read more about them [here](https://www.librato.com/docs/api/#retrieve-metric-by-name).
 
 To retrieve a composite metric:
 
@@ -114,22 +133,11 @@ To create a saved composite metric:
       description='a test composite')
 ```
 
-Iterate over measurements:
+Delete a metric:
 
 ```python
-  metric = api.get("temperature", count=100, resolution=1)
-  source = 'unassigned'
-  for m in metric.measurements[source]:
-    print "%s: %s" % (m['value'], m['measure_time'])
+  api.delete("temperature")
 ```
-
-Notice a couple of things here. First, we are using the key `unassigned` since
-we have not associated our measurements to any source. If we had specified a
-source such as `sf` we could use it in the same fashion. Read more the
-[API documentation](https://www.librato.com/docs/api/). In addition, notice how
-we are passing the count and resolution parameters to make sure the API
-returns measurements in its answer and not only the metric properties.
-Read more about them [here](https://www.librato.com/docs/api/#retrieve-metric-by-name).
 
 ## Sending measurements in batch mode
 
