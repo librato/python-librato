@@ -446,6 +446,7 @@ a = Aggregator(api)
 a.add("foo", 42)
 a.add("foo", 5)
 # count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
+# measure_time = <now>
 a.submit()
 
 a = Aggregator(api, source='my.source', period=60)
