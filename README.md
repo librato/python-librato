@@ -460,7 +460,7 @@ a = Aggregator(api, period=60, measure_time=1419302671)
 a.add("foo", 42)
 a.add("foo", 5)
 # count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
-# measure_time = <now> - (<now> % 60) = 1419302640
+# measure_time = 1419302671 - (1419302671 % 60) = 1419302671 - 31 = 1419302640
 a.submit()
 
 a = Aggregator(api, measure_time=1419302671)
