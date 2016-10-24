@@ -38,6 +38,11 @@ class TestLibratoBase(unittest.TestCase):
         token = os.environ.get('LIBRATO_TOKEN')
         """Initialize the Librato Connection"""
         assert user and token, "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
+        are_you_sure = os.environ.get('LIBRATO_ALLOW_INTEGRATION_TESTS')
+        assert are_you_sure, "THESE TESTS WILL DELETE METRICS!!! If you are absolutely " \
+            "sure that you want to run tests in %s, please set " \
+            "LIBRATO_ALLOW_INTEGRATION_TESTS" % user
+
         cls.conn = librato.connect(user, token)
         cls.conn_sanitize = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
 
