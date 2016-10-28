@@ -58,6 +58,21 @@ class TestLibratoAlerts(unittest.TestCase):
         assert len(alert.conditions) == 0
         assert alert.services[0]._id == 1
 
+    def test_adding_a_new_alert_with_a_service_param(self):
+        alert = self.conn.create_alert(self.name, services=[librato.alerts.Service(1)])
+        assert len(alert.services) == 1
+        assert len(alert.conditions) == 0
+        assert alert.services[0]._id == 1
+
+    def test_adding_a_new_alert_with_a_condition_param(self):
+        cond = librato.alerts.Condition(1)
+        cond = cond.above(200, 'average')
+        cond.duration(5)
+        alert = self.conn.create_alert(self.name, conditions=[cond])
+        assert len(alert.services) == 0
+        assert len(alert.conditions) == 1
+        assert alert.conditions[0].metric_name == 1
+
     def test_add_above_condition(self):
         alert = self.conn.create_alert(self.name)
         alert.add_condition_for('metric_test').above(200, 'average').duration(5)

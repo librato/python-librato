@@ -118,13 +118,13 @@ class Condition(object):
     def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
                   source=data['source'])
-        if data['type'] == Condition.ABOVE:
+        if data['condition_type'] == Condition.ABOVE:
             obj.above(data.get('threshold'), data.get('summary_function'))
             obj.duration(data.get('duration'))
-        elif data['type'] == Condition.BELOW:
+        elif data['condition_type'] == Condition.BELOW:
             obj.below(data.get('threshold'), data.get('summary_function'))
             obj.duration(data.get('duration'))
-        elif data['type'] == Condition.ABSENT:
+        elif data['condition_type'] == Condition.ABSENT:
             obj.stops_reporting_for(data.get('duration'))
         return obj
 

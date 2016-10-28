@@ -420,6 +420,10 @@ class LibratoConnection(object):
         """Create a new alert"""
         payload = Alert(self, name).get_payload()
         for k, v in query_props.items():
+            if k == "services":
+                v = [item._id for item in v]
+            elif isinstance(v, list):
+                v = [item.get_payload() for item in v]
             payload[k] = v
         resp = self._mexe("alerts", method="POST", query_props=payload)
         return Alert.from_dict(self, resp)
