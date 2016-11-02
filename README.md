@@ -417,6 +417,17 @@ for service in api.list_services():
     print(service._id, service.title, service.settings)
 ```
 
+Create an alert with Service IDs
+```python
+alert = api.create_alert("name", services=[1234, 5678])
+```
+
+Create an alert with Service objects
+```python
+s = api.list_services()
+alert = api.create_alert("name", services=[s[0], s[1]])
+```
+
 Add an outbound service to an alert:
 ```python
 alert = api.create_alert("name")
