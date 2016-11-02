@@ -418,9 +418,7 @@ class LibratoConnection(object):
     #
     def create_alert(self, name, **query_props):
         """Create a new alert"""
-        payload = Alert(self, name).get_payload()
-        for k, v in query_props.items():
-            payload[k] = v
+        payload = Alert(self, name, **query_props).get_payload()
         resp = self._mexe("alerts", method="POST", query_props=payload)
         return Alert.from_dict(self, resp)
 

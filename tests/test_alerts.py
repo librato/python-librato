@@ -51,12 +51,20 @@ class TestLibratoAlerts(unittest.TestCase):
         self.conn.delete_alert('say_my_wrong_name')
         assert self.conn.get_alert('say_my_name') is not None
 
-    def test_adding_a_new_alert_with_a_service(self):
+    def test_create_alert_with_service_id(self):
         alert = self.conn.create_alert(self.name)
-        alert.add_service(1)
-        assert len(alert.services) == 1
-        assert len(alert.conditions) == 0
-        assert alert.services[0]._id == 1
+        service_id = 1234
+        alert.add_service(service_id)
+        self.assertEqual(len(alert.services), 1)
+        self.assertEqual(len(alert.conditions), 0)
+        self.assertEqual(alert.services[0]._id, service_id)
+
+    def test_create_alert_with_service_obj(self):
+        service = librato.alerts.Service(1234)
+        alert = self.conn.create_alert(self.name, services=[service])
+        self.assertEqual(len(alert.services), 1)
+        self.assertEqual(len(alert.conditions), 0)
+        self.assertEqual(alert.services[0]._id, service._id)
 
     def test_add_above_condition(self):
         alert = self.conn.create_alert(self.name)
