@@ -117,7 +117,7 @@ class Condition(object):
     @classmethod
     def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
-                  source=data['source'])
+                  source=data.get('source', '*'))
         if data['type'] == Condition.ABOVE:
             obj.above(data.get('threshold'), data.get('summary_function'))
             obj.duration(data.get('duration'))

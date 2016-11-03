@@ -14,30 +14,51 @@ class TestLibratoAlerts(unittest.TestCase):
         server.clean()
 
     def test_list_alerts_when_none(self):
-        ins = self.conn.list_alerts()
-        assert len(ins) == 0
+        alerts = self.conn.list_alerts()
+        self.assertEqual(len(alerts), 0)
 
-    def test_adding_a_new_alert_without_services_or_conditions(self):
+    def test_create_alert_without_services_or_conditions(self):
         alert = self.conn.create_alert(self.name)
-        assert type(alert) == librato.Alert
-        assert alert.name == self.name
-        assert alert._id != 0
-        assert len(alert.services) == 0
-        assert len(alert.conditions) == 0
-        assert len(self.conn.list_alerts()) == 1
+        self.assertIsInstance(alert, librato.Alert)
+        self.assertEqual(alert.name, self.name)
+        self.assertNotEqual(alert._id, 0)
+        self.assertEqual(len(alert.services), 0)
+        self.assertEqual(len(alert.conditions), 0)
+        self.assertEqual(len(self.conn.list_alerts()), 1)
 
     def test_adding_an_alert_with_description(self):
         alert = self.conn.create_alert(self.name, description="test_description")
-        assert alert.description == "test_description"
+        self.assertEqual(alert.description, "test_description")
 
-    def test_adding_a_new_alert_with_a_condition(self):
+    def test_create_alert_with_conditions(self):
+        cond = {'metric_name': 'cpu', 'type': 'above', 'threshold': 42}
+        alert = self.conn.create_alert(self.name, conditions=[cond])
+        self.assertEqual(len(alert.conditions), 1)
+        self.assertEqual(alert.conditions[0].metric_name, 'cpu')
+        self.assertEqual(alert.conditions[0].condition_type, 'above')
+        self.assertEqual(alert.conditions[0].threshold, 42)
+
+    def test_create_alert_with_add_condition(self):
         alert = self.conn.create_alert(self.name)
         alert.add_condition_for('cpu').above(200)
-        assert len(alert.services) == 0
-        assert len(alert.conditions) == 1
-        assert alert.conditions[0].condition_type == 'above'
-        assert alert.conditions[0].metric_name == 'cpu'
-        assert alert.conditions[0].threshold == 200
+        self.assertEqual(len(alert.conditions), 1)
+        self.assertEqual(alert.conditions[0].condition_type, 'above')
+        self.assertEqual(alert.conditions[0].metric_name, 'cpu')
+        self.assertEqual(alert.conditions[0].threshold, 200)
+
+    def test_create_alert_with_condition_obj(self):
+        c1 = librato.alerts.Condition('cpu', 'web*').above(42)
+        c2 = librato.alerts.Condition('mem').below(99)
+        alert = self.conn.create_alert(self.name, conditions=[c1, c2])
+        self.assertEqual(len(alert.conditions), 2)
+        self.assertEqual(alert.conditions[0].metric_name, 'cpu')
+        self.assertEqual(alert.conditions[0].source, 'web*')
+        self.assertEqual(alert.conditions[0].condition_type, 'above')
+        self.assertEqual(alert.conditions[0].threshold, 42)
+        self.assertEqual(alert.conditions[1].metric_name, 'mem')
+        self.assertEqual(alert.conditions[1].source, '*')
+        self.assertEqual(alert.conditions[1].condition_type, 'below')
+        self.assertEqual(alert.conditions[1].threshold, 99)
 
     def test_deleting_an_alert(self):
         alert = self.conn.create_alert(self.name)
