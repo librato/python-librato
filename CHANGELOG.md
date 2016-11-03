@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 2.0.1
+* Fix Alert issues in #142
+
 ### Version 2.0.0
 * Multi Dimension support
 * pep8 compliant
