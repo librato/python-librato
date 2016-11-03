@@ -117,7 +117,7 @@ class Condition(object):
     @classmethod
     def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
-                  source=data['source'])
+                  source=data.get('source', '*'))
         if data['type'] == Condition.ABOVE:
             obj.above(data.get('threshold'), data.get('summary_function'))
             obj.duration(data.get('duration'))
@@ -129,16 +129,15 @@ class Condition(object):
         return obj
 
     def get_payload(self):
-        obj = {'condition_type': self.condition_type,
-               'metric_name': self.metric_name,
-               'source': self.source}
+        obj = {
+            'type': self.condition_type,
+            'metric_name': self.metric_name,
+            'source': self.source,
+            'summary_function': self.summary_function,
+            'duration': self._duration
+        }
         if self.condition_type in [self.ABOVE, self.BELOW]:
             obj['threshold'] = self.threshold
-            obj['summary_function'] = self.summary_function
-            obj['duration'] = self._duration
-        elif self.condition_type == self.ABSENT:
-            obj['summary_function'] = self.summary_function
-            obj['duration'] = self._duration
         return obj
 
 

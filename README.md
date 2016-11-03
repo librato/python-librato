@@ -383,53 +383,72 @@ for alert in api.list_alerts():
     print(alert.name)
 ```
 
-Create alerts with an _above_ condition:
+Create an alert with an _above_ condition:
 ```python
-alert = api.create_alert("name")
+alert = api.create_alert('my.alert')
 alert.add_condition_for('metric_name').above(1) # trigger immediately
 alert.add_condition_for('metric_name').above(1).duration(60) # trigger after a set duration
 alert.add_condition_for('metric_name').above(1, 'sum') # custom summary function
 alert.save()
 ```
 
-Create alerts with a _below_ condition:
+Create an alert with a _below_ condition:
 ```python
-api.create_alert("name")
+alert = api.create_alert('my.alert', description='An alert description')
 alert.add_condition_for('metric_name').below(1) # the same syntax as above conditions
 alert.save()
 ```
 
-Create alerts with an _absent_ condition:
+Create an alert with an _absent_ condition:
 ```python
-api.create_alert("name")
+alert = api.create_alert('my.alert')
 alert.add_condition_for('metric_name').stops_reporting_for(5) # duration in minutes of the threshold to trigger the alert
 alert.save()
 ```
 
-Add a description to an alert (default description is empty):
+Restrict the condition to a specific source (default is `*`):
 ```python
-api.create_alert("name", description='An alert description')
+alert = api.create_alert('my.alert')
+alert.add_condition_for('metric_name', 'mysource')
+alert.save()
 ```
 
-View all outbound services created by the user. The service ID is included in the response.
+View all outbound services for the current user
 ```python
 for service in api.list_services():
     print(service._id, service.title, service.settings)
 ```
 
+Create an alert with Service IDs
+```python
+alert = api.create_alert('my.alert', services=[1234, 5678])
+```
+
+Create an alert with Service objects
+```python
+s = api.list_services()
+alert = api.create_alert('my.alert', services=[s[0], s[1]])
+```
+
 Add an outbound service to an alert:
 ```python
-alert = api.create_alert("name")
-alert.add_service("service ID")
+alert = api.create_alert('my.alert')
+alert.add_service(1234)
 alert.save()
 ```
 
-To restrict the alert to a specific source (default is `*`):
+Put it all together:
 ```python
-api.create_alert("name")
-alert.add_condition_for('metric_name', source='source name')
-alert.save()
+cond = {'metric_name': 'cpu', 'type': 'above', 'threshold': 42}
+s = api.list_services()
+api.create_alert('my.alert', conditions=[cond], services=[s[0], s[1]])
+# We have an issue at the API where conditions and services are not returned
+# when creating. So, retrieve back from API
+alert = api.get_alert('my.alert')
+print(alert.conditions)
+print(alert.services)
 ```
+
 
 ## Client-side Aggregation
 
