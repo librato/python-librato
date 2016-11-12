@@ -164,32 +164,32 @@ class TestLibratoQueue(unittest.TestCase):
         assert gauge.measurements['unassigned'][0]['value'] == 22.1
         assert gauge.measurements['unassigned'][1]['value'] == 23
 
-    def test_submit_tons_of_measurement_batch_mode(self):
-        q = self.q
-        metrics = self.conn.list_metrics()
-        assert len(metrics) == 0
+    # def test_submit_tons_of_measurement_batch_mode(self):
+    #     q = self.q
+    #     metrics = self.conn.list_metrics()
+    #     assert len(metrics) == 0
 
-        for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            q.add('temperature', t)
-        q.submit()
-        metrics = self.conn.list_metrics()
-        assert len(metrics) == 1
-        gauge = self.conn.get('temperature', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
-        assert gauge.name == 'temperature'
-        assert gauge.description is None
-        for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            assert gauge.measurements['unassigned'][t - 1]['value'] == t
+    #     for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
+    #         q.add('temperature', t)
+    #     q.submit()
+    #     metrics = self.conn.list_metrics()
+    #     assert len(metrics) == 1
+    #     gauge = self.conn.get('temperature', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
+    #     assert gauge.name == 'temperature'
+    #     assert gauge.description is None
+    #     for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
+    #         assert gauge.measurements['unassigned'][t - 1]['value'] == t
 
-        for cl in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            q.add('cpu_load', cl)
-        q.submit()
-        metrics = self.conn.list_metrics()
-        assert len(metrics) == 2
-        gauge = self.conn.get('cpu_load', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
-        assert gauge.name == 'cpu_load'
-        assert gauge.description is None
-        for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            assert gauge.measurements['unassigned'][t - 1]['value'] == t
+    #     for cl in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
+    #         q.add('cpu_load', cl)
+    #     q.submit()
+    #     metrics = self.conn.list_metrics()
+    #     assert len(metrics) == 2
+    #     gauge = self.conn.get('cpu_load', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
+    #     assert gauge.name == 'cpu_load'
+    #     assert gauge.description is None
+    #     for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
+    #         assert gauge.measurements['unassigned'][t - 1]['value'] == t
 
     def test_add_aggregator(self):
         q = self.q
@@ -278,28 +278,6 @@ class TestLibratoQueue(unittest.TestCase):
 
         assert measurements[0]['time'] == mt1
         assert measurements[0]['value'] == 33.22
-
-    def test_side_by_side(self):
-        # Ensure tagged and untagged measurements are handled independently
-        q = self.conn.new_queue(tags={'hostname': 'web-1'})
-
-        q.add('system_cpu', 10)
-        q.add_tagged('system_cpu', 20)
-        q.submit()
-
-        resp = self.conn.get('system_cpu', duration=60)
-
-        gauge = self.conn.get('system_cpu', duration=60)
-        assert gauge.name == 'system_cpu'
-        assert len(gauge.measurements['unassigned']) == 1
-        assert gauge.measurements['unassigned'][0]['value'] == 10
-
-        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
-        assert len(resp['series']) == 1
-
-        measurements = resp['series'][0]['measurements']
-        assert len(measurements) == 1
-        assert measurements[0]['value'] == 20
 
     def test_md_auto_submit_on_metric_count(self):
         q = self.conn.new_queue(auto_submit_count=2)

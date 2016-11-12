@@ -35,7 +35,7 @@ import json
 import email.message
 from librato import exceptions
 from librato.queue import Queue
-from librato.metrics import Gauge, Counter
+from librato.metrics import Gauge
 from librato.alerts import Alert, Service
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
@@ -246,63 +246,81 @@ class LibratoConnection(object):
             if len(metric_list) < page_size:
                 break
 
-    def submit(self, name, value, type="gauge", **query_props):
-        payload = {'gauges': [], 'counters': []}
-        metric = {'name': self.sanitize(name), 'value': value}
-        for k, v in query_props.items():
-            metric[k] = v
-        payload[type + 's'].append(metric)
-        self._mexe("metrics", method="POST", query_props=payload)
-
-    def submit_tagged(self, name, value, **query_props):
+    def submit(self, name, value, **query_props):
+        """Submit a measurement (with tags)"""
         payload = {'measurements': []}
         if self.tags:
             payload['tags'] = self.tags
-        metric = {'name': self.sanitize(name), 'sum': value, 'count': 1}
-
+        measurement = {
+            'name': self.sanitize(name),
+            'value': value
+        }
         for k, v in query_props.items():
-            metric[k] = v
-        payload['measurements'].append(metric)
-        self._mexe("measurements", method="POST", query_props=payload)
+            measurement[k] = v
+        payload['measurements'].append(measurement)
+        resp = self._mexe("measurements", method="POST", query_props=payload)
+        return resp
 
-    def get(self, name, **query_props):
-        resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
+    def get_metric(self, name, **query_props):
+        """Get metric metadata (not measurements)"""
+        resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET"
+            , query_props=query_props)
         if resp['type'] == 'gauge':
             return Gauge.from_dict(self, resp)
-        elif resp['type'] == 'counter':
-            return Counter.from_dict(self, resp)
         else:
-            raise Exception('The server sent me something that is not a Gauge nor a Counter.')
+            raise Exception('Unknown metric type')
 
-    def get_tagged(self, name, **query_props):
-        """Fetches multi-dimensional metrics"""
+    # Convert tags={'host': 'foo', 'bar': 'baz'} to 
+    # {'tags[host]': 'foo', 'tags[bar]': 'baz'}
+    # *Really* not happy having to do this to parse a query string
+    # But don't want to add a dependency such as:
+    # https://github.com/uber/multidimensional_urlencode
+    # and don't need multi-level nesting here
+    # Note, Ruby libraries such as Faraday seem to just handle this :(
+    def _parse_tags_params(self, tags):
+        result = {}
+        for k,v in tags.items():
+            result["tags[%s]" % k] = v
+        return result
+
+    def get(self, name, **query_props):
+        """Fetch tagged measurements"""
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
         if 'start_time' not in query_props and 'duration' not in query_props:
-            raise Exception("You must provide 'start_time' or 'duration'")
+            raise Exception("Please provide a 'start_time' or 'duration'")
         if 'start_time' in query_props and 'end_time' in query_props and 'duration' in query_props:
-            raise Exception("It is an error to set 'start_time', 'end_time' and 'duration'")
+            raise Exception("'start_time', 'end_time' and 'duration' cannot all be set")
+        if 'tags' in query_props:
+            # TODO: this could probably be way better
+            parsed_tags = self._parse_tags_params(query_props.pop('tags'))
+            query_props.update(parsed_tags)
+
         return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
 
     def get_composite(self, compose, **query_props):
+        """Get a composite result"""
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
         if 'start_time' not in query_props:
             raise Exception("You must provide a 'start_time'")
         query_props['compose'] = compose
-        return self._mexe("metrics", method="GET", query_props=query_props)
+        return self._mexe("measurements", method="GET", query_props=query_props)
 
     def create_composite(self, name, compose, **query_props):
+        """Create a composite"""
         query_props['composite'] = compose
         query_props['type'] = 'composite'
         return self.update(name, **query_props)
 
     def update(self, name, **query_props):
+        """Update a metric"""
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
 
     def delete(self, names):
+        """Delete a metric"""
         if isinstance(names, six.string_types):
             names = self.sanitize(names)
         else:
@@ -313,7 +331,6 @@ class LibratoConnection(object):
             payload = {'names': names}
             path = "metrics"
         return self._mexe(path, method="DELETE", query_props=payload)
-
 
     #
     # Annotations
