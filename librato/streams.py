@@ -14,7 +14,6 @@ class Stream(object):
         self.source = source
         # Spaces API
         self.composite = composite
-        # For instrument compatibility
         self.name = name
         self.type = type
         self.id = id
