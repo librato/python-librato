@@ -249,12 +249,15 @@ class LibratoConnection(object):
                 break
 
     def submit(self, name, value, type="gauge", **query_props):
-        payload = {'gauges': [], 'counters': []}
-        metric = {'name': self.sanitize(name), 'value': value}
-        for k, v in query_props.items():
-            metric[k] = v
-        payload[type + 's'].append(metric)
-        self._mexe("metrics", method="POST", query_props=payload)
+        if 'tags' in query_props:
+            self.submit_tagged(name, value, **query_props)
+        else:
+            payload = {'gauges': [], 'counters': []}
+            metric = {'name': self.sanitize(name), 'value': value}
+            for k, v in query_props.items():
+                metric[k] = v
+            payload[type + 's'].append(metric)
+            self._mexe("metrics", method="POST", query_props=payload)
 
     def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
