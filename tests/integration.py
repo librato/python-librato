@@ -34,10 +34,21 @@ logging.basicConfig(level=logging.INFO)
 class TestLibratoBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        """ Auth """
         user = os.environ.get('LIBRATO_USER')
         token = os.environ.get('LIBRATO_TOKEN')
-        """Initialize the Librato Connection"""
         assert user and token, "Must set LIBRATO_USER and LIBRATO_TOKEN to run tests"
+        print "%s and %s" % (user, token)
+
+        """ Ensure user really wants to run these tests """
+        are_you_sure = os.environ.get('LIBRATO_ALLOW_INTEGRATION_TESTS')
+        assert are_you_sure == 'Y', "INTEGRATION TESTS WILL DELETE METRICS " \
+            "IN YOUR ACCOUNT!!! " \
+            "If you are absolutely sure that you want to run tests "\
+            "against %s, please set LIBRATO_ALLOW_INTEGRATION_TESTS "\
+            "to 'Y'" % user
+
+        """Initialize the Librato Connection"""
         cls.conn = librato.connect(user, token)
         cls.conn_sanitize = librato.connect(user, token, sanitizer=librato.sanitize_metric_name)
 
