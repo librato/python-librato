@@ -69,12 +69,12 @@ def dump(h):
     print json.dumps(h, indent=4, separators=(',', ': '))
 
 def get(metric_name, api):
-    print "--- SD ---"
+    print "--- SD ---: https://metrics.librato.com/s/spaces/340598?duration=1800"
     m = api.get(metric_name, count=10, duration=300, resolution=1)
     for s in m.measurements.keys():
         print s, len(m.measurements[s])
 
-    print "--- MD ---"
+    print "--- MD ---: https://metrics.librato.com/s/spaces/340599?duration=300&tag_set=%5B%7B%22name%22%3A%22city%22%2C%22grouped%22%3Afalse%2C%22values%22%3A%5B%22%2A%22%5D%7D%5D"
     resp = api.get_tagged(metric_name + "_MD", duration=300)
     for s in resp['series']:
         print s['tags'], len(s['measurements'])
