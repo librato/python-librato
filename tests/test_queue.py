@@ -315,6 +315,25 @@ class TestLibratoQueue(unittest.TestCase):
         resp = self.conn.get_tagged('tagged_cpu', duration=60, tags_search="hostname=web-2")
         assert len(resp['series']) == 1
 
+    def test_transparent_submit_md(self):
+        q = self.q
+        tags = {'hostname': 'web-1'}
+
+        mt1 = int(time.time()) - 5
+        q.add('system_cpu', 3.2, time=mt1, tags=tags)
+        assert q._num_measurements_in_queue() == 1
+        q.submit()
+
+        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
+
+        assert len(resp['series']) == 1
+        assert resp['series'][0].get('tags', {}) == {'hostname': 'web-1'}
+
+        measurements = resp['series'][0]['measurements']
+        assert len(measurements) == 1
+
+        assert measurements[0]['time'] == mt1
+        assert measurements[0]['value'] == 3.2
 
 if __name__ == '__main__':
     unittest.main()
