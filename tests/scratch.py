@@ -45,9 +45,10 @@ def test_queue(metric_name, api):
     a(metric_name, rand(), source="barcelona")
     a(metric_name, rand(), source="madrid")
 
-    at(metric_name + "_MD", rand(), tags={'city': 'sf', 'station': '1'})
-    at(metric_name + "_MD", rand(), tags={'city': 'new york', 'station': '1'})
-    at(metric_name + "_MD", rand(), tags={'city': 'austin', 'station': '1'})
+    # Use regular submit with tags
+    a(metric_name + "_MD", rand(), tags={'city': 'sf', 'station': '1'})
+    a(metric_name + "_MD", rand(), tags={'city': 'new york', 'station': '1'})
+    a(metric_name + "_MD", rand(), tags={'city': 'austin', 'station': '1'})
 
     q.submit()
 
@@ -59,6 +60,7 @@ def send(metric_name, api):
     s(metric_name, rand(), source="barcelona", description= "temp SD")
     s(metric_name, rand(), source="madrid", description= "temp SD")
 
+    # Use transparent submit
     s(metric_name + "_MD", rand(), tags={'city': 'sf', 'station': '1'})
     s(metric_name + "_MD", rand(), tags={'city': 'new york', 'station': '12'})
     s(metric_name + "_MD", rand(), tags={'city': 'austin', 'station': '27'})
