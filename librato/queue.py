@@ -63,15 +63,18 @@ class Queue(object):
         self.tags.update(d)
 
     def add(self, name, value, type='gauge', **query_props):
-        nm = {}  # new measurement
-        nm['name'] = self.connection.sanitize(name)
-        nm['value'] = value
+        if 'tags' in query_props:
+            self.add_tagged(name, value, **query_props)
+        else:
+            nm = {}  # new measurement
+            nm['name'] = self.connection.sanitize(name)
+            nm['value'] = value
 
-        for pn, v in query_props.items():
-            nm[pn] = v
+            for pn, v in query_props.items():
+                nm[pn] = v
 
-        self._add_measurement(type, nm)
-        self._auto_submit_if_necessary()
+            self._add_measurement(type, nm)
+            self._auto_submit_if_necessary()
 
     def add_tagged(self, name, value, **query_props):
         nm = {}  # new measurement

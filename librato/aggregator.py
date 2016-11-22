@@ -135,7 +135,7 @@ class Aggregator(object):
         # }
 
         body = []
-        for metric_name in self.measurements:
+        for metric_name in self.tagged_measurements:
             # Create a clone so we don't change self.tagged_measurements
             vals = dict(self.tagged_measurements[metric_name])
             vals["name"] = metric_name

@@ -216,6 +216,22 @@ class TestLibrato(unittest.TestCase):
             assert measurements[0]['time'] == mt1
             assert measurements[0]['value'] == 20.2
 
+    def test_submit_transparent_tagging(self):
+        mt1 = int(time.time()) - 5
+
+        tags = {'hostname': 'web-1'}
+        self.conn.submit('user_cpu', 20.2, time=mt1, tags=tags)
+
+        resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="hostname=web-1")
+
+        assert len(resp['series']) == 1
+        assert resp['series'][0].get('tags', {}) == tags
+
+        measurements = resp['series'][0]['measurements']
+        assert len(measurements) == 1
+
+        assert measurements[0]['time'] == mt1
+        assert measurements[0]['value'] == 20.2
 
 if __name__ == '__main__':
     unittest.main()
