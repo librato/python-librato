@@ -72,7 +72,7 @@ We can use tags in the submit method in order to associate key value pairs with 
 measurements:
 
 ```python
-    s("temperature", 22, tags={'city': 'austin', 'station': '27'})
+    api.submit("temperature", 22, tags={'city': 'austin', 'station': '27'})
 ```
 
 To iterate over your metric names:
