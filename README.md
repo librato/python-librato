@@ -68,6 +68,13 @@ To create a counter metric (note: counters are expected to be *absolute* counter
   api.submit("connections", 20, type="counter", description="server connections")
 ```
 
+We can use tags in the submit method in order to associate key value pairs with our
+measurements:
+
+```python
+    s("temperature", 22, tags={'city': 'austin', 'station': '27'})
+```
+
 To iterate over your metric names:
 
 ```python
@@ -178,6 +185,17 @@ that autosubmits based on metric volume.
 api = librato.connect('email', 'token')
 # Submit when the 400th metric is queued
 q = api.new_queue(auto_submit_count=400)
+```
+
+Queues also support tags. When adding measurements to a queue, we can associate tags to them
+in the same way we do with the submit method:
+
+```python
+    q = api.new_queue()
+    q.add('temperature', 12, tags={'city': 'sf'      , 'station': '12'})
+    q.add('temperature', 14, tags={'city': 'new york', 'station': '1'})
+    q.add('temperature', 22, tags={'city': 'austin'  , 'station': '112'})
+    q.submit()
 ```
 
 ## Updating Metric Attributes
