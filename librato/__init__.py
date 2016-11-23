@@ -261,13 +261,18 @@ class LibratoConnection(object):
 
     def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
+
         if self.tags:
             payload['tags'] = self.tags
-        metric = {'name': self.sanitize(name), 'sum': value, 'count': 1}
 
+        measurement = {
+            'name': self.sanitize(name),
+            'value': value
+        }
         for k, v in query_props.items():
-            metric[k] = v
-        payload['measurements'].append(metric)
+            measurement[k] = v
+
+        payload['measurements'].append(measurement)
         self._mexe("measurements", method="POST", query_props=payload)
 
     def get(self, name, **query_props):
