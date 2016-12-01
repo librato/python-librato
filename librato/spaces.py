@@ -91,7 +91,7 @@ class Space(object):
         if self.persisted():
             return self.connection.update_space(self)
         else:
-            s = self.connection.create_space(self.name, self.tags)
+            s = self.connection.create_space(self.name, tags=self.tags)
             self.id = s.id
             return s
 
