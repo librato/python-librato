@@ -13,10 +13,8 @@ class MockServer(object):
 
     def clean(self):
         self.metrics = {'gauges': OrderedDict(), 'counters': OrderedDict()}
-        self.instruments = OrderedDict()
         self.alerts = OrderedDict()
         self.services = OrderedDict()
-        self.dashboards = OrderedDict()
         self.spaces = OrderedDict()
         self.last_i_id = 0
         self.last_a_id = 0
@@ -186,16 +184,6 @@ class MockServer(object):
             answer['services'].append(c_service)
         return json.dumps(answer).encode('utf-8')
 
-    def list_of_dashboards(self):
-        answer = {}
-        answer["query"] = {}
-        answer["dashboards"] = []
-        dbs = answer["dashboards"]
-        for _id, c_dbs in self.dashboards.items():
-            c_dbs["id"] = _id
-            dbs.append(c_dbs)
-        return json.dumps(answer).encode('utf-8')
-
     def get_annotation_stream(self):
         name = 'My_Annotation'
         annotation_resp = {}
@@ -266,12 +254,6 @@ class MockServer(object):
         else:
             space['charts'] = [payload]
         self.last_chrt_id += 1
-        return json.dumps(payload).encode('utf-8')
-
-    def create_dashboard(self, payload):
-        self.last_db_id += 1
-        payload["id"] = self.last_i_id
-        self.dashboards[self.last_i_id] = payload
         return json.dumps(payload).encode('utf-8')
 
     def list_of_charts_in_space(self, uri):
@@ -385,34 +367,6 @@ class MockServer(object):
                             "exists %d", _chrt_id)
         else:
             del self.spaces[int(_spc_id)]['charts'][int(_spc_id)]
-        return ''
-
-    def get_dashboard(self, uri):
-        _id = None
-        m = re.search('\/(\d+)$', uri)
-        if m:
-            _id = m.group(1)
-
-        if int(_id) not in self.dashboards:
-            # TODO: return 400
-            raise Exception("Trying to get dashboard that doesn't " +
-                            " exists %d", _id)
-        else:
-            return json.dumps(self.dashboards[int(_id)]).encode('utf-8')
-
-    def update_dashboard(self, payload, uri):
-        _id = None
-        m = re.search('\/(\d+)$', uri)
-        if m:
-            _id = m.group(1)
-
-        if int(_id) not in self.dashboards:
-            # TODO: return 400
-            raise Exception("Trying to update dashboard that doesn't " +
-                            "exists %d", _id)
-        else:
-            self.dashboards[int(_id)] = payload
-            self.dashboards[int(_id)]["id"] = int(_id)
         return ''
 
     def get_metric(self, name, payload):
@@ -573,16 +527,8 @@ class MockResponse(object):
             return server.create_alert(r.body)
         elif self._req_is_delete_alert():
             return server.delete_alert(self._extract_id_from_url(), r.body)
-        elif self._req_is_list_of_dashboards():
-            return server.list_of_dashboards()
         elif self._req_is_get_annotation_stream():
             return server.get_annotation_stream()
-        elif self._req_is_create_dashboard():
-            return server.create_dashboard(r.body)
-        elif self._req_is_get_dashboard():
-            return server.get_dashboard(r.uri)
-        elif self._req_is_update_dashboard():
-            return server.update_dashboard(r.body, r.uri)
         elif self._req_is_list_of_spaces():
             return server.list_of_spaces()
         elif self._req_is_find_space():
@@ -642,21 +588,6 @@ class MockResponse(object):
         return (self._method_is('POST') and
                 re.match('/v1/%s/([\w_]+).json' % what, self.request.uri))
 
-    # Instruments
-    def _req_is_create_instrument(self):
-        return self._method_is('POST') and self._path_is('/v1/instruments')
-
-    def _req_is_list_of_instruments(self):
-        return self._method_is('GET') and self._path_is('/v1/instruments')
-
-    def _req_is_update_instrument(self):
-        return (self._method_is('PUT') and
-                re.match('/v1/instruments/\d+', self.request.uri))
-
-    def _req_is_get_instrument(self):
-        return (self._method_is('GET') and
-                re.match('/v1/instruments/\d+', self.request.uri))
-
     # Alerts
     def _req_is_create_alert(self):
         return self._method_is('POST') and self._path_is('/v1/alerts')
@@ -675,24 +606,6 @@ class MockResponse(object):
     # Services
     def _req_is_list_of_services(self):
         return self._method_is('GET') and self._path_is('/v1/services')
-
-    # dashboards
-    def _req_is_create_dashboard(self):
-        return self._method_is('POST') and self._path_is('/v1/dashboards')
-
-    def _req_is_list_of_dashboards(self):
-        return self._method_is('GET') and self._path_is('/v1/dashboards')
-
-    def _req_is_get_annotation_stream(self):
-        return self._method_is('GET') and self._path_is('/v1/annotations/My_Annotation')
-
-    def _req_is_get_dashboard(self):
-        return (self._method_is('GET') and
-                re.match('/v1/dashboards/\d+', self.request.uri))
-
-    def _req_is_update_dashboard(self):
-        return (self._method_is('PUT') and
-                re.match('/v1/dashboards/\d+', self.request.uri))
 
     # TODO::
     # spaces

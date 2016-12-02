@@ -197,26 +197,6 @@ class TestLibratoBasic(TestLibratoBase):
             self.conn.update(name, attributes=attrs)
         self.conn_sanitize.delete(name)
 
-    def test_instruments(self):
-        _c = self.conn
-
-        _c.submit("server_temp", value="23", source="app1")
-        _c.submit("environmental_temp", value="18", source="rack1")
-
-        _c.create_instrument("Server Temperature",
-                             streams=[
-                                 {"metric": "server_temp", "source": "app1"},
-                                 {"metric": "environmental_temp", "source": "rack1"}
-                             ],
-                             attributes={"display_integral": True})
-
-        """
-        dbs = _c.list_dashboards()
-        assert len(dbs) > 0
-
-        _c.create_dashboard("foo_", instruments = [ { "id": 1 }, { "id": 2 } ] )
-        """
-
     def test_adding_a_new_instrument_with_composite_metric_stream(self):
         name = "my_INST_with_STREAMS"
         ins = self.conn.create_instrument(name)
