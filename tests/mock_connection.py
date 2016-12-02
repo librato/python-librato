@@ -508,15 +508,7 @@ class MockResponse(object):
             d = parse_qs(query)
             # Flatten since parse_qs likes to build lists of values
             payload = {k: v[0] for k, v in six.iteritems(d)}
-            return server.get_tagged_measurements(self._extract_from_url(tagged=True), payload)
-        elif self._req_is_list_of_instruments():
-            return server.list_of_instruments()
-        elif self._req_is_create_instrument():
-            return server.create_instrument(r.body)
-        elif self._req_is_update_instrument():
-            return server.update_instrument(r.body, r.uri)
-        elif self._req_is_get_instrument():
-            return server.get_instrument(r.uri)
+            return server.get_md_measurements(self._extract_from_url(tagged=True), payload)
         elif self._req_is_list_of_alerts():
             return server.list_of_alerts()
         elif self._req_is_list_of_services():
