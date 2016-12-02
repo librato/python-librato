@@ -580,6 +580,9 @@ class MockResponse(object):
         return (self._method_is('POST') and
                 re.match('/v1/%s/([\w_]+).json' % what, self.request.uri))
 
+    def _req_is_get_annotation_stream(self):
+        return self._method_is('GET') and self._path_is('/v1/annotations/My_Annotation')
+
     # Alerts
     def _req_is_create_alert(self):
         return self._method_is('POST') and self._path_is('/v1/alerts')
