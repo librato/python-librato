@@ -197,6 +197,7 @@ class TestLibratoBasic(TestLibratoBase):
             self.conn.update(name, attributes=attrs)
         self.conn_sanitize.delete(name)
 
+
 class TestLibratoAlertsIntegration(TestLibratoBase):
 
     alerts_created_during_test = []
