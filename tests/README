@@ -1,0 +1,3 @@
+To test single tests:
+
+python tests/test_spaces.py TestSpaceModel.test_save_creates_space

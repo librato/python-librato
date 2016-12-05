@@ -4,11 +4,17 @@ from librato.streams import Stream
 class Space(object):
     """Librato Space Base class"""
 
-    def __init__(self, connection, name, id=None, chart_dicts=None):
+    def __init__(self,
+                 connection,
+                 name,
+                 id=None,
+                 chart_dicts=None,
+                 tags=False):
         self.connection = connection
         self.name = name
         self.chart_ids = []
         self._charts = None
+        self.tags = tags
         for c in (chart_dicts or []):
             self.chart_ids.append(c['id'])
         self.id = id
@@ -85,7 +91,7 @@ class Space(object):
         if self.persisted():
             return self.connection.update_space(self)
         else:
-            s = self.connection.create_space(self.name)
+            s = self.connection.create_space(self.name, tags=self.tags)
             self.id = s.id
             return s
 
