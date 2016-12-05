@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 2.1.1
+* Allow creation of Tagged spaces
+
 ### Version 2.1.0
 * Transparent Multidimensional support.
 
