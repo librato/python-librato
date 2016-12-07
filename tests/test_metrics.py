@@ -187,7 +187,11 @@ class TestLibrato(unittest.TestCase):
         self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags)
 
         resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="hostname=web-1")
+        assert len(resp['series']) == 1
+        assert resp['series'][0].get('tags', {}) == tags
 
+        # Same query using tags param instead
+        resp = self.conn.get_tagged('user_cpu', duration=60, tags={'hostname': 'web-1'})
         assert len(resp['series']) == 1
         assert resp['series'][0].get('tags', {}) == tags
 
