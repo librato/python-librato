@@ -175,6 +175,12 @@ class LibratoConnection(object):
             time.sleep(backoff)
             return None, not success, backoff
 
+    def _parse_tags_params(self, tags):
+        result = {}
+        for k, v in tags.items():
+            result["tags[%s]" % k] = v
+        return result
+
     def _mexe(self, path, method="GET", query_props=None, p_headers=None):
         """Internal method for executing a command.
            If we get server errors we exponentially wait before retrying
@@ -293,6 +299,11 @@ class LibratoConnection(object):
             raise Exception("You must provide 'start_time' or 'duration'")
         if 'start_time' in query_props and 'end_time' in query_props and 'duration' in query_props:
             raise Exception("It is an error to set 'start_time', 'end_time' and 'duration'")
+
+        if 'tags' in query_props:
+            parsed_tags = self._parse_tags_params(query_props.pop('tags'))
+            query_props.update(parsed_tags)
+
         return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
 
     def get_composite(self, compose, **query_props):
