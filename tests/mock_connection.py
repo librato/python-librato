@@ -425,21 +425,28 @@ class MockServer(object):
         return json.dumps(metric).encode('utf-8')
 
     def get_tagged_measurements(self, name, payload):
-        if 'tags_search' not in payload:
-            raise Exception('mock_connection md_get requires tags_search to be specified')
+        payload_type = 'invalid'
+        tag, value = None, None
+        for k, v in payload.items():
+            for vk in ['tags[', 'tags_search']:
+                if k[0:len(vk)] == vk:
+                    payload_type = vk
+                    if payload_type == 'tags[':
+                        m = re.match(r"tags\[(\w+)\]", k)
+                        tag, value = m.group(1), v
+                    else:
+                        tag, value = v.split('=')
+                    break
+        if payload_type == 'invalid':
+            raise Exception('mock_connection md_get requires tags_search or tags to be specified')
 
-        query = payload.get('tags_search')
         end = payload.get('end_time', int(time.time()))
-
         if 'start_time' in payload:
             start = int(payload['start_time'])
         elif 'duration' in payload:
             start = end - int(payload['duration'])
         else:
             raise Exception('md get requires a start or duration parameter')
-
-        # Only support a 'tag=value' query syntax
-        tag, value = query.split('=')
 
         measurements = [t for t in self.tagged_measurements[name][tag][value] if (t[0] >= start and t[0] <= end)]
         measurements.sort(key=lambda x: x[1])
