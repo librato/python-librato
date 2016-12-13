@@ -42,7 +42,7 @@ from librato.dashboards import Dashboard
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
 
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 
 # Defaults
 HOSTNAME = "metrics-api.librato.com"

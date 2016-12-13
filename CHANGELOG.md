@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 2.1.2
+* Allow hash argument when querying tagged data
+
 ### Version 2.1.1
 * Allow creation of Tagged spaces
 
