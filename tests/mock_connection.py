@@ -26,7 +26,7 @@ class MockServer(object):
         self.last_chrt_id = 0
 
         # metric_name, tag_name, tag_value -> (time1, value1), (time2, value2), ...
-        self.md_measurements = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        self.tagged_measurements = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
     def list_of_metrics(self):
         answer = self.__an_empty_list_metrics()
@@ -65,7 +65,7 @@ class MockServer(object):
 
         return ''
 
-    def create_md_measurements(self, payload):
+    def create_tagged_measurements(self, payload):
         tags = payload.get('tags', {})
         def_time = payload.get('time', int(time.time()))
         for metric in payload['measurements']:
@@ -87,7 +87,7 @@ class MockServer(object):
                 m_tags.update(metric['tags'])
 
             for tag in m_tags:
-                self.md_measurements[name][tag][m_tags[tag]].append((mt, value))
+                self.tagged_measurements[name][tag][m_tags[tag]].append((mt, value))
 
         return ''
 
@@ -424,13 +424,23 @@ class MockServer(object):
             metric = counters[name]
         return json.dumps(metric).encode('utf-8')
 
-    def get_md_measurements(self, name, payload):
-        if 'tags_search' not in payload:
-            raise Exception('mock_connection md_get requires tags_search to be specified')
+    def get_tagged_measurements(self, name, payload):
+        payload_type = 'invalid'
+        tag, value = None, None
+        for k, v in payload.items():
+            for vk in ['tags[', 'tags_search']:
+                if k[0:len(vk)] == vk:
+                    payload_type = vk
+                    if payload_type == 'tags[':
+                        m = re.match(r"tags\[(\w+)\]", k)
+                        tag, value = m.group(1), v
+                    else:
+                        tag, value = v.split('=')
+                    break
+        if payload_type == 'invalid':
+            raise Exception('mock_connection md_get requires tags_search or tags to be specified')
 
-        query = payload.get('tags_search')
         end = payload.get('end_time', int(time.time()))
-
         if 'start_time' in payload:
             start = int(payload['start_time'])
         elif 'duration' in payload:
@@ -438,10 +448,7 @@ class MockServer(object):
         else:
             raise Exception('md get requires a start or duration parameter')
 
-        # Only support a 'tag=value' query syntax
-        tag, value = query.split('=')
-
-        measurements = [t for t in self.md_measurements[name][tag][value] if (t[0] >= start and t[0] <= end)]
+        measurements = [t for t in self.tagged_measurements[name][tag][value] if (t[0] >= start and t[0] <= end)]
         measurements.sort(key=lambda x: x[1])
         m_dicts = [{'time': t[0], 'value': t[1]} for t in measurements if len(t) > 0]
 
@@ -531,8 +538,8 @@ class MockResponse(object):
             return server.list_of_metrics()
         elif self._req_is_create_metric():
             return server.create_metric(r.body)
-        elif self._req_is_create_md_measurements():
-            return server.create_md_measurements(r.body)
+        elif self._req_is_create_tagged_measurements():
+            return server.create_tagged_measurements(r.body)
         elif self._req_is_delete():
             # check for single delete. Batches don't include name in the url
             try:
@@ -542,12 +549,12 @@ class MockResponse(object):
             return server.delete_metric(name, r.body)
         elif self._req_is_get_metric():
             return server.get_metric(self._extract_from_url(), r.body)
-        elif self._req_is_get_md_measurements():
+        elif self._req_is_get_tagged_measurements():
             query = urlparse(self.request.uri).query
             d = parse_qs(query)
             # Flatten since parse_qs likes to build lists of values
             payload = {k: v[0] for k, v in six.iteritems(d)}
-            return server.get_md_measurements(self._extract_from_url(tagged=True), payload)
+            return server.get_tagged_measurements(self._extract_from_url(tagged=True), payload)
         elif self._req_is_list_of_instruments():
             return server.list_of_instruments()
         elif self._req_is_create_instrument():
@@ -615,7 +622,7 @@ class MockResponse(object):
     def _req_is_create_metric(self):
         return self._method_is('POST') and self._path_is('/v1/metrics')
 
-    def _req_is_create_md_measurements(self):
+    def _req_is_create_tagged_measurements(self):
         return self._method_is('POST') and self._path_is('/v1/measurements')
 
     def _req_is_delete(self):
@@ -627,7 +634,7 @@ class MockResponse(object):
         return (self._method_is('GET') and
                 re.match('/v1/metrics/([\w_]+)', self.request.uri))
 
-    def _req_is_get_md_measurements(self):
+    def _req_is_get_tagged_measurements(self):
         return (self._method_is('GET') and
                 re.match('/v1/measurements/([\w_]+)', self.request.uri))
 
