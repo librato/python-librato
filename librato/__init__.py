@@ -128,9 +128,9 @@ class LibratoConnection(object):
     def __getattr__(self, attr):
         def handle_undefined_method(*args):
             if re.search('dashboard|instrument', attr):
-                print "We have deprecated support for instruments and dashboards."
-                print "https://github.com/librato/python-librato"
-                print ""
+                print("We have deprecated support for instruments and dashboards.")
+                print("https://github.com/librato/python-librato")
+                print("")
             raise NotImplementedError()
         return handle_undefined_method
 
