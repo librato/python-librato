@@ -5,6 +5,8 @@ python-librato
 
 A Python wrapper for the Librato Metrics API.
 
+NOTE: Starting in version 3, we have deprecated instruments and dashboards in favor of spaces.
+
 ## Installation
 
 In your shell:
