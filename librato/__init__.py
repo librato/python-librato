@@ -125,6 +125,15 @@ class LibratoConnection(object):
             ua_chunks.append("(python; %s; %s-%s%s)" % system_info)
             return ' '.join(ua_chunks)
 
+    def __getattr__(self, attr):
+        def handle_undefined_method(*args):
+            if re.search('dashboard|instrument', attr):
+                print "We have deprecated support for instruments and dashboards."
+                print "https://github.com/librato/python-librato"
+                print ""
+            raise NotImplementedError()
+        return handle_undefined_method
+
     def _set_headers(self, headers):
         """ set headers for request """
         if headers is None:
