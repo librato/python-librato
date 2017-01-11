@@ -98,6 +98,11 @@ class TestSpaceModel(SpacesTest):
     def test_init_with_name(self):
         self.assertEqual(Space(self.conn, 'My Space').name, 'My Space')
 
+    def test_init_with_tags(self):
+        self.assertFalse(Space(self.conn, 'My Space').tags)
+        self.assertFalse(Space(self.conn, 'My Space', tags=False).tags)
+        self.assertTrue(Space(self.conn, 'My Space', tags=True).tags)
+
     def test_init_with_empty_name(self):
         self.assertEqual(Space(self.conn, None).name, None)
 
