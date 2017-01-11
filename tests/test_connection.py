@@ -42,6 +42,9 @@ class TestConnection(unittest.TestCase):
         assert 'coal' in tags
         assert tags['coal'] == 'black'
 
+    def test_custom_ua(self):
+        self.conn.custom_ua = 'foo'
+        assert self.conn._compute_ua() == 'foo'
 
 if __name__ == '__main__':
     unittest.main()

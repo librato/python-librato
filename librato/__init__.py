@@ -102,6 +102,7 @@ class LibratoConnection(object):
         if protocol not in ["http", "https"]:
             raise ValueError("Unsupported protocol: {}".format(protocol))
 
+        self.custom_ua = None
         self.protocol = protocol
         self.hostname = hostname
         self.base_path = base_path
@@ -113,20 +114,25 @@ class LibratoConnection(object):
         self.timeout = DEFAULT_TIMEOUT
         self.tags = dict(tags)
 
+    def _compute_ua(self):
+        if self.custom_ua:
+            return self.custom_ua
+        else:
+            # http://en.wikipedia.org/wiki/User_agent#Format
+            # librato-metrics/1.0.3 (ruby; 1.9.3p385; x86_64-darwin11.4.2) direct-faraday/0.8.4
+            ua_chunks = []  # Set user agent
+            ua_chunks.append("python-librato/" + __version__)
+            p = platform
+            system_info = (p.python_version(), p.machine(), p.system(), p.release())
+            ua_chunks.append("(python; %s; %s-%s%s)" % system_info)
+            return ' '.join(ua_chunks)
+
     def _set_headers(self, headers):
         """ set headers for request """
         if headers is None:
             headers = {}
         headers['Authorization'] = b"Basic " + base64.b64encode(self.username + b":" + self.api_key).strip()
-
-        # http://en.wikipedia.org/wiki/User_agent#Format
-        # librato-metrics/1.0.3 (ruby; 1.9.3p385; x86_64-darwin11.4.2) direct-faraday/0.8.4
-        ua_chunks = []  # Set user agent
-        ua_chunks.append("python-librato/" + __version__)
-        p = platform
-        system_info = (p.python_version(), p.machine(), p.system(), p.release())
-        ua_chunks.append("(python; %s; %s-%s%s)" % system_info)
-        headers['User-Agent'] = ' '.join(ua_chunks)
+        headers['User-Agent'] = self._compute_ua()
         return headers
 
     def _url_encode_params(self, params={}):
