@@ -36,9 +36,7 @@ import email.message
 from librato import exceptions
 from librato.queue import Queue
 from librato.metrics import Gauge, Counter
-from librato.instruments import Instrument
 from librato.alerts import Alert, Service
-from librato.dashboards import Dashboard
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
 
@@ -126,6 +124,15 @@ class LibratoConnection(object):
             system_info = (p.python_version(), p.machine(), p.system(), p.release())
             ua_chunks.append("(python; %s; %s-%s%s)" % system_info)
             return ' '.join(ua_chunks)
+
+    def __getattr__(self, attr):
+        def handle_undefined_method(*args):
+            if re.search('dashboard|instrument', attr):
+                print("We have deprecated support for instruments and dashboards.")
+                print("https://github.com/librato/python-librato")
+                print("")
+            raise NotImplementedError()
+        return handle_undefined_method
 
     def _set_headers(self, headers):
         """ set headers for request """
@@ -340,66 +347,6 @@ class LibratoConnection(object):
             payload = {'names': names}
             path = "metrics"
         return self._mexe(path, method="DELETE", query_props=payload)
-
-    #
-    # Dashboards
-    #
-    def list_dashboards(self, **query_props):
-        """List all dashboards"""
-        resp = self._mexe("dashboards", query_props=query_props)
-        return self._parse(resp, "dashboards", Dashboard)
-
-    def get_dashboard(self, id, **query_props):
-        """Get specific dashboard by ID"""
-        resp = self._mexe("dashboards/%s" % id,
-                          method="GET", query_props=query_props)
-        return Dashboard.from_dict(self, resp)
-
-    def update_dashboard(self, dashboard, **query_props):
-        """Update an existing dashboard"""
-        payload = dashboard.get_payload()
-        for k, v in query_props.items():
-            payload[k] = v
-        resp = self._mexe("dashboards/%s" % dashboard.id,
-                          method="PUT", query_props=payload)
-        return resp
-
-    def create_dashboard(self, name, **query_props):
-        payload = Dashboard(self, name).get_payload()
-        for k, v in query_props.items():
-            payload[k] = v
-        resp = self._mexe("dashboards", method="POST", query_props=payload)
-        return Dashboard.from_dict(self, resp)
-
-    #
-    # Instruments
-    #
-    def list_instruments(self, **query_props):
-        """List all instruments"""
-        resp = self._mexe("instruments", query_props=query_props)
-        return self._parse(resp, "instruments", Instrument)
-
-    def get_instrument(self, id, **query_props):
-        """Get specific instrument by ID"""
-        # TODO: Add better handling around 404s
-        resp = self._mexe("instruments/%s" % id, method="GET", query_props=query_props)
-        return Instrument.from_dict(self, resp)
-
-    def update_instrument(self, instrument, **query_props):
-        """Update an existing instrument"""
-        payload = instrument.get_payload()
-        for k, v in query_props.items():
-            payload[k] = v
-        resp = self._mexe("instruments/%s" % instrument.id, method="PUT", query_props=payload)
-        return resp
-
-    def create_instrument(self, name, **query_props):
-        """Create a new instrument"""
-        payload = Instrument(self, name).get_payload()
-        for k, v in query_props.items():
-            payload[k] = v
-        resp = self._mexe("instruments", method="POST", query_props=payload)
-        return Instrument.from_dict(self, resp)
 
     #
     # Annotations
