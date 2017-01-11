@@ -28,7 +28,8 @@ class Space(object):
         obj = cls(connection,
                   data['name'],
                   id=data['id'],
-                  chart_dicts=data.get('charts'))
+                  chart_dicts=data.get('charts'),
+                  tags=data.get('tags'))
         return obj
 
     def get_payload(self):
