@@ -1,5 +1,10 @@
 ## Changelog
 
+### Version 3.0.0
+* (!) Deprecated Dashboards and Instruments in favor of Spaces and Charts
+* Allow custom user agent
+* Minor bug fixes
+
 ### Version 2.1.2
 * Allow hash argument when querying tagged data
 
