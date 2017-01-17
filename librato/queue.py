@@ -63,6 +63,9 @@ class Queue(object):
         self.tags.update(d)
 
     def add(self, name, value, type='gauge', **query_props):
+        if len(self.tags) > 0:
+            query_props['tags'] = self.tags
+
         if 'tags' in query_props:
             self.add_tagged(name, value, **query_props)
         else:
