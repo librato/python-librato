@@ -287,19 +287,13 @@ class TestLibratoQueue(unittest.TestCase):
         q.add_tagged('system_cpu', 20)
         q.submit()
 
-        resp = self.conn.get('system_cpu', duration=60)
-
-        gauge = self.conn.get('system_cpu', duration=60)
-        assert gauge.name == 'system_cpu'
-        assert len(gauge.measurements['unassigned']) == 1
-        assert gauge.measurements['unassigned'][0]['value'] == 10
-
         resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
         assert len(resp['series']) == 1
 
         measurements = resp['series'][0]['measurements']
-        assert len(measurements) == 1
-        assert measurements[0]['value'] == 20
+        assert len(measurements) == 2
+        assert measurements[0]['value'] == 10
+        assert measurements[1]['value'] == 20
 
     def test_md_auto_submit_on_metric_count(self):
         q = self.conn.new_queue(auto_submit_count=2)
@@ -313,6 +307,15 @@ class TestLibratoQueue(unittest.TestCase):
         assert len(gauge.measurements['unassigned']) == 1
 
         resp = self.conn.get_tagged('tagged_cpu', duration=60, tags_search="hostname=web-2")
+        assert len(resp['series']) == 1
+
+    def queue_send_as_md_when_queue_has_tags(self):
+        q = self.conn.new_queue(tags={'foo': 1})
+        q.add('a_metric', 10)
+
+        assert q._num_measurements_in_queue() == 1
+
+        resp = self.conn.get_tagged('a_metric', duration=60, tags_search="foo=1")
         assert len(resp['series']) == 1
 
     def test_transparent_submit_md(self):
