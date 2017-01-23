@@ -67,24 +67,5 @@ class Metric(object):
 
 
 class Gauge(Metric):
-    """Librato Gauge metric"""
-    def add(self, value, source=None, **params):
-        """Add a new measurement to this gauge"""
-        if source:
-            params['source'] = source
-        return self.connection.submit(self.name, value, type="gauge", **params)
-
     def what_am_i(self):
         return 'gauges'
-
-
-class Counter(Metric):
-    """Librato Counter metric"""
-    def add(self, value, source=None, **params):
-        if source:
-            params['source'] = source
-
-        return self.connection.submit(self.name, value, type="counter", **params)
-
-    def what_am_i(self):
-        return 'counters'

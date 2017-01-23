@@ -35,7 +35,7 @@ import json
 import email.message
 from librato import exceptions
 from librato.queue import Queue
-from librato.metrics import Gauge, Counter
+from librato.metrics import Gauge
 from librato.alerts import Alert, Service
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
@@ -282,6 +282,15 @@ class LibratoConnection(object):
 
         payload['measurements'].append(measurement)
         self._mexe("measurements", method="POST", query_props=payload)
+
+    def get_metric(self, name, **query_props):
+        resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
+        if resp['type'] == 'gauge':
+            return Gauge.from_dict(self, resp)
+        elif resp['type'] == 'counter':
+            return Counter.from_dict(self, resp)
+        else:
+            raise Exception('The server sent me something that is not a Gauge nor a Counter.')
 
     def get(self, name, **query_props):
         """Fetches metric data"""

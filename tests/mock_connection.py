@@ -68,6 +68,10 @@ class MockServer(object):
         def_time = payload.get('time', int(time.time()))
         for metric in payload['measurements']:
             name = metric['name']
+            desc = ''
+            if 'description' in metric:
+                desc = metric['description']
+            self.add_metric_to_store({"name": name, "description": desc}, 'gauge')
 
             mt = metric.get('time', def_time)
 
@@ -75,7 +79,7 @@ class MockServer(object):
                 value = metric['value']
             elif 'sum' in metric:
                 # REVIEW
-                #if 'count' not in metric or metric['count'] != 1:
+                # if 'count' not in metric or metric['count'] != 1:
                 if 'count' not in metric:
                     raise Exception('mock_connection only supports a count value of one', metric)
                 value = metric['sum']
@@ -134,9 +138,6 @@ class MockServer(object):
                             " exists %d", _id)
         else:
             return json.dumps(self.instruments[int(_id)]).encode('utf-8')
-
-    def __an_empty_list_metrics(self):
-        answer = {}
 
     def create_alert(self, payload):
         self.last_a_id += 1
