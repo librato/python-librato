@@ -1,5 +1,8 @@
 ## Changelog
 
+### Version 3.0.1
+* Submit in tag mode if default tags present in queue
+
 ### Version 3.0.0
 * (!) Deprecated Dashboards and Instruments in favor of Spaces and Charts
 * Allow custom user agent
