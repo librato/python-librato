@@ -74,8 +74,10 @@ class MockServer(object):
             if 'value' in metric:
                 value = metric['value']
             elif 'sum' in metric:
-                if 'count' not in metric or metric['count'] != 1:
-                    raise Exception('mock_connection only supports a count value of one')
+                # REVIEW
+                #if 'count' not in metric or metric['count'] != 1:
+                if 'count' not in metric:
+                    raise Exception('mock_connection only supports a count value of one', metric)
                 value = metric['sum']
             else:
                 raise Exception('md submit payload must provide value or sum/count attributes')
