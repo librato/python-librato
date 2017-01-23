@@ -267,18 +267,7 @@ class LibratoConnection(object):
             if len(metric_list) < page_size:
                 break
 
-    def submit(self, name, value, type="gauge", **query_props):
-        if 'tags' in query_props:
-            self.submit_tagged(name, value, **query_props)
-        else:
-            payload = {'gauges': [], 'counters': []}
-            metric = {'name': self.sanitize(name), 'value': value}
-            for k, v in query_props.items():
-                metric[k] = v
-            payload[type + 's'].append(metric)
-            self._mexe("metrics", method="POST", query_props=payload)
-
-    def submit_tagged(self, name, value, **query_props):
+    def submit(self, name, value, **query_props):
         payload = {'measurements': []}
 
         if self.tags:
@@ -295,16 +284,7 @@ class LibratoConnection(object):
         self._mexe("measurements", method="POST", query_props=payload)
 
     def get(self, name, **query_props):
-        resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
-        if resp['type'] == 'gauge':
-            return Gauge.from_dict(self, resp)
-        elif resp['type'] == 'counter':
-            return Counter.from_dict(self, resp)
-        else:
-            raise Exception('The server sent me something that is not a Gauge nor a Counter.')
-
-    def get_tagged(self, name, **query_props):
-        """Fetches multi-dimensional metrics"""
+        """Fetches metric data"""
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
@@ -320,15 +300,17 @@ class LibratoConnection(object):
         return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
 
     def get_composite(self, compose, **query_props):
+        """Get a composite result"""
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
         if 'start_time' not in query_props:
             raise Exception("You must provide a 'start_time'")
         query_props['compose'] = compose
-        return self._mexe("metrics", method="GET", query_props=query_props)
+        return self._mexe("measurements", method="GET", query_props=query_props)
 
     def create_composite(self, name, compose, **query_props):
+        """Create a composite"""
         query_props['composite'] = compose
         query_props['type'] = 'composite'
         return self.update(name, **query_props)
