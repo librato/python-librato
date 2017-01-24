@@ -49,8 +49,6 @@ class Metric(object):
         which is usually from librato's API"""
         if data.get('type') == "gauge":
             cls = Gauge
-        elif data.get('type') == "counter":
-            cls = Counter
 
         obj = cls(connection, data['name'])
         obj.period = data['period']

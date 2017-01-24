@@ -56,75 +56,56 @@ transparent pagination.
 Let's now create a Metric:
 
 ```python
-  api.submit("temperature", 10, description="temperature at home")
+    api.submit("temperature", 10, tags={'city': 'Barcelona'})
 ```
 
-By default ```submit()``` will create a gauge metric. The metric will be
-created automatically by the server if it does not exist
+The metric will be created automatically by the server if it does not exist.
 
 To iterate over your metric names:
 
 ```python
-  for m in api.list_metrics():
-      print "%s: %s" % (m.name, m.description)
+    for m in api.list_metrics():
+        print "%s: %s" % (m.name, m.description)
 ```
 
 To retrieve a specific metric:
 
 ```python
-  # Retrieve metric metadata ONLY
-  gauge = api.get("temperature")
-  gauge.name # "temperature"
-  gauge.description # "temperature at home"
-  gauge.measurements # {}
-  # Retrive metric with the last measurement seen
-  gauge = api.get("temperature", count=1, resolution=1)
-  gauge.measurements
-  # {u'unassigned': [{u'count': 1, u'sum_squares': 100.0, u'min': 10.0, u'measure_time': 1474988647, u'max': 10.0, u'sum': 10.0, u'value': 10.0}]}
+    tags = {"city": "Barcelona}
+    metric = api.get_metric("temperature")
+    metric.name # "temperature"
+
+    # Retrieve the last measurements seen on that metric
+    data = api.get("temperature", duration=60, tags=tags)
+    data = self.api.get(name, duration=60, tags=tags)
+    data['series'][0]['measurements']
 ```
 
 Iterate over measurements:
 
 ```python
-  metric = api.get("temperature", count=100, resolution=1)
-  source = 'unassigned'
-  for m in metric.measurements[source]:
-    print "%s: %s" % (m['value'], m['measure_time'])
+    data = api.get("temperature", duration=60, tags=tags)
+    data = self.api.get(name, duration=60, tags=tags)
+    data['series'][0]['measurements']
+    for m in data['series'][0]['measurements']:
+        print m
 ```
-
-Notice a couple of things here. First, we are using the key `unassigned` since
-we have not associated our measurements to any source. If we had specified a
-source such as `sf` we could use it in the same fashion. Read more the
-[API documentation](https://www.librato.com/docs/api/). In addition, notice how
-we are passing the count and resolution parameters to make sure the API
-returns measurements in its answer and not only the metric properties.
-Read more about them [here](https://www.librato.com/docs/api/#retrieve-metric-by-name).
 
 To retrieve a composite metric:
 
 ```python
-  # Get average temperature across all cities for last 8 hours
-  compose = 'mean(s("temperature", "*", {function: "mean", period: "3600"}))'
-  import time
-  start_time = int(time.time()) - 8 * 3600
-  resp = api.get_composite(compose, start_time=start_time)
-  resp['measurements'][0]['series']
-  # [
-  #   {u'measure_time': 1421744400, u'value': 41.23944444444444},
-  #   {u'measure_time': 1421748000, u'value': 40.07611111111111},
-  #   {u'measure_time': 1421751600, u'value': 38.77444444444445},
-  #   {u'measure_time': 1421755200, u'value': 38.05833333333333},
-  #   {u'measure_time': 1421758800, u'value': 37.983333333333334},
-  #   {u'measure_time': 1421762400, u'value': 38.93333333333333},
-  #   {u'measure_time': 1421766000, u'value': 40.556666666666665}
-  # ]
+	compose = 'mean(s("' + name + '", "*", {function: "mean", period: "3600"}))'
+	import time
+	start_time = int(time.time()) - 3600
+	data = self.api.get_composite(compose, start_time=start_time)
+	for m in data['series'][0]['measurements']:
+		print m
 ```
 
 To create a saved composite metric:
 
 ```python
-  api.create_composite('humidity', 'sum(s("all.*", "*"))',
-      description='a test composite')
+  api.create_composite('humidity', 'sum(s("all.*", "*"))', description='a test composite')
 ```
 
 Delete a metric:
@@ -142,13 +123,12 @@ in batch mode. We push measurements that are stored and when we are
 ready, they will be submitted in an efficient manner. Here is an example:
 
 ```python
-api = librato.connect('email', 'token')
-q   = api.new_queue()
-q.add('temperature', 22.1, source='upstairs')
-q.add('temperature', 23.1, source='dowstairs')
-q.submit()
+    q = api.new_queue()
+    q.add('temperature', 12, tags={'city': 'sf'      , 'station': '12'})
+    q.add('temperature', 14, tags={'city': 'new york', 'station': '1'})
+    q.add('temperature', 22, tags={'city': 'austin'  , 'station': '112'})
+    q.submit()
 ```
-
 Queues can also be used as context managers. Once the context block is complete the queue
 is submitted automatically. This is true even if an exception interrupts flow. In the
 example below if ```potentially_dangerous_operation``` causes an exception the queue will
@@ -158,40 +138,18 @@ If the operation succeeds both measurements will be submitted.
 ```python
 api = librato.connect('email', 'token')
 with api.new_queue() as q:
-    q.add('temperature', 22.1, source='upstairs')
+    q.add('temperature', 22.1, tags={'city': 'sf', 'station': '12'})
     potentially_dangerous_operation()
-    q.add('num_requests', 100, source='server1')
+    q.add('num_requests', tags={'city': 'austin'  , 'station': '112'})
 ```
 
 Queues by default will collect metrics until they are told to submit. You may create a queue
 that autosubmits based on metric volume.
 
 ```python
-api = librato.connect('email', 'token')
-# Submit when the 400th metric is queued
-q = api.new_queue(auto_submit_count=400)
-```
-
-## Submitting tagged measurements
-
-NOTE: **Tagged measurements are only available in the Tags Beta. Please [contact Librato support](mailto:support@librato.com) to join the beta.**
-
-We can use tags in the submit method in order to associate key value pairs with our
-measurements:
-
-```python
-    api.submit("temperature", 22, tags={'city': 'austin', 'station': '27'})
-```
-
-Queues also support tags. When adding measurements to a queue, we can associate tags to them
-in the same way we do with the submit method:
-
-```python
-    q = api.new_queue()
-    q.add('temperature', 12, tags={'city': 'sf'      , 'station': '12'})
-    q.add('temperature', 14, tags={'city': 'new york', 'station': '1'})
-    q.add('temperature', 22, tags={'city': 'austin'  , 'station': '112'})
-    q.submit()
+	api = librato.connect('email', 'token')
+	# Submit when the 400th metric is queued
+	q = api.new_queue(auto_submit_count=400)
 ```
 
 ## Updating Metric Attributes
@@ -200,12 +158,10 @@ You can update the information for a metric by using the `update` method,
 for example:
 
 ```python
-api = librato.connect('email', 'token')
-for metric in api.list_metrics(name=" "):
-  gauge = api.get(metric.name)
-  attrs = gauge.attributes
-  attrs['display_units_long'] = 'ms'
-  api.update(metric.name, attributes=attrs)
+	metric = self.api.get_metric("temperature")
+	attrs = metric.attributes
+	attrs['description'] = "A temperature metric"
+	self.api.update(name, attributes=attrs)
 ```
 
 ## Annotations
@@ -244,6 +200,7 @@ doesn't exist). Title is a required parameter, and all other parameters are opti
 ```python
 api.post_annotation("testing",title="foobarbiz")
 
+####################### UPDATE ##########################
 api.post_annotation("TravisCI",title="build %s"%travisBuildID,
                      source="SystemSource",
                      description="Application %s, Travis build %s"%(appName,travisBuildID),
@@ -290,6 +247,7 @@ space.delete()
 ### Create a Chart
 ```python
 # Create a Chart directly via API (defaults to line chart)
+############################################################# UPDATE
 space = api.find_space('Production')
 chart = api.create_chart(
     'cpu',

@@ -248,12 +248,14 @@ class LibratoConnection(object):
     #
     def list_metrics(self, **query_props):
         """List a page of metrics"""
+
         from librato.metrics import Metric
         resp = self._mexe("metrics", query_props=query_props)
         return self._parse(resp, "metrics", Metric)
 
     def list_all_metrics(self, **query_props):
         """List all avaliable metrics"""
+
         if 'length' not in query_props:
             query_props['length'] = 100
         if 'offset' not in query_props:
@@ -268,6 +270,8 @@ class LibratoConnection(object):
                 break
 
     def submit(self, name, value, **query_props):
+        """Send measurements for a metric"""
+
         payload = {'measurements': []}
 
         if self.tags:
@@ -284,6 +288,8 @@ class LibratoConnection(object):
         self._mexe("measurements", method="POST", query_props=payload)
 
     def get_metric(self, name, **query_props):
+        """Get a metric definition"""
+
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
         if resp['type'] == 'gauge':
             return Gauge.from_dict(self, resp)
@@ -323,9 +329,11 @@ class LibratoConnection(object):
         return self.update(name, **query_props)
 
     def update(self, name, **query_props):
+        """update a metric"""
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
 
     def delete(self, names):
+        """delete a metric or a group of metrics"""
         if isinstance(names, six.string_types):
             names = self.sanitize(names)
         else:
@@ -443,9 +451,9 @@ class LibratoConnection(object):
         return Space.from_dict(self, resp)
 
     def find_space(self, name):
+        """Find specific space by Name"""
         if type(name) is int:
             raise ValueError("This method expects name as a parameter, %s given" % name)
-        """Find specific space by Name"""
         spaces = self.list_spaces(name=name)
         # Find the Space by name (case-insensitive)
         # This returns the first space found matching the name
