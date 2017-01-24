@@ -68,7 +68,7 @@ class MockServer(object):
         def_time = payload.get('time', int(time.time()))
         for metric in payload['measurements']:
             name = metric['name']
-            desc = ''
+            desc = None
             if 'description' in metric:
                 desc = metric['description']
             self.add_metric_to_store({"name": name, "description": desc}, 'gauge')

@@ -5,8 +5,6 @@ python-librato
 
 A Python wrapper for the Librato Metrics API.
 
-NOTE: Starting in version 3, we have deprecated Dashboards and Instruments in favor of Spaces and Charts.
-
 ## Installation
 
 In your shell:
@@ -63,12 +61,6 @@ Let's now create a Metric:
 
 By default ```submit()``` will create a gauge metric. The metric will be
 created automatically by the server if it does not exist
-
-To create a counter metric (note: counters are expected to be *absolute* counters and take a monotonically increasing value such as network throughput):
-
-```python
-  api.submit("connections", 20, type="counter", description="server connections")
-```
 
 To iterate over your metric names:
 
@@ -154,8 +146,6 @@ api = librato.connect('email', 'token')
 q   = api.new_queue()
 q.add('temperature', 22.1, source='upstairs')
 q.add('temperature', 23.1, source='dowstairs')
-q.add('num_requests', 100, type='counter', source='server1')
-q.add('num_requests', 102, type='counter', source='server2')
 q.submit()
 ```
 
@@ -170,7 +160,7 @@ api = librato.connect('email', 'token')
 with api.new_queue() as q:
     q.add('temperature', 22.1, source='upstairs')
     potentially_dangerous_operation()
-    q.add('num_requests', 100, type='counter', source='server1')
+    q.add('num_requests', 100, source='server1')
 ```
 
 Queues by default will collect metrics until they are told to submit. You may create a queue

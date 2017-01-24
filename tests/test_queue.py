@@ -30,11 +30,11 @@ class TestLibratoQueue(unittest.TestCase):
         assert conn.get_tags() == {'sky': 'blue'}
 
         q = conn.new_queue()
-        q.add_tagged('user_cpu', 10)
+        q.add('user_cpu', 10)
         q.submit()
 
         # Measurement must inherit 'sky' tag from connection
-        resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="sky=blue")
+        resp = self.conn.get('user_cpu', duration=60, tags_search="sky=blue")
 
         assert len(resp['series']) == 1
         assert resp['series'][0].get('tags', {}) == conn.get_tags()
@@ -79,22 +79,13 @@ class TestLibratoQueue(unittest.TestCase):
     def test_single_measurement_gauge(self):
         q = self.q
         q.add('temperature', 22.1)
-        assert len(q.chunks) == 1
+        assert len(q.tagged_chunks) == 1
         assert q._num_measurements_in_current_chunk() == 1
 
     def test_default_type_measurement(self):
         q = self.q
         q.add('temperature', 22.1)
-        assert len(q._current_chunk()['gauges']) == 1
-        assert len(q._current_chunk()['counters']) == 0
-
-    def test_single_measurement_counter(self):
-        q = self.q
-        q.add('num_requests', 2000, type='counter')
-        assert len(q.chunks) == 1
-        assert q._num_measurements_in_current_chunk() == 1
-        assert len(q._current_chunk()['gauges']) == 0
-        assert len(q._current_chunk()['counters']) == 1
+        assert len(q._current_chunk()['measurements']) == 1
 
     def test_num_metrics_in_queue(self):
         q = self.q
@@ -104,7 +95,7 @@ class TestLibratoQueue(unittest.TestCase):
         assert q._num_measurements_in_queue() == 290
         # Now ensure multiple chunks
         for _ in range(100):
-            q.add('num_requests', randint(100, 300), type='counter')
+            q.add('num_requests', randint(100, 300))
         assert q._num_measurements_in_queue() == 390
 
     def test_auto_submit_on_metric_count(self):
@@ -123,111 +114,125 @@ class TestLibratoQueue(unittest.TestCase):
         q = self.q
         for i in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
             q.add('temperature', randint(20, 30))
-        assert len(q.chunks) == 1
+        assert len(q.tagged_chunks) == 1
         assert q._num_measurements_in_current_chunk() == q.MAX_MEASUREMENTS_PER_CHUNK
 
         q.add('temperature', 40)  # damn is pretty hot :)
         assert q._num_measurements_in_current_chunk() == 1
-        assert len(q.chunks) == 2
+        assert len(q.tagged_chunks) == 2
 
     def test_submit_context_manager(self):
+        tags = {"host": "machine1"}
         try:
             with self.conn.new_queue() as q:
-                q.add('temperature', 32)
+                q.add('temperature', 32, tags=tags)
                 raise ValueError
         except ValueError:
-            gauge = self.conn.get('temperature', resolution=1, count=2)
-            assert gauge.name == 'temperature'
-            assert gauge.description is None
-            assert len(gauge.measurements['unassigned']) == 1
+            metric = self.conn.get_metric('temperature')
+            data = self.conn.get('temperature', resolution=1, count=2, duration=60, tags=tags)
+            assert metric.name == 'temperature'
+            assert metric.description is None
+            assert len(data['series'][0]['measurements']) == 1
 
     def test_submit_one_measurement_batch_mode(self):
+        tags = {'city': 'barcelona'}
         q = self.q
-        q.add('temperature', 22.1)
+        q.add('temperature', 22.1, tags=tags)
         q.submit()
         metrics = self.conn.list_metrics()
         assert len(metrics) == 1
-        gauge = self.conn.get('temperature', resolution=1, count=2)
-        assert gauge.name == 'temperature'
-        assert gauge.description is None
-        assert len(gauge.measurements['unassigned']) == 1
+        metric = self.conn.get_metric('temperature', resolution=1, count=2)
+        assert metric.name == 'temperature'
+        assert metric.description is None
+        data = self.conn.get('temperature', resolution=1, count=2, duration=60, tags=tags)
+        assert len(data['series'][0]['measurements']) == 1
 
         # Add another measurements for temperature
-        q.add('temperature', 23)
+        q.add('temperature', 23, tags=tags)
         q.submit()
         metrics = self.conn.list_metrics()
         assert len(metrics) == 1
-        gauge = self.conn.get('temperature', resolution=1, count=2)
-        assert gauge.name == 'temperature'
-        assert gauge.description is None
-        assert len(gauge.measurements['unassigned']) == 2
-        assert gauge.measurements['unassigned'][0]['value'] == 22.1
-        assert gauge.measurements['unassigned'][1]['value'] == 23
+        metric = self.conn.get_metric('temperature', resolution=1, count=2)
+        assert metric.name == 'temperature'
+        assert metric.description is None
+        data = self.conn.get('temperature', resolution=1, count=2, duration=60, tags=tags)
+        assert len(data['series'][0]['measurements']) == 2
+        assert data['series'][0]['measurements'][0]['value'] == 22.1
+        assert data['series'][0]['measurements'][1]['value'] == 23
 
     def test_submit_tons_of_measurement_batch_mode(self):
         q = self.q
         metrics = self.conn.list_metrics()
         assert len(metrics) == 0
 
+        tags = {'city': 'barcelona'}
         for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            q.add('temperature', t)
+            q.add('temperature', t, tags=tags)
         q.submit()
+
         metrics = self.conn.list_metrics()
         assert len(metrics) == 1
-        gauge = self.conn.get('temperature', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
-        assert gauge.name == 'temperature'
-        assert gauge.description is None
-        for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            assert gauge.measurements['unassigned'][t - 1]['value'] == t
+        m = self.conn.get_metric('temperature', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
+        assert m.name == 'temperature'
+        assert m.description is None
 
+        data = self.conn.get('temperature', resolution=1, duration=60, tags=tags)
+        measurements = data['series'][0]['measurements']
+        for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
+            assert measurements[t - 1]['value'] == t
+
+        tags = {'host': 'pollux'}
         for cl in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            q.add('cpu_load', cl)
+            q.add('cpu_load', cl, tags=tags)
         q.submit()
+
         metrics = self.conn.list_metrics()
         assert len(metrics) == 2
-        gauge = self.conn.get('cpu_load', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
-        assert gauge.name == 'cpu_load'
-        assert gauge.description is None
+
+        m = self.conn.get_metric('cpu_load', resolution=1, count=q.MAX_MEASUREMENTS_PER_CHUNK + 1)
+        assert m.name == 'cpu_load'
+        assert m.description is None
+
+        data = self.conn.get('cpu_load', resolution=1, duration=60, tags=tags)
+        measurements = data['series'][0]['measurements']
         for t in range(1, q.MAX_MEASUREMENTS_PER_CHUNK + 1):
-            assert gauge.measurements['unassigned'][t - 1]['value'] == t
+            assert measurements[t - 1]['value'] == t
 
     def test_add_aggregator(self):
         q = self.q
-        metrics = self.conn.list_metrics()
-        a = Aggregator(self.conn, source='mysource', period=10)
+        tags = {'sky': 'blue'}
+        a = Aggregator(self.conn, tags=tags, measure_time=123)
         a.add('foo', 42)
         a.add('bar', 37)
         q.add_aggregator(a)
 
-        gauges = q.chunks[0]['gauges']
-        names = [g['name'] for g in gauges]
-
-        assert len(q.chunks) == 1
-
+        measurements = q.tagged_chunks[0]['measurements']
+        names = [g['name'] for g in measurements]
+        assert len(q.tagged_chunks) == 1
         assert 'foo' in names
         assert 'bar' in names
 
-        # All gauges should have the same source
-        assert gauges[0]['source'] == 'mysource'
-        assert gauges[1]['source'] == 'mysource'
+        assert measurements[0]['tags'] == tags
+        assert measurements[1]['tags'] == tags
 
         # All gauges should have the same measure_time
-        assert 'measure_time' in gauges[0]
-        assert 'measure_time' in gauges[1]
+        assert 'time' in measurements[0]
+        assert 'time' in measurements[1]
 
-        # Test that time was snapped to 10s
-        assert gauges[0]['measure_time'] % 10 == 0
+        assert measurements[0]['time'] == 123
+        assert measurements[1]['time'] == 123
 
-    def test_md_submit(self):
+    def test_submit(self):
         q = self.q
-        q.set_tags({'hostname': 'web-1'})
+        tags = {'hostname': 'web-1'}
+        q.set_tags(tags)
 
         mt1 = int(time.time()) - 5
-        q.add_tagged('system_cpu', 3.2, time=mt1)
+        q.add('system_cpu', 3.2, time=mt1)
         assert q._num_measurements_in_queue() == 1
         q.submit()
 
-        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
+        resp = self.conn.get('system_cpu', duration=60, tags_search="hostname=web-1")
 
         assert len(resp['series']) == 1
         assert resp['series'][0].get('tags', {}) == {'hostname': 'web-1'}
@@ -238,17 +243,17 @@ class TestLibratoQueue(unittest.TestCase):
         assert measurements[0]['time'] == mt1
         assert measurements[0]['value'] == 3.2
 
-    def test_md_measurement_level_tag(self):
+    def test_measurement_level_tag(self):
         q = self.q
         q.set_tags({'hostname': 'web-1'})
 
         mt1 = int(time.time()) - 5
-        q.add_tagged('system_cpu', 33.22, time=mt1, tags={"user": "james"})
+        q.add('system_cpu', 33.22, time=mt1, tags={"user": "james"})
         q.submit()
 
         # Ensure both tags get submitted
         for tag_search in ["hostname=web-1", "user=james"]:
-            resp = self.conn.get_tagged('system_cpu', duration=60, tags_search=tag_search)
+            resp = self.conn.get('system_cpu', duration=60, tags_search=tag_search)
 
             assert len(resp['series']) == 1
 
@@ -263,14 +268,14 @@ class TestLibratoQueue(unittest.TestCase):
         q.set_tags({'hostname': 'web-1'})
 
         mt1 = int(time.time()) - 5
-        q.add_tagged('system_cpu', 33.22, time=mt1, tags={"hostname": "web-2"})
+        q.add('system_cpu', 33.22, time=mt1, tags={"hostname": "web-2"})
         q.submit()
 
         # Ensure measurement-level tag takes precedence
-        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
+        resp = self.conn.get('system_cpu', duration=60, tags_search="hostname=web-1")
         assert len(resp['series']) == 0
 
-        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-2")
+        resp = self.conn.get('system_cpu', duration=60, tags_search="hostname=web-2")
         assert len(resp['series']) == 1
 
         measurements = resp['series'][0]['measurements']
@@ -279,64 +284,23 @@ class TestLibratoQueue(unittest.TestCase):
         assert measurements[0]['time'] == mt1
         assert measurements[0]['value'] == 33.22
 
-    def test_side_by_side(self):
-        # Ensure tagged and untagged measurements are handled independently
-        q = self.conn.new_queue(tags={'hostname': 'web-1'})
-
-        q.add('system_cpu', 10)
-        q.add_tagged('system_cpu', 20)
-        q.submit()
-
-        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
-        assert len(resp['series']) == 1
-
-        measurements = resp['series'][0]['measurements']
-        assert len(measurements) == 2
-        assert measurements[0]['value'] == 10
-        assert measurements[1]['value'] == 20
-
-    def test_md_auto_submit_on_metric_count(self):
+    def test_auto_submit_on_metric_count_2(self):
         q = self.conn.new_queue(auto_submit_count=2)
 
-        q.add('untagged_cpu', 10)
-        q.add_tagged('tagged_cpu', 20, tags={'hostname': 'web-2'})
+        q.add('tagged_cpu', 10, tags={'hostname': 'web-2'})
+        q.add('tagged_cpu', 20, tags={'hostname': 'web-2'})
 
-        assert q._num_measurements_in_queue() == 0
+        resp = self.conn.get('tagged_cpu', duration=60, tags_search="hostname=web-2")
+        assert len(resp['series'][0]['measurements']) == 2
 
-        gauge = self.conn.get('untagged_cpu', duration=60)
-        assert len(gauge.measurements['unassigned']) == 1
-
-        resp = self.conn.get_tagged('tagged_cpu', duration=60, tags_search="hostname=web-2")
-        assert len(resp['series']) == 1
-
-    def queue_send_as_md_when_queue_has_tags(self):
+    def queue_send_as_when_queue_has_tags(self):
         q = self.conn.new_queue(tags={'foo': 1})
         q.add('a_metric', 10)
 
         assert q._num_measurements_in_queue() == 1
 
-        resp = self.conn.get_tagged('a_metric', duration=60, tags_search="foo=1")
+        resp = self.conn.get('a_metric', duration=60, tags_search="foo=1")
         assert len(resp['series']) == 1
-
-    def test_transparent_submit_md(self):
-        q = self.q
-        tags = {'hostname': 'web-1'}
-
-        mt1 = int(time.time()) - 5
-        q.add('system_cpu', 3.2, time=mt1, tags=tags)
-        assert q._num_measurements_in_queue() == 1
-        q.submit()
-
-        resp = self.conn.get_tagged('system_cpu', duration=60, tags_search="hostname=web-1")
-
-        assert len(resp['series']) == 1
-        assert resp['series'][0].get('tags', {}) == {'hostname': 'web-1'}
-
-        measurements = resp['series'][0]['measurements']
-        assert len(measurements) == 1
-
-        assert measurements[0]['time'] == mt1
-        assert measurements[0]['value'] == 3.2
 
 if __name__ == '__main__':
     unittest.main()

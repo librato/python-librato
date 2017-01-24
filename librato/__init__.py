@@ -287,8 +287,6 @@ class LibratoConnection(object):
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
         if resp['type'] == 'gauge':
             return Gauge.from_dict(self, resp)
-        elif resp['type'] == 'counter':
-            return Counter.from_dict(self, resp)
         else:
             raise Exception('The server sent me something that is not a Gauge nor a Counter.')
 

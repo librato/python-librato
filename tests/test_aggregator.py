@@ -103,7 +103,7 @@ class TestAggregator(unittest.TestCase):
         assert meas['min'] == 42
         assert meas['max'] == 44
 
-    # Only gauges are supported (not counters)
+    # Only gauges are supported
     def test_to_payload(self):
         self.agg.source = 'mysource'
         self.agg.add('test.metric', 42)
@@ -115,7 +115,6 @@ class TestAggregator(unittest.TestCase):
             'source': 'mysource'
         }
         assert 'gauges' in self.agg.to_payload()
-        assert 'counters' not in self.agg.to_payload()
 
     def test_to_payload_no_source(self):
         self.agg.source = None
