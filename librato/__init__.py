@@ -35,7 +35,7 @@ import json
 import email.message
 from librato import exceptions
 from librato.queue import Queue
-from librato.metrics import Gauge, Counter
+from librato.metrics import Gauge
 from librato.alerts import Alert, Service
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
@@ -248,12 +248,14 @@ class LibratoConnection(object):
     #
     def list_metrics(self, **query_props):
         """List a page of metrics"""
+
         from librato.metrics import Metric
         resp = self._mexe("metrics", query_props=query_props)
         return self._parse(resp, "metrics", Metric)
 
     def list_all_metrics(self, **query_props):
         """List all avaliable metrics"""
+
         if 'length' not in query_props:
             query_props['length'] = 100
         if 'offset' not in query_props:
@@ -267,18 +269,9 @@ class LibratoConnection(object):
             if len(metric_list) < page_size:
                 break
 
-    def submit(self, name, value, type="gauge", **query_props):
-        if 'tags' in query_props:
-            self.submit_tagged(name, value, **query_props)
-        else:
-            payload = {'gauges': [], 'counters': []}
-            metric = {'name': self.sanitize(name), 'value': value}
-            for k, v in query_props.items():
-                metric[k] = v
-            payload[type + 's'].append(metric)
-            self._mexe("metrics", method="POST", query_props=payload)
+    def submit(self, name, value, **query_props):
+        """Send measurements for a metric"""
 
-    def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
 
         if self.tags:
@@ -294,17 +287,17 @@ class LibratoConnection(object):
         payload['measurements'].append(measurement)
         self._mexe("measurements", method="POST", query_props=payload)
 
-    def get(self, name, **query_props):
+    def get_metric(self, name, **query_props):
+        """Get a metric definition"""
+
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
         if resp['type'] == 'gauge':
             return Gauge.from_dict(self, resp)
-        elif resp['type'] == 'counter':
-            return Counter.from_dict(self, resp)
         else:
             raise Exception('The server sent me something that is not a Gauge nor a Counter.')
 
-    def get_tagged(self, name, **query_props):
-        """Fetches multi-dimensional metrics"""
+    def get(self, name, **query_props):
+        """Fetches metric data"""
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
@@ -320,23 +313,27 @@ class LibratoConnection(object):
         return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
 
     def get_composite(self, compose, **query_props):
+        """Get a composite result"""
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
         if 'start_time' not in query_props:
             raise Exception("You must provide a 'start_time'")
         query_props['compose'] = compose
-        return self._mexe("metrics", method="GET", query_props=query_props)
+        return self._mexe("measurements", method="GET", query_props=query_props)
 
     def create_composite(self, name, compose, **query_props):
+        """Create a composite"""
         query_props['composite'] = compose
         query_props['type'] = 'composite'
         return self.update(name, **query_props)
 
     def update(self, name, **query_props):
+        """update a metric"""
         return self._mexe("metrics/%s" % self.sanitize(name), method="PUT", query_props=query_props)
 
     def delete(self, names):
+        """delete a metric or a group of metrics"""
         if isinstance(names, six.string_types):
             names = self.sanitize(names)
         else:
@@ -454,9 +451,9 @@ class LibratoConnection(object):
         return Space.from_dict(self, resp)
 
     def find_space(self, name):
+        """Find specific space by Name"""
         if type(name) is int:
             raise ValueError("This method expects name as a parameter, %s given" % name)
-        """Find specific space by Name"""
         spaces = self.list_spaces(name=name)
         # Find the Space by name (case-insensitive)
         # This returns the first space found matching the name

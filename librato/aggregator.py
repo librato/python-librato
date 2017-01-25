@@ -35,12 +35,9 @@ class Aggregator(object):
 
     def __init__(self, connection, **args):
         self.connection = connection
-        # Global source for all 'legacy' metrics sent into the aggregator
-        self.source = args.get('source')
         # Global tags, which apply to MD metrics only
         self.tags = dict(args.get('tags', {}))
         self.measurements = {}
-        self.tagged_measurements = {}
         self.period = args.get('period')
         self.measure_time = args.get('measure_time')
 
@@ -75,56 +72,7 @@ class Aggregator(object):
 
         return self.measurements
 
-    def add_tagged(self, name, value):
-        if name not in self.tagged_measurements:
-            self.tagged_measurements[name] = {
-                'count': 1,
-                'sum': value,
-                'min': value,
-                'max': value
-            }
-        else:
-            m = self.tagged_measurements[name]
-            m['sum'] += value
-            m['count'] += 1
-            if value < m['min']:
-                m['min'] = value
-            if value > m['max']:
-                m['max'] = value
-
-        return self.tagged_measurements
-
     def to_payload(self):
-        # Map measurements into Librato POST (array) format
-        # {
-        #     'gauges': [
-        #         {'count': 1, 'max': 42, 'sum': 42, 'name': 'foo', 'min': 42}
-        #     ]
-        #    'measure_time': 1418838418 (optional)
-        #    'source': 'mysource' (optional)
-        # }
-        # Note: hash format would work too, but the mocks aren't currently set up
-        # for the hash format :-(
-        # i.e. result = {'gauges': dict(self.measurements)}
-
-        body = []
-        for metric_name in self.measurements:
-            # Create a clone so we don't change self.measurements
-            vals = dict(self.measurements[metric_name])
-            vals["name"] = metric_name
-            body.append(vals)
-
-        result = {'gauges': body}
-        if self.source:
-            result['source'] = self.source
-
-        mt = self.floor_measure_time()
-        if mt:
-            result['measure_time'] = mt
-
-        return result
-
-    def to_md_payload(self):
         # Map measurements into Librato MD POST format
         # {
         #     'measures': [
@@ -135,9 +83,9 @@ class Aggregator(object):
         # }
 
         body = []
-        for metric_name in self.tagged_measurements:
-            # Create a clone so we don't change self.tagged_measurements
-            vals = dict(self.tagged_measurements[metric_name])
+        for metric_name in self.measurements:
+            # Create a clone so we don't change self.measurements
+            vals = dict(self.measurements[metric_name])
             vals["name"] = metric_name
             body.append(vals)
 
@@ -179,19 +127,11 @@ class Aggregator(object):
 
     def clear(self):
         self.measurements = {}
-        self.tagged_measurements = {}
         self.measure_time = None
 
     def submit(self):
-        # Submit any legacy or tagged measurements to API
-        # This will actually return an empty 200 response (no body)
-        if self.measurements:
-            self.connection._mexe("metrics",
-                                  method="POST",
-                                  query_props=self.to_payload())
-        if self.tagged_measurements:
-            self.connection._mexe("measurements",
-                                  method="POST",
-                                  query_props=self.to_md_payload())
+        self.connection._mexe("measurements",
+                              method="POST",
+                              query_props=self.to_payload())
         # Clear measurements
         self.clear()

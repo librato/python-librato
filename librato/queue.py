@@ -62,24 +62,7 @@ class Queue(object):
     def add_tags(self, d):
         self.tags.update(d)
 
-    def add(self, name, value, type='gauge', **query_props):
-        if len(self.tags) > 0:
-            query_props['tags'] = self.tags
-
-        if 'tags' in query_props:
-            self.add_tagged(name, value, **query_props)
-        else:
-            nm = {}  # new measurement
-            nm['name'] = self.connection.sanitize(name)
-            nm['value'] = value
-
-            for pn, v in query_props.items():
-                nm[pn] = v
-
-            self._add_measurement(type, nm)
-            self._auto_submit_if_necessary()
-
-    def add_tagged(self, name, value, **query_props):
+    def add(self, name, value, **query_props):
         nm = {}  # new measurement
         nm['name'] = self.connection.sanitize(name)
         nm['sum'] = value
@@ -92,26 +75,12 @@ class Queue(object):
         self._auto_submit_if_necessary()
 
     def add_aggregator(self, aggregator):
-        cloned_measurements = dict(aggregator.measurements)
-
         # Find measure_time, if any
         mt = aggregator.get_measure_time()
 
-        for name in cloned_measurements:
-            nm = cloned_measurements[name]
-            # Set metric name
-            nm['name'] = name
-            # Set measure_time
-            if mt:
-                nm['measure_time'] = mt
-            # Set source
-            if aggregator.source:
-                nm['source'] = aggregator.source
-            self._add_measurement('gauge', nm)
-
-        tagged_measurements = dict(aggregator.tagged_measurements)
-        for name in tagged_measurements:
-            nm = tagged_measurements[name]
+        measurements = dict(aggregator.measurements)
+        for name in measurements:
+            nm = measurements[name]
 
             nm['name'] = name
             if mt:
@@ -165,13 +134,13 @@ class Queue(object):
             self.tagged_chunks.append({'measurements': []})
         self.tagged_chunks[-1]['measurements'].append(nm)
 
-    def _current_chunk(self, tagged=False):
+    def _current_chunk(self, tagged=True):
         if tagged:
             return self.tagged_chunks[-1] if self.tagged_chunks else None
         else:
             return self.chunks[-1] if self.chunks else None
 
-    def _num_measurements_in_current_chunk(self, tagged=False):
+    def _num_measurements_in_current_chunk(self, tagged=True):
         if tagged:
             if self.tagged_chunks:
                 return len(self.tagged_chunks[-1]['measurements'])

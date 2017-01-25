@@ -30,7 +30,7 @@ class TestAggregator(unittest.TestCase):
         assert 'sky' in tags
         assert tags['sky'] == 'blue'
 
-    def test_add_tags(self):
+    def test_add(self):
         agg = Aggregator(self.conn, tags={'sky': 'blue'})
         agg.add_tags({'sky': 'red', 'coal': 'black'})
         tags = agg.get_tags()
@@ -49,10 +49,6 @@ class TestAggregator(unittest.TestCase):
         assert len(tags) == 1
         assert 'coal' in tags
         assert tags['coal'] == 'black'
-
-    def test_initialize_source(self):
-        assert Aggregator(self.conn).source is None
-        assert Aggregator(self.conn, source='my.source').source == 'my.source'
 
     def test_initialize_period(self):
         assert Aggregator(self.conn).period is None
@@ -103,35 +99,20 @@ class TestAggregator(unittest.TestCase):
         assert meas['min'] == 42
         assert meas['max'] == 44
 
-    # Only gauges are supported (not counters)
     def test_to_payload(self):
-        self.agg.source = 'mysource'
-        self.agg.add('test.metric', 42)
-        self.agg.add('test.metric', 43)
-        assert self.agg.to_payload() == {
-            'gauges': [
-                {'name': 'test.metric', 'count': 2, 'sum': 85, 'min': 42, 'max': 43}
-            ],
-            'source': 'mysource'
-        }
-        assert 'gauges' in self.agg.to_payload()
-        assert 'counters' not in self.agg.to_payload()
-
-    def test_to_payload_no_source(self):
-        self.agg.source = None
-        self.agg.add('test.metric', 42)
-
-        assert self.agg.to_payload() == {
-            'gauges': [
-                {
-                    'name': 'test.metric',
-                    'count': 1,
-                    'sum': 42,
-                    'min': 42,
-                    'max': 42
-                }
-            ]
-        }
+        a = Aggregator(self.conn, tags={'foo': 'bar'})
+        a.add('test.metric', 42)
+        a.add('test.metric', 43)
+        print a.to_payload()
+        assert a.to_payload() == {
+            'measurements': [{
+                'count': 2,
+                'max': 43,
+                'sum': 85,
+                'name': 'test.metric',
+                'min': 42}],
+            'tags': {'foo': 'bar'}
+            }
 
     # If 'value' is specified in the payload, the API will throw an error
     # This is because it must be calculated at the API via sum/count=avg
@@ -182,8 +163,8 @@ class TestAggregator(unittest.TestCase):
         self.agg.measure_time = mt
         self.agg.period = None
         self.agg.add("foo", 42)
-        assert 'measure_time' in self.agg.to_payload()
-        assert self.agg.to_payload()['measure_time'] == mt
+        assert 'time' in self.agg.to_payload()
+        assert self.agg.to_payload()['time'] == mt
 
     def test_measure_time_not_in_payload(self):
         self.agg.measure_time = None
@@ -224,21 +205,7 @@ class TestAggregator(unittest.TestCase):
         # This will occur only if period is set
         self.agg.measure_time = 1418838418
         self.agg.period = 60
-        assert self.agg.to_payload()['measure_time'] == 1418838360
-
-    def test_submit_side_by_side(self):
-        # Tagged and untagged measurements should be handled as separate
-        self.agg.add_tags({'hostname': 'web-1'})
-        self.agg.add('test.metric', 42)
-        self.agg.add_tagged('test.metric', 10)
-        self.agg.submit()
-
-        gauge = self.conn.get('test.metric', duration=60)
-        assert len(gauge.measurements['unassigned']) == 1
-
-        resp = self.conn.get_tagged('test.metric', duration=60, tags_search="hostname=web-1")
-        assert len(resp['series']) == 1
-
+        assert self.agg.to_payload()['time'] == 1418838360
 
 if __name__ == '__main__':
     unittest.main()
