@@ -35,8 +35,6 @@ class Aggregator(object):
 
     def __init__(self, connection, **args):
         self.connection = connection
-        # Global source for all 'legacy' metrics sent into the aggregator
-        self.source = args.get('source')
         # Global tags, which apply to MD metrics only
         self.tags = dict(args.get('tags', {}))
         self.measurements = {}
@@ -81,7 +79,6 @@ class Aggregator(object):
         #         {'count': 1, 'max': 42, 'sum': 42, 'name': 'foo', 'min': 42}
         #     ]
         #    'measure_time': 1418838418 (optional)
-        #    'source': 'mysource' (optional)
         # }
         # Note: hash format would work too, but the mocks aren't currently set up
         # for the hash format :-(
@@ -95,8 +92,6 @@ class Aggregator(object):
             body.append(vals)
 
         result = {'gauges': body}
-        if self.source:
-            result['source'] = self.source
 
         mt = self.floor_measure_time()
         if mt:

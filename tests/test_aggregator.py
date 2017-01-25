@@ -50,10 +50,6 @@ class TestAggregator(unittest.TestCase):
         assert 'coal' in tags
         assert tags['coal'] == 'black'
 
-    def test_initialize_source(self):
-        assert Aggregator(self.conn).source is None
-        assert Aggregator(self.conn, source='my.source').source == 'my.source'
-
     def test_initialize_period(self):
         assert Aggregator(self.conn).period is None
         assert Aggregator(self.conn, period=300).period == 300

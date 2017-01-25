@@ -293,43 +293,46 @@ print(alert.services)
 
 ## Client-side Aggregation
 
-You can aggregate measurements before submission using the `Aggregator` class.  Optionally, specify a `measure_time` to submit that timestamp to the API.  You may also optionally specify a `period` to floor the timestamp to a particular interval.  If `period` is specified without a `measure_time`, the current timestamp will be used, and floored to `period`.  Specifying an optional `source` allows the aggregated measurement to report a source name.
+You can aggregate measurements before submission using the `Aggregator` class.
+Optionally, specify a `measure_time` to submit that timestamp to the API.
+You may also optionally specify a `period` to floor the timestamp to a particular interval.
+If `period` is specified without a `measure_time`, the current timestamp will be used, and floored to `period`.
 
-Aggregator instances can be sent immediately by calling `submit()` or added to a `Queue` by calling `queue.add_aggregator()`.
+Aggregator instances can be sent immediately by calling `submit()` or added to
+a `Queue` by calling `queue.add_aggregator()`.
 
 ```python
 from librato.aggregator import Aggregator
 
 api = librato.connect('email', 'token')
 
-a = Aggregator(api)
+a = Aggregator(api, tags={'host': 'machine1'})
 a.add("foo", 42)
 a.add("foo", 5)
-# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5)
 # measure_time = <now>
 a.submit()
 
-a = Aggregator(api, source='my.source', period=60)
+a = Aggregator(api, tags={'host': 'machine1'}, period=60)
 a.add("foo", 42)
 a.add("foo", 5)
-# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=my.source
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5)
 # measure_time = <now> - (<now> % 60)
 a.submit()
 
-a = Aggregator(api, period=60, measure_time=1419302671)
+a = Aggregator(api, period=60, measure_time=1419302671, tags={'host': 'machine1'})
 a.add("foo", 42)
 a.add("foo", 5)
-# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5)
 # measure_time = 1419302671 - (1419302671 % 60) = 1419302671 - 31 = 1419302640
 a.submit()
 
-a = Aggregator(api, measure_time=1419302671)
+a = Aggregator(api, measure_time=1419302671, tags={'host': 'machine1'})
 a.add("foo", 42)
 a.add("foo", 5)
-# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5), source=unassigned
+# count=2, min=5, max=42, sum=47 (value calculated by API = mean = 23.5)
 # measure_time = 1419302671
 a.submit()
-
 
 # You can also add an Aggregator instance to a queue
 q = librato.queue.Queue(api)
