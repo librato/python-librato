@@ -5,6 +5,8 @@ python-librato
 
 A Python wrapper for the Librato Metrics API.
 
+## Sections
+
 ## Installation
 
 In your shell:
@@ -129,6 +131,7 @@ ready, they will be submitted in an efficient manner. Here is an example:
     q.add('temperature', 22, tags={'city': 'austin'  , 'station': '112'})
     q.submit()
 ```
+
 Queues can also be used as context managers. Once the context block is complete the queue
 is submitted automatically. This is true even if an exception interrupts flow. In the
 example below if ```potentially_dangerous_operation``` causes an exception the queue will
@@ -140,7 +143,7 @@ api = librato.connect('email', 'token')
 with api.new_queue() as q:
     q.add('temperature', 22.1, tags={'city': 'sf', 'station': '12'})
     potentially_dangerous_operation()
-    q.add('num_requests', tags={'city': 'austin'  , 'station': '112'})
+    q.add('num_requests', tags={'city': 'austin', 'station': '112'})
 ```
 
 Queues by default will collect metrics until they are told to submit. You may create a queue
@@ -200,7 +203,6 @@ doesn't exist). Title is a required parameter, and all other parameters are opti
 ```python
 api.post_annotation("testing",title="foobarbiz")
 
-####################### UPDATE ##########################
 api.post_annotation("TravisCI",title="build %s"%travisBuildID,
                      source="SystemSource",
                      description="Application %s, Travis build %s"%(appName,travisBuildID),
@@ -212,139 +214,6 @@ Delete a named annotation stream:
 ```python
 api.delete_annotation_stream("testing")
 ```
-
-## Spaces API
-### List Spaces
-```python
-# List spaces
-spaces = api.list_spaces()
-```
-
-### Create a Space
-```python
-# Create a new Space directly via API
-space = api.create_space("space_name")
-print("Created '%s'" % space.name)
-
-# Create a new Space via the model, passing the connection
-space = Space(api, 'Production')
-space.save()
-```
-
-### Find a Space
-```python
-space = api.find_space('Production')
-```
-
-### Delete a Space
-```python
-space = api.create_space('Test')
-api.delete_space(space.id)
-# or
-space.delete()
-```
-
-### Create a Chart
-```python
-# Create a Chart directly via API (defaults to line chart)
-############################################################# UPDATE
-space = api.find_space('Production')
-chart = api.create_chart(
-    'cpu',
-    space,
-    streams=[{'metric': 'cpu.idle', 'source': '*'}]
-)
-```
-
-```python
-# Create line chart using the Space model
-space = api.find_space('Production')
-
-# You can actually create an empty chart (default to line)
-chart = space.add_chart('cpu')
-
-# Create a chart with all attributes
-chart = space.add_chart(
-    'memory',
-    type='line',
-    streams=[
-      {'metric': 'memory.free', 'source': '*'},
-      {'metric': 'memory.used', 'source': '*',
-        'group_function': 'breakout', 'summary_function': 'average'}
-    ],
-    min=0,
-    max=50,
-    label='the y axis label',
-    use_log_yaxis=True,
-    related_space=1234
-)
-```
-
-```python
-# Shortcut to create a line chart with a single metric on it
-chart = space.add_single_line_chart('my chart', 'my.metric', '*')
-chart = space.add_single_line_chart('my chart', metric='my.metric', source='*')
-```
-
-```python
-# Shortcut to create a stacked chart with a single metric on it
-chart = space.add_single_stacked_chart('my chart', 'my.metric', '*')
-```
-
-```python
-# Create a big number chart
-bn = space.add_chart(
-    'memory',
-    type='bignumber',
-    streams=[{'metric': 'my.metric', 'source': '*'}]
-)
-# Shortcut to add big number chart
-bn = space.add_bignumber_chart('My Chart', 'my.metric', '*')
-bn = space.add_bignumber_chart('My Chart', 'my.metric',
-  source='*',
-  group_function='sum',
-  summary_function='sum',
-  use_last_value=True
-)
-```
-
-### Find a Chart
-```python
-# Takes either space_id or a space object
-chart = api.get_chart(chart_id, space_id)
-chart = api.get_chart(chart_id, space)
-```
-
-### Update a Chart
-```python
-chart = api.get_chart(chart_id, space_id)
-chart.min = 0
-chart.max = 50
-chart.save()
-```
-
-### Rename a Chart
-```python
-chart = api.get_chart(chart_id, space_id)
-# save() gets called automatically here
-chart.rename('new chart name')
-```
-
-### Add new metrics to a Chart
-```python
-chart = space.charts()[-1]
-chart.new_stream('foo', '*')
-chart.new_stream(metric='foo', source='*')
-chart.new_stream(composite='s("foo", "*")')
-chart.save()
-```
-
-### Delete a Chart
-```python
-chart = api.get_chart(chart_id, space_id)
-chart.delete()
-```
-
 
 ## Alerts
 
