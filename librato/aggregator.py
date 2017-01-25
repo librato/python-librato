@@ -73,33 +73,6 @@ class Aggregator(object):
         return self.measurements
 
     def to_payload(self):
-        # Map measurements into Librato POST (array) format
-        # {
-        #     'gauges': [
-        #         {'count': 1, 'max': 42, 'sum': 42, 'name': 'foo', 'min': 42}
-        #     ]
-        #    'measure_time': 1418838418 (optional)
-        # }
-        # Note: hash format would work too, but the mocks aren't currently set up
-        # for the hash format :-(
-        # i.e. result = {'gauges': dict(self.measurements)}
-
-        body = []
-        for metric_name in self.measurements:
-            # Create a clone so we don't change self.measurements
-            vals = dict(self.measurements[metric_name])
-            vals["name"] = metric_name
-            body.append(vals)
-
-        result = {'gauges': body}
-
-        mt = self.floor_measure_time()
-        if mt:
-            result['measure_time'] = mt
-
-        return result
-
-    def to_md_payload(self):
         # Map measurements into Librato MD POST format
         # {
         #     'measures': [
@@ -159,6 +132,6 @@ class Aggregator(object):
     def submit(self):
         self.connection._mexe("measurements",
                               method="POST",
-                              query_props=self.to_md_payload())
+                              query_props=self.to_payload())
         # Clear measurements
         self.clear()
