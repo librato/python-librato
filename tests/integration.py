@@ -110,7 +110,7 @@ class TestLibratoBasic(TestLibratoBase):
         self._delete_and_verify_metric(name, self.conn_sanitize)
 
     def test_create_and_delete_gauge(self):
-        name = 'Test'
+        name = 'a_py_metric_del_gau_test'
         self._add_and_verify_metric(name, 10, tags())
         self._delete_and_verify_metric(name)
 
@@ -122,7 +122,7 @@ class TestLibratoBasic(TestLibratoBase):
         self._delete_and_verify_metric([name_one, name_two])
 
     def test_save_gauge_metrics(self):
-        name = 'Test'
+        name = 'py_s_ga_me_test'
         self.conn.submit(name, 10, tags=tags())
         self.conn.submit(name, 20, tags=tags())
         self.conn.delete(name)
@@ -165,7 +165,7 @@ class TestLibratoBasic(TestLibratoBase):
         self.conn.new_queue().submit()
 
     def test_update_metrics_attributes(self):
-        name = 'Test'
+        name = 'py_update_m__att'
         self.conn.submit(name, 10, tags=tags())
         self.wait_for_replication()
         gauge = self.conn.get_metric(name)
