@@ -106,7 +106,7 @@ source such as `sf` we could use it in the same fashion. Read more the
 [API documentation](https://www.librato.com/docs/api/). In addition, notice how
 we are passing the count and resolution parameters to make sure the API
 returns measurements in its answer and not only the metric properties.
-Read more about them [here](https://www.librato.com/docs/api/#retrieve-metric-by-name).
+Read more about them [here](https://www.librato.com/docs/api/#retrieve-a-metric-by-name).
 
 To retrieve a composite metric:
 
