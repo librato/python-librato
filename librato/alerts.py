@@ -1,7 +1,7 @@
 class Alert(object):
     """Librato Alert Base class"""
 
-    def __init__(self, connection, name, _id=None, description=None, version=2,
+    def __init__(self, connection, name, _id=None, description=None, version=2, md=False,
                  conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
         self.connection = connection
         self.name = name
@@ -29,6 +29,7 @@ class Alert(object):
         self.active = active
         self.rearm_seconds = rearm_seconds
         self._id = _id
+        self.md = md
 
     def add_condition_for(self, metric_name, source='*'):
         condition = Condition(metric_name, source)
@@ -51,11 +52,13 @@ class Alert(object):
                   _id=data['id'],
                   active=data['active'],
                   rearm_seconds=data['rearm_seconds'],
-                  attributes=data['attributes'])
+                  attributes=data['attributes'],
+                  md=data['md'])
         return obj
 
     def get_payload(self):
         return {'name': self.name,
+                'md': self.md,
                 'attributes': self.attributes,
                 'version': self.version,
                 'description': self.description,
