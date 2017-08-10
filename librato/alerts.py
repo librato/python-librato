@@ -76,9 +76,10 @@ class Condition(object):
     # Note this is 'average' not 'mean'
     SUMMARY_FUNCTION_AVERAGE = 'average'
 
-    def __init__(self, metric_name, source='*'):
+    def __init__(self, metric_name, source='*', tags=None):
         self.metric_name = metric_name
         self.source = source
+        self.tags = tags or {}
         self.summary_function = None
 
     def above(self, threshold, summary_function=SUMMARY_FUNCTION_AVERAGE):
@@ -117,7 +118,8 @@ class Condition(object):
     @classmethod
     def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
-                  source=data.get('source', '*'))
+                  source=data.get('source', '*'),
+                  tags=data.get('tags', {}))
         if data['type'] == Condition.ABOVE:
             obj.above(data.get('threshold'), data.get('summary_function'))
             obj.duration(data.get('duration'))
@@ -133,6 +135,7 @@ class Condition(object):
             'type': self.condition_type,
             'metric_name': self.metric_name,
             'source': self.source,
+            'tags': self.tags,
             'summary_function': self.summary_function,
             'duration': self._duration
         }
