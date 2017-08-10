@@ -420,20 +420,22 @@ class LibratoConnection(object):
             return alerts[0]
         return None
 
-    # List alerts (defaults to v2 only)
-    # TODO: support for pagination
     def list_alerts(self, active_only=True, **query_props):
         """List all alerts (default to active only)"""
-        # Only v2 is supported
-        # TODO: remove this when v1 is deprecated at the API
-        query_props['version'] = 2
         # Note: query_props may contain 'name' which would filter by name
-        resp = self._mexe("alerts", query_props=query_props)
-        alerts = self._parse(resp, "alerts", Alert)
-        if active_only:
-            return [a for a in alerts if a.active]
-        else:
-            return alerts
+        offset = query_props.get('offset', 0)
+        while True:
+            query_props['offset'] = offset
+            resp = self._mexe("alerts", query_props=query_props)
+            alerts = self._parse(resp, "alerts", Alert)
+            for alert in alerts:
+                if not active_only or alert.active:
+                    yield alert
+            length = resp.get('query', {}).get('length', 0)
+            offset += length
+            total = resp.get('query', {}).get('total', length)
+            if offset >= total or length == 0:
+                break
 
     def list_services(self, **query_props):
         resp = self._mexe("services", query_props=query_props)
