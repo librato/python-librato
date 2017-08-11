@@ -422,10 +422,12 @@ class LibratoConnection(object):
 
     def list_alerts(self, active_only=True, **query_props):
         """List all alerts (default to active only)"""
+        query_props['version'] = '2'
         # Note: query_props may contain 'name' which would filter by name
         offset = query_props.get('offset', 0)
         while True:
-            query_props['offset'] = offset
+            if offset > 0:
+                query_props['offset'] = offset
             resp = self._mexe("alerts", query_props=query_props)
             alerts = self._parse(resp, "alerts", Alert)
             for alert in alerts:

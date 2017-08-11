@@ -14,7 +14,7 @@ class TestLibratoAlerts(unittest.TestCase):
         server.clean()
 
     def test_list_alerts_when_none(self):
-        alerts = self.conn.list_alerts()
+        alerts = list(self.conn.list_alerts())
         self.assertEqual(len(alerts), 0)
 
     def test_create_alert_without_services_or_conditions(self):
@@ -24,7 +24,7 @@ class TestLibratoAlerts(unittest.TestCase):
         self.assertNotEqual(alert._id, 0)
         self.assertEqual(len(alert.services), 0)
         self.assertEqual(len(alert.conditions), 0)
-        self.assertEqual(len(self.conn.list_alerts()), 1)
+        self.assertEqual(len(list(self.conn.list_alerts())), 1)
 
     def test_adding_an_alert_with_description(self):
         alert = self.conn.create_alert(self.name, description="test_description")
@@ -63,9 +63,9 @@ class TestLibratoAlerts(unittest.TestCase):
     def test_deleting_an_alert(self):
         alert = self.conn.create_alert(self.name)
         # TODO: use requests directly instead of the client methods?
-        assert len(self.conn.list_alerts()) == 1
+        assert len(list(self.conn.list_alerts())) == 1
         self.conn.delete_alert(self.name)
-        assert len(self.conn.list_alerts()) == 0
+        assert len(list(self.conn.list_alerts())) == 0
 
     def test_deleting_an_inexistent_alert(self):
         self.conn.create_alert('say_my_name')
