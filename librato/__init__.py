@@ -439,9 +439,55 @@ class LibratoConnection(object):
             if offset >= total or length == 0:
                 break
 
+    def list_all_alerts(self, active_only=True, **query_props):
+        """List all avaliable alerts.  In addition to the normal query_props,
+        active_only=<bool> can be passed in to filter out inactive alerts
+
+        :type active_only: bool
+        :param active_only: Whether to only return active alerts, or all alerts
+
+        """
+        if 'length' not in query_props:
+            query_props['length'] = 100
+        if 'offset' not in query_props:
+            query_props['offset'] = 0
+        page_size = query_props['length']
+        while True:
+            # Get all alerts from list_alerts, and filter them below so that
+            # we can determine when to terminate in the presence of pagination.
+            alert_list = self.list_alerts(active_only=active_only,  **query_props)
+            for a in alert_list:
+                if active_only:
+                    if not a.active:
+                        continue
+                    yield a
+                else:
+                    yield a
+            query_props['offset'] += page_size
+            if len(alert_list) < page_size:
+                break
+
+
     def list_services(self, **query_props):
         resp = self._mexe("services", query_props=query_props)
         return self._parse(resp, "services", Service)
+
+    def list_all_services(self, **query_props):
+        if 'length' not in query_props:
+            query_props['length'] = 100
+        if 'offset' not in query_props:
+            query_props['offset'] = 0
+        page_size = query_props['length']
+        while True:
+            # Get all services from list_services, and filter them below so that
+            # we can determine when to terminate in the presence of pagination.
+            svc_list = self.list_services(**query_props)
+            for m in svc_list:
+                yield m
+            query_props['offset'] += page_size
+            if len(svc_list) < page_size:
+                break
+
 
     #
     # Spaces
