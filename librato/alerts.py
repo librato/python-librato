@@ -1,7 +1,7 @@
 class Alert(object):
     """Librato Alert Base class"""
 
-    def __init__(self, connection, name, _id=None, description=None, version=2,
+    def __init__(self, connection, name, _id=None, description=None, version=2, md=False,
                  conditions=[], services=[], attributes={}, active=True, rearm_seconds=None):
         self.connection = connection
         self.name = name
@@ -29,6 +29,7 @@ class Alert(object):
         self.active = active
         self.rearm_seconds = rearm_seconds
         self._id = _id
+        self.md = md
 
     def add_condition_for(self, metric_name, source='*'):
         condition = Condition(metric_name, source)
@@ -51,11 +52,13 @@ class Alert(object):
                   _id=data['id'],
                   active=data['active'],
                   rearm_seconds=data['rearm_seconds'],
-                  attributes=data['attributes'])
+                  attributes=data['attributes'],
+                  md=data['md'])
         return obj
 
     def get_payload(self):
         return {'name': self.name,
+                'md': self.md,
                 'attributes': self.attributes,
                 'version': self.version,
                 'description': self.description,
@@ -76,9 +79,10 @@ class Condition(object):
     # Note this is 'average' not 'mean'
     SUMMARY_FUNCTION_AVERAGE = 'average'
 
-    def __init__(self, metric_name, source='*'):
+    def __init__(self, metric_name, source='*', tags=None):
         self.metric_name = metric_name
         self.source = source
+        self.tags = tags or {}
         self.summary_function = None
 
     def above(self, threshold, summary_function=SUMMARY_FUNCTION_AVERAGE):
@@ -117,7 +121,8 @@ class Condition(object):
     @classmethod
     def from_dict(cls, data):
         obj = cls(metric_name=data['metric_name'],
-                  source=data.get('source', '*'))
+                  source=data.get('source', '*'),
+                  tags=data.get('tags', {}))
         if data['type'] == Condition.ABOVE:
             obj.above(data.get('threshold'), data.get('summary_function'))
             obj.duration(data.get('duration'))
@@ -133,6 +138,7 @@ class Condition(object):
             'type': self.condition_type,
             'metric_name': self.metric_name,
             'source': self.source,
+            'tags': self.tags,
             'summary_function': self.summary_function,
             'duration': self._duration
         }
