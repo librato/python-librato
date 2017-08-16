@@ -19,11 +19,11 @@ class SpacesTest(unittest.TestCase):
 class TestSpacesConnection(SpacesTest):
     def test_list_spaces(self):
         self.conn.create_space('My Space')
-        self.assertEqual(len(self.conn.list_spaces()), 1)
+        self.assertEqual(len(list(self.conn.list_spaces())), 1)
 
     def test_list_spaces_when_none(self):
         spcs = self.conn.list_spaces()
-        self.assertEqual(len(spcs), 0)
+        self.assertEqual(len(list(spcs)), 0)
 
     # Find a space by ID
     def test_get_space(self):
@@ -67,7 +67,7 @@ class TestSpacesConnection(SpacesTest):
         space = self.conn.create_space('My Space')
         self.conn.update_space(space, name='New Name')
 
-        updated_spaces = self.conn.list_spaces()
+        updated_spaces = list(self.conn.list_spaces())
         self.assertEqual(len(updated_spaces), 1)
 
         updated = updated_spaces[0]
@@ -84,7 +84,7 @@ class TestSpacesConnection(SpacesTest):
     def test_delete_space(self):
         space = self.conn.create_space('My Space')
         self.conn.delete_space(space.id)
-        self.assertEqual(len(self.conn.list_spaces()), 0)
+        self.assertEqual(len(list(self.conn.list_spaces())), 0)
 
 
 class TestSpaceModel(SpacesTest):
