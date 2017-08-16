@@ -39,6 +39,9 @@ class Alert(object):
     def add_service(self, service_id):
         self.services.append(Service(service_id))
 
+    def __repr__(self):
+        return "%s<%s>" % (self.__class__.__name__, self.name)
+
     @classmethod
     def from_dict(cls, connection, data):
         """Returns an alert object from a dictionary item,
@@ -166,3 +169,6 @@ class Service(object):
             'type': self.type,
             'settings': self.settings
         }
+
+    def __repr__(self):
+        return "%s<%s><%s>" % (self.__class__.__name__, self.type, self.title)

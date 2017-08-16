@@ -34,6 +34,9 @@ class Annotation(object):
         self.events = {}
         self.query = {}
 
+    def __repr__(self):
+        return "%s<%s>" % (self.__class__.__name__, self.name)
+
     @classmethod
     def from_dict(cls, connection, data):
         """Returns a metric object from a dictionary item,

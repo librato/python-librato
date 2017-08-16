@@ -141,14 +141,14 @@ class TestService(unittest.TestCase):
         server.clean()
 
     def test_list_services(self):
-        services = self.conn.list_services()
+        services = list(self.conn.list_services())
         self.assertEqual(len(services), 0)
         # Hack this into the server until we have a :create_service
         # method on the actual connection
         server.create_service(self.sample_payload)
         # id is 1
         self.assertEqual(server.services[1], self.sample_payload)
-        services = self.conn.list_services()
+        services = list(self.conn.list_services())
         self.assertEqual(len(services), 1)
         s = services[0]
         self.assertIsInstance(s, librato.alerts.Service)
