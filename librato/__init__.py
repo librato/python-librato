@@ -35,7 +35,7 @@ import json
 import email.message
 from librato import exceptions
 from librato.queue import Queue
-from librato.metrics import Gauge, Counter
+from librato.metrics import Gauge, Counter, Metric
 from librato.alerts import Alert, Service
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
@@ -243,12 +243,28 @@ class LibratoConnection(object):
     def add_tags(self, d):
         self.tags.update(d)
 
+    # Return all items for a "list" request
+    def _get_paginated_results(self, entity, klass, **query_props):
+        offset = query_props.get('offset', 0)
+        while True:
+            if offset > 0:
+                query_props['offset'] = offset
+            resp = self._mexe(entity, query_props=query_props)
+
+            results = self._parse(resp, entity, klass)
+            for result in results:
+                yield result
+            length = resp.get('query', {}).get('length', 0)
+            offset += length
+            total = resp.get('query', {}).get('total', length)
+            if offset >= total or length == 0:
+                break
+
     #
     # Metrics
     #
     def list_metrics(self, **query_props):
         """List a page of metrics"""
-        from librato.metrics import Metric
         resp = self._mexe("metrics", query_props=query_props)
         return self._parse(resp, "metrics", Metric)
 
@@ -348,13 +364,13 @@ class LibratoConnection(object):
             path = "metrics"
         return self._mexe(path, method="DELETE", query_props=payload)
 
+
     #
     # Annotations
     #
     def list_annotation_streams(self, **query_props):
         """List all annotation streams"""
-        resp = self._mexe("annotations", query_props=query_props)
-        return self._parse(resp, "annotations", Annotation)
+        return self._get_paginated_results('annotations', Annotation, **query_props)
 
     def get_annotation_stream(self, name, **query_props):
         """Get an annotation stream (add start_date to query props for events)"""
@@ -412,9 +428,9 @@ class LibratoConnection(object):
         resp = self._mexe("alerts/%s" % alert._id, method="DELETE")
         return resp
 
-    def get_alert(self, name, **query_props):
+    def get_alert(self, name):
         """Get specific alert"""
-        resp = self._mexe("alerts", query_props={'version': 2, 'name': name})
+        resp = self._mexe("alerts", query_props={'name': name})
         alerts = self._parse(resp, "alerts", Alert)
         if len(alerts) > 0:
             return alerts[0]
@@ -422,34 +438,19 @@ class LibratoConnection(object):
 
     def list_alerts(self, active_only=True, **query_props):
         """List all alerts (default to active only)"""
-        query_props['version'] = 2
-        # Note: query_props may contain 'name' which would filter by name
-        offset = query_props.get('offset', 0)
-        while True:
-            if offset > 0:
-                query_props['offset'] = offset
-            resp = self._mexe("alerts", query_props=query_props)
-            alerts = self._parse(resp, "alerts", Alert)
-            for alert in alerts:
-                if not active_only or alert.active:
-                    yield alert
-            length = resp.get('query', {}).get('length', 0)
-            offset += length
-            total = resp.get('query', {}).get('total', length)
-            if offset >= total or length == 0:
-                break
+        return self._get_paginated_results("alerts", Alert, **query_props)
 
     def list_services(self, **query_props):
-        resp = self._mexe("services", query_props=query_props)
-        return self._parse(resp, "services", Service)
+        # Note: This API currently does not have the ability to
+        # filter by title, type, etc
+        return self._get_paginated_results("services", Service, **query_props)
 
     #
     # Spaces
     #
     def list_spaces(self, **query_props):
         """List all spaces"""
-        resp = self._mexe("spaces", query_props=query_props)
-        return self._parse(resp, "spaces", Space)
+        return self._get_paginated_results("spaces", Space, **query_props)
 
     def get_space(self, id, **query_props):
         """Get specific space by ID"""
