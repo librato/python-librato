@@ -364,7 +364,6 @@ class LibratoConnection(object):
             path = "metrics"
         return self._mexe(path, method="DELETE", query_props=payload)
 
-
     #
     # Annotations
     #
