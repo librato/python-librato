@@ -13,9 +13,9 @@ from mock_connection import MockConnect, server
 librato.HTTPSConnection = MockConnect
 
 fake_metric = {
-               "name":"3333",
+               "name": "3333",
                "display_name": "test name",
-               "type":"gauge",
+               "type": "gauge",
                "attributes": {
                               "created_by_ua": "fake",
                              },
@@ -23,6 +23,7 @@ fake_metric = {
                "period": 60,
                "source_lag": 60
                }
+
 
 class TestLibrato(unittest.TestCase):
     def setUp(self):
@@ -39,11 +40,15 @@ class TestLibrato(unittest.TestCase):
             offset = query_props['offset']
             # I don't care what the metrics are
             # this is about testing the logic and the calls
-            #result = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
             result = [fake_metric for x in range(12)]
-            
-            return {"query":
-                    {"offset":offset,"length":length,"found":12,"total":12},
+            return {
+                    "query":
+                    {
+                        "offset": offset,
+                        "length": length,
+                        "found": 12,
+                        "total": 12
+                    },
                     "metrics": result[offset:length + offset]
                    }
 
