@@ -245,20 +245,19 @@ class LibratoConnection(object):
 
     # Return all items for a "list" request
     def _get_paginated_results(self, entity, klass, **query_props):
-        offset = query_props.get('offset', 0)
-        while True:
-            if offset > 0:
-                query_props['offset'] = offset
-            resp = self._mexe(entity, query_props=query_props)
+        resp = self._mexe(entity, query_props=query_props)
 
-            results = self._parse(resp, entity, klass)
-            for result in results:
+        results = self._parse(resp, entity, klass)
+        for result in results:
+            yield result
+
+        length = resp.get('query', {}).get('length', 0)
+        offset = query_props.get('offset', 0) + length
+        total = resp.get('query', {}).get('total', length)
+        if offset < total and length > 0:
+            query_props.update({'offset': offset})
+            for result in self._get_paginated_results(entity, klass, **query_props):
                 yield result
-            length = resp.get('query', {}).get('length', 0)
-            offset += length
-            total = resp.get('query', {}).get('total', length)
-            if offset >= total or length == 0:
-                break
 
     #
     # Metrics
@@ -269,19 +268,7 @@ class LibratoConnection(object):
         return self._parse(resp, "metrics", Metric)
 
     def list_all_metrics(self, **query_props):
-        """List all avaliable metrics"""
-        if 'length' not in query_props:
-            query_props['length'] = 100
-        if 'offset' not in query_props:
-            query_props['offset'] = 0
-        page_size = query_props['length']
-        while True:
-            metric_list = self.list_metrics(**query_props)
-            for m in metric_list:
-                yield m
-            query_props['offset'] += page_size
-            if len(metric_list) < page_size:
-                break
+        return self._get_paginated_results("metrics", Metric, **query_props)
 
     def submit(self, name, value, type="gauge", **query_props):
         if 'tags' in query_props:

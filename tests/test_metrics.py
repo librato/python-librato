@@ -12,6 +12,18 @@ from mock_connection import MockConnect, server
 # Mock the server
 librato.HTTPSConnection = MockConnect
 
+fake_metric = {
+    "name": "3333",
+    "display_name": "test name",
+    "type": "gauge",
+    "attributes": {
+        "created_by_ua": "fake",
+    },
+    "description": "a description",
+    "period": 60,
+    "source_lag": 60
+}
+
 
 class TestLibrato(unittest.TestCase):
     def setUp(self):
@@ -23,26 +35,31 @@ class TestLibrato(unittest.TestCase):
         assert len(metrics) == 0
 
     def test_list_all_metrics(self):
-        def mock_list(**args):
-            offset = args['offset']
-            length = args['length']
+        def mock_list(entity, query_props=None):
+            length = query_props['length']
+            offset = query_props['offset']
             # I don't care what the metrics are
             # this is about testing the logic and the calls
-            result = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
-            return result[offset:length + offset]
+            result = [fake_metric for x in range(12)]
+            return {
+                    "query":
+                    {
+                        "offset": offset,
+                        "length": length,
+                        "found": 12,
+                        "total": 12
+                    },
+                    "metrics": result[offset:length + offset]
+                   }
 
-        expected_call_list = [({'length': 5, 'offset': 0},),
-                              ({'length': 5, 'offset': 5},),
-                              ({'length': 5, 'offset': 10},)]
         with patch.object(
                 self.conn,
-                'list_metrics',
+                '_mexe',
         ) as list_prop:
             list_prop.side_effect = mock_list
-            metrics = list(self.conn.list_all_metrics(length=5))
+            metrics = list(self.conn.list_all_metrics(length=5, offset=0))
             assert len(metrics) == 12
             assert list_prop.call_count == 3
-            assert list_prop.call_args_list == expected_call_list
 
     def test_list_metrics_adding_gauge(self):
         """ Notice that the api forces you to send a value even when you are
