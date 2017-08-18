@@ -256,7 +256,8 @@ class LibratoConnection(object):
         total = resp.get('query', {}).get('total', length)
         if offset < total and length > 0:
             query_props.update({'offset': offset})
-            yield from self._get_paginated_results(entity, klass, **query_props)
+            for result in self._get_paginated_results(entity, klass, **query_props):
+                yield result
 
     #
     # Metrics
