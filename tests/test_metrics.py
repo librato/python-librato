@@ -13,16 +13,16 @@ from mock_connection import MockConnect, server
 librato.HTTPSConnection = MockConnect
 
 fake_metric = {
-               "name": "3333",
-               "display_name": "test name",
-               "type": "gauge",
-               "attributes": {
-                              "created_by_ua": "fake",
-                             },
-               "description": "a description",
-               "period": 60,
-               "source_lag": 60
-               }
+    "name": "3333",
+    "display_name": "test name",
+    "type": "gauge",
+    "attributes": {
+        "created_by_ua": "fake",
+    },
+    "description": "a description",
+    "period": 60,
+    "source_lag": 60
+}
 
 
 class TestLibrato(unittest.TestCase):
