@@ -26,6 +26,7 @@ import six
 import platform
 import time
 import logging
+import os
 from six.moves import http_client
 from six.moves import map
 from six import string_types
@@ -560,11 +561,15 @@ class LibratoConnection(object):
         self.timeout = timeout
 
 
-def connect(username, api_key, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
+def connect(username=None, api_key=None, hostname=HOSTNAME, base_path=BASE_PATH, sanitizer=sanitize_no_op,
             protocol="https", tags={}):
     """
     Connect to Librato Metrics
     """
+
+    username = username if username else os.getenv('LIBRATO_USER', '')
+    api_key = api_key if api_key else os.getenv('LIBRATO_TOKEN', '')
+
     return LibratoConnection(username, api_key, hostname, base_path, sanitizer=sanitizer, protocol=protocol, tags=tags)
 
 
