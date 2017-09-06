@@ -47,10 +47,14 @@ class Metric(object):
     def from_dict(cls, connection, data):
         """Returns a metric object from a dictionary item,
         which is usually from librato's API"""
-        if data.get('type') == "gauge":
+        metric_type = data.get('type')
+        if metric_type == "gauge":
             cls = Gauge
-        elif data.get('type') == "counter":
+        elif metric_type == "counter":
             cls = Counter
+        elif metric_type == "composite":
+            # Since we don't have a formal Composite class, use Gauge for now
+            cls = Gauge
 
         obj = cls(connection, data['name'])
         obj.period = data['period']
@@ -58,7 +62,8 @@ class Metric(object):
         obj.description = data['description'] if 'description' in data else None
         obj.measurements = data['measurements'] if 'measurements' in data else {}
         obj.query = data['query'] if 'query' in data else {}
-        obj.composite = data['composite'] if 'composite' in data else None
+        obj.composite = data.get('composite', None)
+        obj.source_lag = data.get('source_lag', None)
 
         return obj
 
