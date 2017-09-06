@@ -272,7 +272,7 @@ class LibratoConnection(object):
         return self._get_paginated_results("metrics", Metric, **query_props)
 
     def submit(self, name, value, type="gauge", **query_props):
-        if 'tags' in query_props:
+        if 'tags' in query_props or self.get_tags():
             self.submit_tagged(name, value, **query_props)
         else:
             payload = {'gauges': [], 'counters': []}
@@ -323,14 +323,29 @@ class LibratoConnection(object):
 
         return self._mexe("measurements/%s" % self.sanitize(name), method="GET", query_props=query_props)
 
+    def get_measurements(self, name, **query_props):
+        return self.get_tagged(name, **query_props)
+
     def get_composite(self, compose, **query_props):
+        if self.get_tags():
+            return self.get_composite_tagged(compose, **query_props)
+        else:
+            if 'resolution' not in query_props:
+                # Default to raw resolution
+                query_props['resolution'] = 1
+            if 'start_time' not in query_props:
+                raise Exception("You must provide a 'start_time'")
+            query_props['compose'] = compose
+            return self._mexe('metrics', method="GET", query_props=query_props)
+
+    def get_composite_tagged(self, compose, **query_props):
         if 'resolution' not in query_props:
             # Default to raw resolution
             query_props['resolution'] = 1
         if 'start_time' not in query_props:
             raise Exception("You must provide a 'start_time'")
         query_props['compose'] = compose
-        return self._mexe("metrics", method="GET", query_props=query_props)
+        return self._mexe('measurements', method="GET", query_props=query_props)
 
     def create_composite(self, name, compose, **query_props):
         query_props['composite'] = compose
