@@ -5,8 +5,12 @@ python-librato
 
 A Python wrapper for the Librato Metrics API.
 
-## Source-based Librato users (legacy)
-Starting in version 3, we have deprecated Dashboards and Instruments in favor of Spaces and Charts.
+## Documentation Notes
+
+- New accounts
+  - Refer to [master](https://github.com/librato/python-librato/tree/master) for the latest documentation.
+- Legacy (source-based) Librato users
+  - Please see the [legacy documentation](https://github.com/librato/python-librato/tree/v2.1.2)
 
 ## Installation
 
@@ -317,13 +321,6 @@ Create an alert with an _absent_ condition:
 ```python
 alert = api.create_alert('my.alert')
 alert.add_condition_for('metric_name').stops_reporting_for(5) # duration in minutes of the threshold to trigger the alert
-alert.save()
-```
-
-Restrict the condition to a specific source (default is `*`):
-```python
-alert = api.create_alert('my.alert')
-alert.add_condition_for('metric_name', 'mysource')
 alert.save()
 ```
 
