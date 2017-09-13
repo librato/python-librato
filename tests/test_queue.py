@@ -53,7 +53,7 @@ class TestLibratoQueue(unittest.TestCase):
         measurements = q.tagged_chunks[0]['measurements']
 
         assert len(measurements) == 1
-        assert measurements[0].get('tags', {}) == {'sky':'blue', 'hi': 'five'}
+        assert measurements[0].get('tags', {}) == {'sky': 'blue', 'hi': 'five'}
 
     def test_ignore_connection_queue_level_tags(self):
         """test if queue level tags are ignored when passing measurement level tags"""
@@ -66,7 +66,6 @@ class TestLibratoQueue(unittest.TestCase):
         assert len(measurements) == 1
         assert measurements[0].get('tags', {}) == {'hi': 'five'}
 
-
     def test_inherit_queue_connection_level_tags(self):
         """test if queue level tags are ignored when passing measurement level tags"""
         conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'Librato'})
@@ -76,7 +75,7 @@ class TestLibratoQueue(unittest.TestCase):
         measurements = q.tagged_chunks[0]['measurements']
 
         assert len(measurements) == 1
-        assert measurements[0].get('tags', {}) == {'sky':'red', 'service': 'api', 'hi': 'five', 'company': 'Librato'}
+        assert measurements[0].get('tags', {}) == {'sky': 'red', 'service': 'api', 'hi': 'five', 'company': 'Librato'}
 
     def test_inherit_queue_level_tags(self):
         """test if queue level tags are ignored when passing measurement level tags"""
