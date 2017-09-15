@@ -568,13 +568,7 @@ class LibratoConnection(object):
     # Queue
     #
     def new_queue(self, **kwargs):
-        tags = self.tags
-        if 'tags' in kwargs:
-            # Supplied tag set takes precedence
-            tags.update(kwargs.pop('tags'))
-
-        q = Queue(self, tags=tags, **kwargs)
-        return q
+        return Queue(self, **kwargs)
 
     #
     # misc

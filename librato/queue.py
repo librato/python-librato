@@ -85,8 +85,8 @@ class Queue(object):
 
         # must remove the inherit_tags key for compliance with json
         inherit_tags = query_props.pop('inherit_tags', False)
-        if inherit_tags:
-            tags = query_props.get('tags', {})
+        tags = query_props.get('tags', {})
+        if inherit_tags or tags == {}:
             inheritted_tags = dict(self.connection.get_tags(), **self.get_tags())
             query_props['tags'] = dict(inheritted_tags, **tags)
 
@@ -140,10 +140,6 @@ class Queue(object):
         self.chunks = []
 
         for chunk in self.tagged_chunks:
-            if 'tags' in chunk:
-                chunk['tags'] = dict(self.tags, **chunk['tags'])
-            elif self.tags:
-                chunk['tags'] = dict(self.tags)
             self.connection._mexe("measurements", method="POST", query_props=chunk)
         self.tagged_chunks = []
 
