@@ -184,23 +184,23 @@ When there are tag collisions, the measurement, then the batch, then the connect
 priority.
 
 ```python
-api = librato.connect('email', 'token', tags={"company": "librato", "service": "app"})
+api = librato.connect('email', 'token', tags={'company': 'librato', 'service': 'app'})
 
-#tags = {"city": "sf"}
-api.submit("temperature", 80, tags={"city": "sf"})
+# tags will be {'city': 'sf'}
+api.submit('temperature', 80, tags={'city': 'sf'})
 
-#tags = {"city": "sf", "company": "librato", "service": "app"}
-api.submit("temperature", 80, tags={"city": "sf"}, inherit_tags=True)
+# tags will be {'city': 'sf', 'company': 'librato', 'service': 'app'}
+api.submit('temperature', 80, tags={'city': 'sf'}, inherit_tags=True)
 
-q = api.new_queue(tags={"service":"api"})
+q = api.new_queue(tags={'service':'api'})
 
-#tags = {'location': 'downstairs'} 
+# tags will be {'location': 'downstairs'} 
 q.add('temperature', 22.1, tags={'location': 'downstairs'})
 
-# tags={"company": "librato", "service":"api"}
+# tags will be {'company': 'librato', 'service':'api'}
 q.add('temperature', 23.1)
 
-#tags = {'location': 'downstairs', "company": "librato", "service": "api"}
+# tags will be {'location': 'downstairs', 'company': 'librato', 'service': 'api'}
 q.add('temperature', 22.1, tags={'location': 'downstairs'}, inherit_tags=True)
 q.submit()
 ```
