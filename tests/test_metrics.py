@@ -197,6 +197,20 @@ class TestLibrato(unittest.TestCase):
         assert len(gauge.measurements[src]) == 2
         assert gauge.measurements[src][-1]['value'] == 1
 
+    def test_md_inherit_tags(self):
+        self.conn.set_tags({'company': 'Librato', 'hi': 'four'})
+
+        measurement = self.conn.create_tagged_payload('user_cpu', 20.2, tags={'hi': 'five'}, inherit_tags=True)
+
+        assert measurement['tags'] == {'hi': 'five', 'company': 'Librato'}
+
+    def test_md_donot_inherit_tags(self):
+        self.conn.set_tags({'company': 'Librato', 'hi': 'four'})
+
+        measurement = self.conn.create_tagged_payload('user_cpu', 20.2, tags={'hi': 'five'})
+
+        assert measurement['tags'] == {'hi': 'five'}
+
     def test_md_submit(self):
         mt1 = int(time.time()) - 5
 
@@ -223,7 +237,7 @@ class TestLibrato(unittest.TestCase):
 
         self.conn.set_tags({'company': 'Librato'})
         tags = {'hostname': 'web-1'}
-        self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags)
+        self.conn.submit_tagged('user_cpu', 20.2, time=mt1, tags=tags, inherit_tags=True)
 
         # Ensure 'company' and 'hostname' tags made it through
         for tags_search in ["hostname=web-1", "company=Librato"]:

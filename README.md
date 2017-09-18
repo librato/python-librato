@@ -168,9 +168,41 @@ with api.new_queue() as q:
 Queues by default will collect metrics until they are told to submit. You may create a queue
 that autosubmits based on metric volume.
 
+
 ```python
 # Submit when the 400th metric is queued
 q = api.new_queue(auto_submit_count=400)
+```
+
+## Tag Inheritance
+
+Tags can be inherited from the queue or connection object if `inherit_tags=True` is passed as
+an attribute.  If inherit_tags is not passed, but tags are added to the measurement, the measurement
+tags will be the only tags added to that measurement.  
+
+When there are tag collisions, the measurement, then the batch, then the connection is the order of
+priority.
+
+```python
+api = librato.connect('email', 'token', tags={'company': 'librato', 'service': 'app'})
+
+# tags will be {'city': 'sf'}
+api.submit('temperature', 80, tags={'city': 'sf'})
+
+# tags will be {'city': 'sf', 'company': 'librato', 'service': 'app'}
+api.submit('temperature', 80, tags={'city': 'sf'}, inherit_tags=True)
+
+q = api.new_queue(tags={'service':'api'})
+
+# tags will be {'location': 'downstairs'} 
+q.add('temperature', 22.1, tags={'location': 'downstairs'})
+
+# tags will be {'company': 'librato', 'service':'api'}
+q.add('temperature', 23.1)
+
+# tags will be {'location': 'downstairs', 'company': 'librato', 'service': 'api'}
+q.add('temperature', 22.1, tags={'location': 'downstairs'}, inherit_tags=True)
+q.submit()
 ```
 
 ## Updating Metric Attributes

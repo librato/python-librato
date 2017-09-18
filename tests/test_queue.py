@@ -43,6 +43,56 @@ class TestLibratoQueue(unittest.TestCase):
         assert len(measurements) == 1
         assert measurements[0]['value'] == 10
 
+    def test_inherit_connection_level_tags(self):
+        """test if top level tags are ignored when passing measurement level tags"""
+        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+
+        q = conn.new_queue()
+        q.add_tagged('user_cpu', 10, tags={"hi": "five"}, inherit_tags=True)
+
+        measurements = q.tagged_chunks[0]['measurements']
+
+        assert len(measurements) == 1
+        assert measurements[0].get('tags', {}) == {'sky': 'blue', 'hi': 'five'}
+
+    def test_ignore_connection_queue_level_tags(self):
+        """test if queue level tags are ignored when passing measurement level tags"""
+        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
+
+        q = conn.new_queue(tags={"service": "api"})
+        q.add_tagged('user_cpu', 10, tags={"hi": "five"})
+        measurements = q.tagged_chunks[0]['measurements']
+
+        assert len(measurements) == 1
+        assert measurements[0].get('tags', {}) == {'hi': 'five'}
+
+        q.submit()
+
+        resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="sky=blue")
+        assert len(resp['series']) == 0
+
+    def test_inherit_queue_connection_level_tags(self):
+        """test if queue level tags are ignored when passing measurement level tags"""
+        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'Librato'})
+
+        q = conn.new_queue(tags={"service": "api", "hi": "four", "sky": "red"})
+        q.add_tagged('user_cpu', 100, tags={"hi": "five"}, inherit_tags=True)
+        measurements = q.tagged_chunks[0]['measurements']
+
+        assert len(measurements) == 1
+        assert measurements[0].get('tags', {}) == {'sky': 'red', 'service': 'api', 'hi': 'five', 'company': 'Librato'}
+
+    def test_inherit_queue_level_tags(self):
+        """test if queue level tags are ignored when passing measurement level tags"""
+        conn = librato.connect('user_test', 'key_test')
+
+        q = conn.new_queue(tags={"service": "api", "hi": "four"})
+        q.add_tagged('user_cpu', 100, tags={"hi": "five"}, inherit_tags=True)
+        measurements = q.tagged_chunks[0]['measurements']
+
+        assert len(measurements) == 1
+        assert measurements[0].get('tags', {}) == {'service': 'api', 'hi': 'five'}
+
     def test_constructor_tags(self):
         conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue'})
         q = conn.new_queue(tags={'sky': 'red', 'coal': 'black'})
@@ -243,7 +293,7 @@ class TestLibratoQueue(unittest.TestCase):
         q.set_tags({'hostname': 'web-1'})
 
         mt1 = int(time.time()) - 5
-        q.add_tagged('system_cpu', 33.22, time=mt1, tags={"user": "james"})
+        q.add_tagged('system_cpu', 33.22, time=mt1, tags={"user": "james"}, inherit_tags=True)
         q.submit()
 
         # Ensure both tags get submitted

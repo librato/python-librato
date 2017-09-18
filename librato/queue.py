@@ -63,10 +63,8 @@ class Queue(object):
         self.tags.update(d)
 
     def add(self, name, value, type='gauge', **query_props):
-        if len(self.tags) > 0:
-            query_props['tags'] = self.tags
-
-        if 'tags' in query_props:
+        """add measurements to the Q"""
+        if 'tags' in query_props or len(self.tags) > 0:
             self.add_tagged(name, value, **query_props)
         else:
             nm = {}  # new measurement
@@ -84,6 +82,13 @@ class Queue(object):
         nm['name'] = self.connection.sanitize(name)
         nm['sum'] = value
         nm['count'] = 1
+
+        # must remove the inherit_tags key for compliance with json
+        inherit_tags = query_props.pop('inherit_tags', False)
+        tags = query_props.get('tags', {})
+        if inherit_tags or tags == {}:
+            inheritted_tags = dict(self.connection.get_tags(), **self.get_tags())
+            query_props['tags'] = dict(inheritted_tags, **tags)
 
         for pn, v in query_props.items():
             nm[pn] = v
@@ -134,12 +139,8 @@ class Queue(object):
             self.connection._mexe("metrics", method="POST", query_props=c)
         self.chunks = []
 
-        for c in self.tagged_chunks:
-            if 'tags' in c:
-                c['tags'] = dict(self.tags).update(c['tags'])
-            elif self.tags:
-                c['tags'] = dict(self.tags)
-            self.connection._mexe("measurements", method="POST", query_props=c)
+        for chunk in self.tagged_chunks:
+            self.connection._mexe("measurements", method="POST", query_props=chunk)
         self.tagged_chunks = []
 
     def __enter__(self):

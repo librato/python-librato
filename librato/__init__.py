@@ -284,19 +284,26 @@ class LibratoConnection(object):
 
     def submit_tagged(self, name, value, **query_props):
         payload = {'measurements': []}
+        payload['measurements'].append(self.create_tagged_payload(name, value, **query_props))
+        self._mexe("measurements", method="POST", query_props=payload)
 
-        if self.tags:
-            payload['tags'] = self.tags
-
+    def create_tagged_payload(self, name, value, **query_props):
+        """Create the measurement for forwarding to Librato"""
         measurement = {
             'name': self.sanitize(name),
             'value': value
         }
+        if 'tags' in query_props:
+            inherit_tags = query_props.pop('inherit_tags', False)
+            if inherit_tags:
+                tags = query_props.pop('tags', {})
+                measurement['tags'] = dict(self.get_tags(), **tags)
+        elif self.tags:
+            measurement['tags'] = self.tags
+
         for k, v in query_props.items():
             measurement[k] = v
-
-        payload['measurements'].append(measurement)
-        self._mexe("measurements", method="POST", query_props=payload)
+        return measurement
 
     def get(self, name, **query_props):
         resp = self._mexe("metrics/%s" % self.sanitize(name), method="GET", query_props=query_props)
@@ -561,13 +568,7 @@ class LibratoConnection(object):
     # Queue
     #
     def new_queue(self, **kwargs):
-        tags = self.tags
-        if 'tags' in kwargs:
-            # Supplied tag set takes precedence
-            tags.update(kwargs.pop('tags'))
-
-        q = Queue(self, tags=tags, **kwargs)
-        return q
+        return Queue(self, **kwargs)
 
     #
     # misc
