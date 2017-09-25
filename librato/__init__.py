@@ -41,7 +41,7 @@ from librato.alerts import Alert, Service
 from librato.annotations import Annotation
 from librato.spaces import Space, Chart
 
-__version__ = "3.0.1"
+__version__ = "3.1.0"
 
 # Defaults
 HOSTNAME = "metrics-api.librato.com"
