@@ -64,7 +64,7 @@ class Queue(object):
 
     def add(self, name, value, type='gauge', **query_props):
         """add measurements to the Q"""
-        if 'tags' in query_props or len(self.tags) > 0:
+        if 'tags' in query_props or len(self.tags) > 0 or len(self.connection.get_tags()) > 0:
             self.add_tagged(name, value, **query_props)
         else:
             nm = {}  # new measurement

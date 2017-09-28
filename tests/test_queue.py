@@ -71,6 +71,17 @@ class TestLibratoQueue(unittest.TestCase):
         resp = self.conn.get_tagged('user_cpu', duration=60, tags_search="sky=blue")
         assert len(resp['series']) == 0
 
+    def test_inherit_connection_level_tags_through_add(self):
+        """test if connection level tags are recognized when using the add function"""
+        conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'Librato'})
+
+        q = conn.new_queue()
+        q.add('user_cpu', 100)
+        measurements = q.tagged_chunks[0]['measurements']
+
+        assert len(measurements) == 1
+        assert measurements[0].get('tags', {}) == {'sky': 'blue', 'company': 'Librato'}
+
     def test_inherit_queue_connection_level_tags(self):
         """test if queue level tags are ignored when passing measurement level tags"""
         conn = librato.connect('user_test', 'key_test', tags={'sky': 'blue', 'company': 'Librato'})

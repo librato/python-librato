@@ -1,5 +1,11 @@
 ## Changelog
 
+### Version 3.1.0
+Added the ability to inherit tags
+Readme updates for tag usage
+Added ability to use envvars when creating a connection
+Added generators for pagination
+
 ### Version 3.0.1
 * Submit in tag mode if default tags present in queue
 
