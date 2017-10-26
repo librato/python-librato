@@ -298,7 +298,24 @@ space.delete()
 
 ### Create a Chart
 
-Not yet supported for tags-based accounts.
+```python
+# Create a line chart with various metric streams including their tags(s) and group/summary functions:
+space = api.get_space(123)
+linechart = api.create_chart(
+  'cities MD line chart',
+  space,
+  streams=[
+    {
+      "metric": "librato.cpu.percent.idle",
+      "tags": [{"name": "environment", "values": ["*"]]
+    },
+    {
+      "metric": "librato.cpu.percent.user",
+      "tags": [{"name": "environment", 'dynamic': True}]
+    }
+  ]
+)
+```
 
 ### Find a Chart
 ```python
@@ -309,7 +326,13 @@ chart = api.get_chart(chart_id, space)
 
 ### Update a Chart
 
-Not yet supported for tags-based accounts.
+```python
+space = api.get_space(123)
+charts = space.chart_ids
+chart = api.get_chart(charts[0], space.id)
+chart.name = 'Your chart name'
+chart.save()
+```
 
 ### Rename a Chart
 ```python
