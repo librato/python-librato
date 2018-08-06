@@ -38,11 +38,6 @@ class Stream(object):
         for attr in kwargs:
             setattr(self, attr, kwargs[attr])
 
-        # Can't have a composite and source/metric
-        if self.composite:
-            self.source = None
-            self.metric = None
-
     def _attrs(self):
         return ['metric', 'source', 'composite', 'name',
                 'type', 'id', 'group_function', 'summary_function', 'transform_function', 'downsample_function',
