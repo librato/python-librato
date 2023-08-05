@@ -135,13 +135,11 @@ class Queue(object):
         self._auto_submit_if_necessary()
 
     def submit(self):
-        for c in self.chunks:
-            self.connection._mexe("metrics", method="POST", query_props=c)
-        self.chunks = []
+        while len(self.chunks) > 0:
+            self.connection._mexe("metrics", method="POST", query_props=self.chunks.pop(0))
 
-        for chunk in self.tagged_chunks:
-            self.connection._mexe("measurements", method="POST", query_props=chunk)
-        self.tagged_chunks = []
+        while len(self.tagged_chunks) > 0:
+            self.connection._mexe("measurements", method="POST", query_props=self.tagged_chunks.pop(0))
 
     def __enter__(self):
         return self
